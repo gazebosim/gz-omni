@@ -1,5 +1,9 @@
+find_package(ignition-plugin1 REQUIRED COMPONENTS register)
+
+file(GLOB_RECURSE sources CONFIGURE_DEPENDS *.cc)
+
 add_executable(${PROJECT_NAME}
-  main.cpp
+  ${sources}
 )
 
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_17)
@@ -21,5 +25,7 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE
 )
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
+  # omniclient
   -lar -larch -lgf -ljs -lkind -lpcp -lplug -lsdf -ltf -ltrace -lusd -lusdGeom -lvt -lwork -lusdShade -lusdLux -lomniclient -lpython3.7m -lboost_python37
+  ignition-plugin1::register
 )
