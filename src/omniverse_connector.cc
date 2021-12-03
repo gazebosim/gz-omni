@@ -877,144 +877,172 @@ namespace ignition::omni
 	public:
 		bool Load(const std::map<std::string, std::string> & /* params */) override
 		{
-			startOmniverse(false);
+			throw std::runtime_error("Not implemented");
+			std::cout << "Load" << std::endl;
+			// startOmniverse(false);
 			return true;
 		}
 
 		bool Init() override
 		{
+			std::cout << "Init" << std::endl;
 			return true;
 		}
 
 		void Destroy() override
 		{
-			shutdownOmniverse();
+			std::cout << "Destroy" << std::endl;
+			// shutdownOmniverse();
 		}
 
 		bool Fini() override
 		{
+			std::cout << "Fini" << std::endl;
 			return true;
 		}
 
 		bool IsLoaded() const override
 		{
+			std::cout << "IsLoaded" << std::endl;
 			return true;
 		}
 
 		bool IsInitialized() const override
 		{
+			std::cout << "IsInitialized" << std::endl;
 			return true;
 		}
 
 		bool IsEnabled() const override
 		{
+			std::cout << "IsEnabled" << std::endl;
 			return true;
 		}
 
 		std::string Name() const override
 		{
+			std::cout << "Name" << std::endl;
 			return "OmniverseConnector";
 		}
 
 		unsigned int SceneCount() const override
 		{
+			std::cout << "SceneCount" << std::endl;
 			return 1;
 		}
 
 		bool HasScene(ConstScenePtr scene) const override
 		{
+			std::cout << "HasScene" << std::endl;
 			return false;
 		}
 
 		bool HasSceneId(unsigned int id) const override
 		{
+			std::cout << "HasSceneId" << std::endl;
 			return false;
 		}
 
 		bool HasSceneName(const std::string &name) const override
 		{
+			std::cout << "HasSceneName" << std::endl;
 			return false;
 		}
 
 		ScenePtr SceneById(unsigned int id) const override
 		{
+			std::cout << "SceneById" << std::endl;
 			return nullptr;
 		}
 
 		ScenePtr SceneByName(const std::string &name) const override
 		{
+			std::cout << "SceneByName" << std::endl;
 			return nullptr;
 		}
 
 		ScenePtr SceneByIndex(unsigned int index) const override
 		{
+			std::cout << "SceneByIndex" << std::endl;
 			return nullptr;
 		}
 
 		void DestroyScene(ScenePtr scene) override
 		{
+			std::cout << "DestroyScene" << std::endl;
 		}
 
 		void DestroySceneById(unsigned int id) override
 		{
+			std::cout << "DestroySceneById" << std::endl;
 		}
 
 		void DestroySceneByName(const std::string &name) override
 		{
+			std::cout << "DestroySceneByName" << std::endl;
 		}
 
 		void DestroySceneByIndex(unsigned int index) override
 		{
+			std::cout << "DestroySceneByIndex" << std::endl;
 		}
 
 		void DestroyScenes() override
 		{
+			std::cout << "DestroyScenes" << std::endl;
 		}
 
 		ScenePtr CreateScene(const std::string &name) override
 		{
+			std::cout << "CreateScene" << std::endl;
 			return nullptr;
 		}
 
 		ScenePtr CreateScene(unsigned int id, const std::string &name) override
 		{
+			std::cout << "CreateSceneId" << std::endl;
 			return nullptr;
 		}
 
 		void SetHeadless(bool headless) override
 		{
+			std::cout << "SetHeadless" << std::endl;
 		}
 
 		bool Headless() const override
 		{
+			std::cout << "Headless" << std::endl;
 			return false;
 		}
 
 		void AddResourcePath(const std::string &path) override
 		{
+			std::cout << "AddResourcePath" << std::endl;
 		}
 
 		RenderPassSystemPtr RenderPassSystem() const override
 		{
+			std::cout << "RenderPassSystem" << std::endl;
 			return nullptr;
 		}
 	};
+
+	static OmniverseConnectorEngine engine;
 
 	class OmniverseConnectorPlugin : public RenderEnginePlugin
 	{
 	public:
 		std::string Name() const override
 		{
-			return "OmniConnector";
+			std::cout << "Name" << std::endl;
+			return "OmniverseConnector";
 		}
-
-	private:
-		const std::unique_ptr<OmniverseConnectorEngine> engine;
 
 	public:
 		RenderEngine *Engine() const override
 		{
-			return this->engine.get();
+			std::cout << "Engine" << std::endl;
+			return &engine;
 		}
 	};
 }
