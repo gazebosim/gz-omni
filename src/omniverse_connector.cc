@@ -75,6 +75,9 @@
 #include <pxr/usd/usdShade/shader.h>
 #include <pxr/usd/usd/modelAPI.h>
 
+#include <ignition/plugin/Register.hh>
+#include <ignition/rendering.hh>
+
 PXR_NAMESPACE_USING_DIRECTIVE
 
 // Globals for Omniverse Connection and base Stage
@@ -96,42 +99,17 @@ static std::mutex gLogMutex;
 // takes a token as input should use a predefined token
 // rather than one created on the fly from a string.
 TF_DEFINE_PRIVATE_TOKENS(
-	_tokens,
-	(box)
-	(DistantLight)
-	(DomeLight)
-	(Looks)
-	(Root)
-	(Shader)
-	(st)
+		_tokens,
+		(box)(DistantLight)(DomeLight)(Looks)(Root)(Shader)(st)
 
-	// These tokens will be reworked or replaced by the official MDL schema for USD.
-	// https://developer.nvidia.com/usd/MDLschema
-	(Material)
-	((_module, "module"))
-	(name)
-	(out)
-	((shaderId, "mdlMaterial"))
-	(mdl)
+		// These tokens will be reworked or replaced by the official MDL schema for USD.
+		// https://developer.nvidia.com/usd/MDLschema
+		(Material)((_module, "module"))(name)(out)((shaderId, "mdlMaterial"))(mdl)
 
-	// Tokens used for USD Preview Surface
-	(diffuseColor)
-	(normal)
-	(file)
-	(result)
-	(varname)
-	(rgb)
-	(RAW)
-	(sRGB)
-	(surface)
-	(PrimST)
-	(UsdPreviewSurface)
-	((UsdShaderId, "UsdPreviewSurface"))
-	((PrimStShaderId, "UsdPrimvarReader_float2"))
-	(UsdUVTexture)
-);
+		// Tokens used for USD Preview Surface
+		(diffuseColor)(normal)(file)(result)(varname)(rgb)(RAW)(sRGB)(surface)(PrimST)(UsdPreviewSurface)((UsdShaderId, "UsdPreviewSurface"))((PrimStShaderId, "UsdPrimvarReader_float2"))(UsdUVTexture));
 
-static void OmniClientConnectionStatusCallbackImpl(void* userData, const char* url, OmniClientConnectionStatus status) noexcept
+static void OmniClientConnectionStatusCallbackImpl(void *userData, const char *url, OmniClientConnectionStatus status) noexcept
 {
 	// Let's just print this regardless
 	{
@@ -163,7 +141,7 @@ static void shutdownOmniverse()
 	// Calling this prior to shutdown ensures that all pending live updates complete.
 	omniUsdLiveWaitForPendingUpdates();
 
-	// The stage is a sophisticated object that needs to be destroyed properly.  
+	// The stage is a sophisticated object that needs to be destroyed properly.
 	// Since gStage is a smart pointer we can just reset it
 	gStage.Reset();
 
@@ -172,7 +150,7 @@ static void shutdownOmniverse()
 }
 
 // Omniverse Log callback
-static void logCallback(const char* threadName, const char* component, OmniClientLogLevel level, const char* message) noexcept
+static void logCallback(const char *threadName, const char *component, OmniClientLogLevel level, const char *message) noexcept
 {
 	std::unique_lock<std::mutex> lk(gLogMutex);
 	if (gOmniverseLoggingEnabled)
@@ -181,7 +159,7 @@ static void logCallback(const char* threadName, const char* component, OmniClien
 	}
 }
 
-// Startup Omniverse 
+// Startup Omniverse
 static bool startOmniverse(bool doLiveEdit)
 {
 	// Register a function to be called whenever the library wants to print something to a log
@@ -202,12 +180,12 @@ static bool startOmniverse(bool doLiveEdit)
 
 	// Enable live updates
 	omniUsdLiveSetDefaultEnabled(doLiveEdit);
-	
+
 	return true;
 }
 
 // Create a new connection for this model in Omniverse, returns the created stage URL
-static std::string createOmniverseModel(const std::string& destinationPath)
+static std::string createOmniverseModel(const std::string &destinationPath)
 {
 	std::string stageUrl = destinationPath + "/helloworld.usd";
 
@@ -244,7 +222,7 @@ static std::string createOmniverseModel(const std::string& destinationPath)
 // This function will add a commented checkpoint to a file on Nucleus if:
 //   Live mode is disabled (live checkpoints are ill-supported)
 //   The Nucleus server supports checkpoints
-static void checkpointFile(const std::string& stageUrl, const char* comment)
+static void checkpointFile(const std::string &stageUrl, const char *comment)
 {
 	if (omniUsdLiveGetDefaultEnabled())
 	{
@@ -252,41 +230,40 @@ static void checkpointFile(const std::string& stageUrl, const char* comment)
 	}
 
 	bool bCheckpointsSupported = false;
-	omniClientWait(omniClientGetServerInfo(stageUrl.c_str(), &bCheckpointsSupported, 
-		[](void* UserData, OmniClientResult Result, OmniClientServerInfo const * Info) noexcept
-		{
-			if (Result == eOmniClientResult_Ok && Info && UserData)
-			{
-				bool* bCheckpointsSupported = static_cast<bool*>(UserData);
-				*bCheckpointsSupported = Info->checkpointsEnabled;
-			}
-		}));
+	omniClientWait(omniClientGetServerInfo(stageUrl.c_str(), &bCheckpointsSupported,
+																				 [](void *UserData, OmniClientResult Result, OmniClientServerInfo const *Info) noexcept
+																				 {
+																					 if (Result == eOmniClientResult_Ok && Info && UserData)
+																					 {
+																						 bool *bCheckpointsSupported = static_cast<bool *>(UserData);
+																						 *bCheckpointsSupported = Info->checkpointsEnabled;
+																					 }
+																				 }));
 
 	if (bCheckpointsSupported)
 	{
 		const bool bForceCheckpoint = true;
-		omniClientWait(omniClientCreateCheckpoint(stageUrl.c_str(), comment, bForceCheckpoint, nullptr, 
-		[](void* userData, OmniClientResult result, char const * checkpointQuery) noexcept
-		{}));
+		omniClientWait(omniClientCreateCheckpoint(stageUrl.c_str(), comment, bForceCheckpoint, nullptr,
+																							[](void *userData, OmniClientResult result, char const *checkpointQuery) noexcept {}));
 
 		std::unique_lock<std::mutex> lk(gLogMutex);
-		std::cout << "Adding checkpoint comment <" << comment << "> to stage <" << stageUrl <<">" << std::endl;
+		std::cout << "Adding checkpoint comment <" << comment << "> to stage <" << stageUrl << ">" << std::endl;
 	}
 }
 
 // Stage URL really only needs to contain the server in the URL.  eg. omniverse://ov-prod
-static void printConnectedUsername(const std::string& stageUrl)
+static void printConnectedUsername(const std::string &stageUrl)
 {
 	// Get the username for the connection
 	std::string userName("_none_");
-	omniClientWait(omniClientGetServerInfo(stageUrl.c_str(), &userName, [](void* userData, OmniClientResult result, struct OmniClientServerInfo const * info) noexcept
-		{
-			std::string* userName = static_cast<std::string*>(userData);
-			if (userData && userName && info && info->username)
-			{
-				userName->assign(info->username);
-			}
-		}));
+	omniClientWait(omniClientGetServerInfo(stageUrl.c_str(), &userName, [](void *userData, OmniClientResult result, struct OmniClientServerInfo const *info) noexcept
+																				 {
+																					 std::string *userName = static_cast<std::string *>(userData);
+																					 if (userData && userName && info && info->username)
+																					 {
+																						 userName->assign(info->username);
+																					 }
+																				 }));
 	{
 		std::unique_lock<std::mutex> lk(gLogMutex);
 		std::cout << "Connected username: " << userName << std::endl;
@@ -295,12 +272,12 @@ static void printConnectedUsername(const std::string& stageUrl)
 
 // Create a simple box in USD with normals and UV information
 double h = 50.0;
-int gBoxVertexIndices[] = { 0, 1, 2, 1, 3, 2, 4, 5, 6, 4, 6, 7, 8, 9, 10, 8, 10, 11, 12, 13, 14, 12, 14, 15, 16, 17, 18, 16, 18, 19, 20, 21, 22, 20, 22, 23 };
-double gBoxNormals[][3] = { {0, 0, -1}, {0, 0, -1}, {0, 0, -1}, {0, 0, -1}, {0, 0, 1}, {0, 0, 1}, {0, 0, 1}, {0, 0, 1}, {0, -1, 0}, {0, -1, 0}, {0, -1, 0}, {0, -1, 0}, {1, 0, 0}, {1, 0, 0}, {1, 0, 0}, {1, 0, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {-1, 0, 0}, {-1, 0, 0}, {-1, 0, 0}, {-1, 0, 0} };
-double gBoxPoints[][3] = { {h, -h, -h}, {-h, -h, -h}, {h, h, -h}, {-h, h, -h}, {h, h, h}, {-h, h, h}, {-h, -h, h}, {h, -h, h}, {h, -h, h}, {-h, -h, h}, {-h, -h, -h}, {h, -h, -h}, {h, h, h}, {h, -h, h}, {h, -h, -h}, {h, h, -h}, {-h, h, h}, {h, h, h}, {h, h, -h}, {-h, h, -h}, {-h, -h, h}, {-h, h, h}, {-h, h, -h}, {-h, -h, -h} };
-float gBoxUV[][2] = { {0, 0}, {0, 1}, {1, 1}, {1, 0}, {0, 0}, {0, 1}, {1, 1}, {1, 0}, {0, 0}, {0, 1}, {1, 1}, {1, 0}, {0, 0}, {0, 1}, {1, 1}, {1, 0}, {0, 0}, {0, 1}, {1, 1}, {1, 0}, {0, 0}, {0, 1}, {1, 1}, {1, 0} };
+int gBoxVertexIndices[] = {0, 1, 2, 1, 3, 2, 4, 5, 6, 4, 6, 7, 8, 9, 10, 8, 10, 11, 12, 13, 14, 12, 14, 15, 16, 17, 18, 16, 18, 19, 20, 21, 22, 20, 22, 23};
+double gBoxNormals[][3] = {{0, 0, -1}, {0, 0, -1}, {0, 0, -1}, {0, 0, -1}, {0, 0, 1}, {0, 0, 1}, {0, 0, 1}, {0, 0, 1}, {0, -1, 0}, {0, -1, 0}, {0, -1, 0}, {0, -1, 0}, {1, 0, 0}, {1, 0, 0}, {1, 0, 0}, {1, 0, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {-1, 0, 0}, {-1, 0, 0}, {-1, 0, 0}, {-1, 0, 0}};
+double gBoxPoints[][3] = {{h, -h, -h}, {-h, -h, -h}, {h, h, -h}, {-h, h, -h}, {h, h, h}, {-h, h, h}, {-h, -h, h}, {h, -h, h}, {h, -h, h}, {-h, -h, h}, {-h, -h, -h}, {h, -h, -h}, {h, h, h}, {h, -h, h}, {h, -h, -h}, {h, h, -h}, {-h, h, h}, {h, h, h}, {h, h, -h}, {-h, h, -h}, {-h, -h, h}, {-h, h, h}, {-h, h, -h}, {-h, -h, -h}};
+float gBoxUV[][2] = {{0, 0}, {0, 1}, {1, 1}, {1, 0}, {0, 0}, {0, 1}, {1, 1}, {1, 0}, {0, 0}, {0, 1}, {1, 1}, {1, 0}, {0, 0}, {0, 1}, {1, 1}, {1, 0}, {0, 0}, {0, 1}, {1, 1}, {1, 0}, {0, 0}, {0, 1}, {1, 1}, {1, 0}};
 
-static UsdGeomMesh createBox(int boxNumber=0)
+static UsdGeomMesh createBox(int boxNumber = 0)
 {
 	// Keep the model contained inside of "Root", only need to do this once per model
 	SdfPath rootPrimPath = SdfPath::AbsoluteRootPath().AppendChild(_tokens->Root);
@@ -313,7 +290,7 @@ static UsdGeomMesh createBox(int boxNumber=0)
 	// Create the geometry inside of "Root"
 	std::string boxName("box_");
 	boxName.append(std::to_string(boxNumber));
-	SdfPath boxPrimPath = rootPrimPath.AppendChild(TfToken(boxName));//_tokens->box);
+	SdfPath boxPrimPath = rootPrimPath.AppendChild(TfToken(boxName)); //_tokens->box);
 	UsdGeomMesh mesh = UsdGeomMesh::Define(gStage, boxPrimPath);
 
 	if (!mesh)
@@ -391,7 +368,7 @@ static UsdGeomMesh createBox(int boxNumber=0)
 }
 
 // Opens an existing stage and finds the first UsdGeomMesh
-static UsdGeomMesh findGeomMesh(const std::string& existingStage)
+static UsdGeomMesh findGeomMesh(const std::string &existingStage)
 {
 	// Open this file from Omniverse
 	gStage = UsdStage::Open(existingStage);
@@ -414,7 +391,7 @@ static UsdGeomMesh findGeomMesh(const std::string& existingStage)
 
 	// Traverse the stage and return the first UsdGeomMesh we find
 	auto range = gStage->Traverse();
-	for (const auto& node : range)
+	for (const auto &node : range)
 	{
 		if (node.IsA<UsdGeomMesh>())
 		{
@@ -432,7 +409,7 @@ static UsdGeomMesh findGeomMesh(const std::string& existingStage)
 }
 
 // Upload a material and its textures to the Omniverse Server
-static void uploadMaterial(const std::string& destinationPath)
+static void uploadMaterial(const std::string &destinationPath)
 {
 	std::string uriPath = destinationPath + "/Materials";
 
@@ -469,9 +446,9 @@ static void createMaterial(UsdGeomMesh meshIn)
 	TfToken materialNameToken(materialName);
 	// Make path for "/Root/Looks/Fieldstone";
 	SdfPath matPath = SdfPath::AbsoluteRootPath()
-		.AppendChild(_tokens->Root)
-		.AppendChild(_tokens->Looks)
-		.AppendChild(materialNameToken);
+												.AppendChild(_tokens->Root)
+												.AppendChild(_tokens->Looks)
+												.AppendChild(materialNameToken);
 	UsdShadeMaterial newMat = UsdShadeMaterial::Define(gStage, matPath);
 
 	// MDL Shader
@@ -492,7 +469,6 @@ static void createMaterial(UsdGeomMesh meshIn)
 		mdlOutput.ConnectToSource(mdlShader, _tokens->out);
 	}
 
-	
 	// USD Preview Surface Shaders
 	{
 		// Create the "USD Primvar reader for float2" shader
@@ -555,8 +531,8 @@ static void createDistantLight()
 {
 	// Construct /Root/Light path
 	SdfPath lightPath = SdfPath::AbsoluteRootPath()
-		.AppendChild(_tokens->Root)
-		.AppendChild(_tokens->DistantLight);
+													.AppendChild(_tokens->Root)
+													.AppendChild(_tokens->DistantLight);
 	UsdLuxDistantLight newLight = UsdLuxDistantLight::Define(gStage, lightPath);
 
 	// Set the attributes
@@ -571,12 +547,12 @@ static void createDistantLight()
 }
 
 // Create a light source in the scene.
-static void createDomeLight(const std::string& texturePath)
+static void createDomeLight(const std::string &texturePath)
 {
 	// Construct /Root/Light path
 	SdfPath lightPath = SdfPath::AbsoluteRootPath()
-		.AppendChild(_tokens->Root)
-		.AppendChild(_tokens->DomeLight);
+													.AppendChild(_tokens->Root)
+													.AppendChild(_tokens->DomeLight);
 	UsdLuxDomeLight newLight = UsdLuxDomeLight::Define(gStage, lightPath);
 
 	// Set the attributes
@@ -597,7 +573,7 @@ static void createDomeLight(const std::string& texturePath)
 }
 
 // Create an empty folder, just as an example.
-static void createEmptyFolder(const std::string& emptyFolderPath)
+static void createEmptyFolder(const std::string &emptyFolderPath)
 {
 	{
 		std::unique_lock<std::mutex> lk(gLogMutex);
@@ -607,11 +583,11 @@ static void createEmptyFolder(const std::string& emptyFolderPath)
 	OmniClientResult localResult;
 	localResult = Count_eOmniClientResult;
 
-	omniClientWait(omniClientCreateFolder(emptyFolderPath.c_str(), &localResult, [](void* userData, OmniClientResult result) noexcept
-		{
-			auto returnResult = static_cast<OmniClientResult*>(userData);
-			*returnResult = result;
-		}));
+	omniClientWait(omniClientCreateFolder(emptyFolderPath.c_str(), &localResult, [](void *userData, OmniClientResult result) noexcept
+																				{
+																					auto returnResult = static_cast<OmniClientResult *>(userData);
+																					*returnResult = result;
+																				}));
 
 	{
 		std::unique_lock<std::mutex> lk(gLogMutex);
@@ -643,7 +619,8 @@ static void liveEdit(UsdGeomMesh meshIn)
 		// Process any updates that may have happened to the stage from another client
 		omniUsdLiveWaitForPendingUpdates();
 
-		switch (nextCommand) {
+		switch (nextCommand)
+		{
 		case 't':
 		{
 			// Increase the angle
@@ -672,7 +649,8 @@ static void liveEdit(UsdGeomMesh meshIn)
 			// Get the current xform op values
 			for (size_t i = 0; i < xFormOps.size(); i++)
 			{
-				switch (xFormOps[i].GetOpType()) {
+				switch (xFormOps[i].GetOpType())
+				{
 				case UsdGeomXformOp::TypeTranslate:
 					translateOp = xFormOps[i];
 					translateOp.Get(&position);
@@ -696,7 +674,7 @@ static void liveEdit(UsdGeomMesh meshIn)
 			class SetOp
 			{
 			public:
-				SetOp(UsdGeomXformable& xForm, UsdGeomXformOp& op, UsdGeomXformOp::Type opType, const GfVec3d& value, const UsdGeomXformOp::Precision precision)
+				SetOp(UsdGeomXformable &xForm, UsdGeomXformOp &op, UsdGeomXformOp::Type opType, const GfVec3d &value, const UsdGeomXformOp::Precision precision)
 				{
 					if (!op)
 					{
@@ -742,13 +720,13 @@ static void liveEdit(UsdGeomMesh meshIn)
 }
 
 // Returns true if the provided maybeURL contains a host and path
-static bool isValidOmniURL(const std::string& maybeURL)
+static bool isValidOmniURL(const std::string &maybeURL)
 {
 	bool isValidURL = false;
-	OmniClientUrl* url = omniClientBreakUrl(maybeURL.c_str());
-	if (url->host && url->path && 
-		(std::string(url->scheme) == std::string("omniverse") ||
-		 std::string(url->scheme) == std::string("omni")))
+	OmniClientUrl *url = omniClientBreakUrl(maybeURL.c_str());
+	if (url->host && url->path &&
+			(std::string(url->scheme) == std::string("omniverse") ||
+			 std::string(url->scheme) == std::string("omni")))
 	{
 		isValidURL = true;
 	}
@@ -773,9 +751,8 @@ static void printCmdLineArgHelp()
 	std::cout << "    > samples -e omniverse://ov-prod/Projects/LiveEdit/livestage.usd" << std::endl;
 }
 
-
-// Main Application 
-int main(int argc, char*argv[])
+// Main Application
+int main(int argc, char *argv[])
 {
 	bool doLiveEdit = false;
 	std::string existingStage;
@@ -796,9 +773,10 @@ int main(int argc, char*argv[])
 		}
 		else if ((strcmp(argv[x], "-p") == 0 || strcmp(argv[x], "--path") == 0) && argc > x)
 		{
-			if (x == argc-1)
+			if (x == argc - 1)
 			{
-				std::cout << "ERROR: Missing an Omniverse folder URL to create the stage.\n" << std::endl;
+				std::cout << "ERROR: Missing an Omniverse folder URL to create the stage.\n"
+									<< std::endl;
 				printCmdLineArgHelp();
 				return -1;
 			}
@@ -817,9 +795,10 @@ int main(int argc, char*argv[])
 		else if (strcmp(argv[x], "-e") == 0 || strcmp(argv[x], "--existing") == 0)
 		{
 			doLiveEdit = true;
-			if (x == argc-1)
+			if (x == argc - 1)
 			{
-				std::cout << "ERROR: Missing an Omniverse URL to the stage to edit.\n" << std::endl;
+				std::cout << "ERROR: Missing an Omniverse URL to the stage to edit.\n"
+									<< std::endl;
 				printCmdLineArgHelp();
 				return -1;
 			}
@@ -888,3 +867,156 @@ int main(int argc, char*argv[])
 
 	return 0;
 }
+
+namespace ignition::omni
+{
+	using namespace rendering;
+
+	class OmniverseConnectorEngine : public RenderEngine
+	{
+	public:
+		bool Load(const std::map<std::string, std::string> & /* params */) override
+		{
+			startOmniverse(false);
+			return true;
+		}
+
+		bool Init() override
+		{
+			return true;
+		}
+
+		void Destroy() override
+		{
+			shutdownOmniverse();
+		}
+
+		bool Fini() override
+		{
+			return true;
+		}
+
+		bool IsLoaded() const override
+		{
+			return true;
+		}
+
+		bool IsInitialized() const override
+		{
+			return true;
+		}
+
+		bool IsEnabled() const override
+		{
+			return true;
+		}
+
+		std::string Name() const override
+		{
+			return "OmniverseConnector";
+		}
+
+		unsigned int SceneCount() const override
+		{
+			return 1;
+		}
+
+		bool HasScene(ConstScenePtr scene) const override
+		{
+			return false;
+		}
+
+		bool HasSceneId(unsigned int id) const override
+		{
+			return false;
+		}
+
+		bool HasSceneName(const std::string &name) const override
+		{
+			return false;
+		}
+
+		ScenePtr SceneById(unsigned int id) const override
+		{
+			return nullptr;
+		}
+
+		ScenePtr SceneByName(const std::string &name) const override
+		{
+			return nullptr;
+		}
+
+		ScenePtr SceneByIndex(unsigned int index) const override
+		{
+			return nullptr;
+		}
+
+		void DestroyScene(ScenePtr scene) override
+		{
+		}
+
+		void DestroySceneById(unsigned int id) override
+		{
+		}
+
+		void DestroySceneByName(const std::string &name) override
+		{
+		}
+
+		void DestroySceneByIndex(unsigned int index) override
+		{
+		}
+
+		void DestroyScenes() override
+		{
+		}
+
+		ScenePtr CreateScene(const std::string &name) override
+		{
+			return nullptr;
+		}
+
+		ScenePtr CreateScene(unsigned int id, const std::string &name) override
+		{
+			return nullptr;
+		}
+
+		void SetHeadless(bool headless) override
+		{
+		}
+
+		bool Headless() const override
+		{
+			return false;
+		}
+
+		void AddResourcePath(const std::string &path) override
+		{
+		}
+
+		RenderPassSystemPtr RenderPassSystem() const override
+		{
+			return nullptr;
+		}
+	};
+
+	class OmniverseConnectorPlugin : public RenderEnginePlugin
+	{
+	public:
+		std::string Name() const override
+		{
+			return "OmniConnector";
+		}
+
+	private:
+		const std::unique_ptr<OmniverseConnectorEngine> engine;
+
+	public:
+		RenderEngine *Engine() const override
+		{
+			return this->engine.get();
+		}
+	};
+}
+
+IGNITION_ADD_PLUGIN(ignition::omni::OmniverseConnectorPlugin, ignition::rendering::RenderEnginePlugin)
