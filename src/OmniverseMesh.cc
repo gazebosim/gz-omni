@@ -26,7 +26,7 @@ namespace ignition::rendering::omni
   void OmniverseMesh::SetSkeletonLocalTransforms(const std::map<std::string, math::Matrix4d> &_tfs) { throw std::runtime_error("not implemented"); }
   std::unordered_map<std::string, float> OmniverseMesh::SkeletonWeights() const { throw std::runtime_error("not implemented"); }
   void OmniverseMesh::SetSkeletonWeights(const std::unordered_map<std::string, float> &_weights) { throw std::runtime_error("not implemented"); }
-  void OmniverseMesh::SetSkeletonAnimationEnabled(const std::string &_name, bool _enabled, bool _loop = true, float _weight = 1.0) { throw std::runtime_error("not implemented"); }
+  void OmniverseMesh::SetSkeletonAnimationEnabled(const std::string &_name, bool _enabled, bool _loop, float _weight) { throw std::runtime_error("not implemented"); }
   bool OmniverseMesh::SkeletonAnimationEnabled(const std::string &_name) const { throw std::runtime_error("not implemented"); }
   void OmniverseMesh::UpdateSkeletonAnimation(std::chrono::steady_clock::duration _time) { throw std::runtime_error("not implemented"); }
   unsigned int OmniverseMesh::SubMeshCount() const { throw std::runtime_error("not implemented"); }
@@ -38,6 +38,6 @@ namespace ignition::rendering::omni
   const MeshDescriptor &OmniverseMesh::Descriptor() const { throw std::runtime_error("not implemented"); }
 
   MaterialPtr OmniverseSubMesh::Material() const { throw std::runtime_error("not implemented"); }
-  void OmniverseSubMesh::SetMaterial(const std::string &_name, bool _unique = true) { throw std::runtime_error("not implemented"); }
-  void OmniverseSubMesh::SetMaterial(MaterialPtr _material, bool _unique = true) { throw std::runtime_error("not implemented"); }
+  void OmniverseSubMesh::SetMaterial(const std::string &_name, bool _unique) { throw std::runtime_error("not implemented"); }
+  void OmniverseSubMesh::SetMaterial(MaterialPtr _material, bool _unique) { throw std::runtime_error("not implemented"); }
 } // namespace ignition::rendering::omni

@@ -22,10 +22,10 @@
 namespace ignition::rendering::omni
 {
   math::Color OmniverseLight::DiffuseColor() const { throw std::runtime_error("not implemented"); }
-  void OmniverseLight::SetDiffuseColor(double _r, double _g, double _b, double _a = 1.0) { throw std::runtime_error("not implemented"); }
+  void OmniverseLight::SetDiffuseColor(double _r, double _g, double _b, double _a) { throw std::runtime_error("not implemented"); }
   void OmniverseLight::SetDiffuseColor(const math::Color &_color) { throw std::runtime_error("not implemented"); }
   math::Color OmniverseLight::SpecularColor() const { throw std::runtime_error("not implemented"); }
-  void OmniverseLight::SetSpecularColor(double _r, double _g, double _b, double _a = 1.0) { throw std::runtime_error("not implemented"); }
+  void OmniverseLight::SetSpecularColor(double _r, double _g, double _b, double _a) { throw std::runtime_error("not implemented"); }
   void OmniverseLight::SetSpecularColor(const math::Color &_color) { throw std::runtime_error("not implemented"); }
   double OmniverseLight::AttenuationConstant() const { throw std::runtime_error("not implemented"); }
   void OmniverseLight::SetAttenuationConstant(double _value) { throw std::runtime_error("not implemented"); }

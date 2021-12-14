@@ -28,23 +28,23 @@ namespace ignition::rendering::omni
   void OmniverseMaterial::SetDepthWriteEnabled(bool _enabled) { throw std::runtime_error("not implemented"); }
   bool OmniverseMaterial::DepthWriteEnabled() const { throw std::runtime_error("not implemented"); }
   math::Color OmniverseMaterial::Ambient() const { throw std::runtime_error("not implemented"); }
-  void OmniverseMaterial::SetAmbient(const double _r, const double _g, const double _b, const double _a = 1.0) { throw std::runtime_error("not implemented"); }
+  void OmniverseMaterial::SetAmbient(const double _r, const double _g, const double _b, const double _a) { throw std::runtime_error("not implemented"); }
   void OmniverseMaterial::SetAmbient(const math::Color &_color) { throw std::runtime_error("not implemented"); }
   math::Color OmniverseMaterial::Diffuse() const { throw std::runtime_error("not implemented"); }
-  void OmniverseMaterial::SetDiffuse(const double _r, const double _g, const double _b, const double _a = 1.0) { throw std::runtime_error("not implemented"); }
+  void OmniverseMaterial::SetDiffuse(const double _r, const double _g, const double _b, const double _a) { throw std::runtime_error("not implemented"); }
   void OmniverseMaterial::SetDiffuse(const math::Color &_color) { throw std::runtime_error("not implemented"); }
   math::Color OmniverseMaterial::Specular() const { throw std::runtime_error("not implemented"); }
-  void OmniverseMaterial::SetSpecular(const double _r, const double _g, const double _b, const double _a = 1.0) { throw std::runtime_error("not implemented"); }
+  void OmniverseMaterial::SetSpecular(const double _r, const double _g, const double _b, const double _a) { throw std::runtime_error("not implemented"); }
   void OmniverseMaterial::SetSpecular(const math::Color &_color) { throw std::runtime_error("not implemented"); }
   math::Color OmniverseMaterial::Emissive() const { throw std::runtime_error("not implemented"); }
-  void OmniverseMaterial::SetEmissive(const double _r, const double _g, const double _b, const double _a = 1.0) { throw std::runtime_error("not implemented"); }
+  void OmniverseMaterial::SetEmissive(const double _r, const double _g, const double _b, const double _a) { throw std::runtime_error("not implemented"); }
   void OmniverseMaterial::SetEmissive(const math::Color &_color) { throw std::runtime_error("not implemented"); }
   double OmniverseMaterial::Shininess() const { throw std::runtime_error("not implemented"); }
   void OmniverseMaterial::SetShininess(const double _shininess) { throw std::runtime_error("not implemented"); }
   double OmniverseMaterial::Transparency() const { throw std::runtime_error("not implemented"); }
   void OmniverseMaterial::SetDepthMaterial(const double far, const double near) { throw std::runtime_error("not implemented"); }
   void OmniverseMaterial::SetTransparency(const double _transparency) { throw std::runtime_error("not implemented"); }
-  void OmniverseMaterial::SetAlphaFromTexture(bool _enabled, double _alpha = 0.5, bool _twoSided = true) { throw std::runtime_error("not implemented"); }
+  void OmniverseMaterial::SetAlphaFromTexture(bool _enabled, double _alpha, bool _twoSided) { throw std::runtime_error("not implemented"); }
   bool OmniverseMaterial::TextureAlphaEnabled() const { throw std::runtime_error("not implemented"); }
   double OmniverseMaterial::AlphaThreshold() const { throw std::runtime_error("not implemented"); }
   bool OmniverseMaterial::TwoSidedEnabled() const { throw std::runtime_error("not implemented"); }
@@ -83,7 +83,7 @@ namespace ignition::rendering::omni
   bool OmniverseMaterial::HasLightMap() const { throw std::runtime_error("not implemented"); }
   std::string OmniverseMaterial::LightMap() const { throw std::runtime_error("not implemented"); }
   unsigned int OmniverseMaterial::LightMapTexCoordSet() const { throw std::runtime_error("not implemented"); }
-  void OmniverseMaterial::SetLightMap(const std::string &_lightMap, unsigned int _uvSet = 0u) { throw std::runtime_error("not implemented"); }
+  void OmniverseMaterial::SetLightMap(const std::string &_lightMap, unsigned int _uvSet) { throw std::runtime_error("not implemented"); }
   void OmniverseMaterial::ClearLightMap() { throw std::runtime_error("not implemented"); }
   void OmniverseMaterial::SetRenderOrder(const float _renderOrder) { throw std::runtime_error("not implemented"); }
   float OmniverseMaterial::RenderOrder() const { throw std::runtime_error("not implemented"); }
@@ -94,7 +94,7 @@ namespace ignition::rendering::omni
   enum MaterialType OmniverseMaterial::Type() const { throw std::runtime_error("not implemented"); }
   enum ShaderType OmniverseMaterial::ShaderType() const { throw std::runtime_error("not implemented"); }
   void OmniverseMaterial::SetShaderType(enum ShaderType _type) { throw std::runtime_error("not implemented"); }
-  MaterialPtr OmniverseMaterial::Clone(const std::string &_name = "") const { throw std::runtime_error("not implemented"); }
+  MaterialPtr OmniverseMaterial::Clone(const std::string &_name) const { throw std::runtime_error("not implemented"); }
   void OmniverseMaterial::CopyFrom(ConstMaterialPtr _material) { throw std::runtime_error("not implemented"); }
   void OmniverseMaterial::CopyFrom(const common::Material &_material) { throw std::runtime_error("not implemented"); }
   std::string OmniverseMaterial::VertexShader() const { throw std::runtime_error("not implemented"); }

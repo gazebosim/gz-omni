@@ -15,7 +15,10 @@
  *
  */
 
-#include <ignition/rendering.hh>
+#include <pxr/usd/usd/prim.h>
+#include <pxr/usd/usd/references.h>
+
+#include "OmniverseScene.hh"
 #include "OmniverseRenderEngine.hh"
 
 namespace ignition::rendering::omni
@@ -26,156 +29,21 @@ namespace ignition::rendering::omni
     return &instance;
   }
 
-  bool OmniverseRenderEngine::Load(const std::map<std::string, std::string> & /* params */)
+  bool OmniverseRenderEngine::LoadImpl(const std::map<std::string, std::string> &params)
   {
-    throw std::runtime_error("Not implemented");
-    std::cout << "Load" << std::endl;
-    // startOmniverse(false);
+    // TODO: create stage in omniverse
+    this->_stage->CreateInMemory();
     return true;
   }
 
-  bool OmniverseRenderEngine::Init()
+  bool OmniverseRenderEngine::InitImpl()
   {
-    std::cout << "Init" << std::endl;
+    // TODO: start omniverse
     return true;
   }
 
-  void OmniverseRenderEngine::Destroy()
+  ScenePtr OmniverseRenderEngine::CreateSceneImpl(unsigned int id, const std::string &name)
   {
-    std::cout << "Destroy" << std::endl;
-    // shutdownOmniverse();
+    return std::make_shared<OmniverseScene>(this, this->_stage, id, name);
   }
-
-  bool OmniverseRenderEngine::Fini()
-  {
-    std::cout << "Fini" << std::endl;
-    return true;
-  }
-
-  bool OmniverseRenderEngine::IsLoaded() const
-  {
-    std::cout << "IsLoaded" << std::endl;
-    return true;
-  }
-
-  bool OmniverseRenderEngine::IsInitialized() const
-  {
-    std::cout << "IsInitialized" << std::endl;
-    return true;
-  }
-
-  bool OmniverseRenderEngine::IsEnabled() const
-  {
-    std::cout << "IsEnabled" << std::endl;
-    return true;
-  }
-
-  std::string OmniverseRenderEngine::Name() const
-  {
-    std::cout << "Name" << std::endl;
-    return "OmniverseConnector";
-  }
-
-  unsigned int OmniverseRenderEngine::SceneCount() const
-  {
-    std::cout << "SceneCount" << std::endl;
-    return 1;
-  }
-
-  bool OmniverseRenderEngine::HasScene(ConstScenePtr scene) const
-  {
-    std::cout << "HasScene" << std::endl;
-    return false;
-  }
-
-  bool OmniverseRenderEngine::HasSceneId(unsigned int id) const
-  {
-    std::cout << "HasSceneId" << std::endl;
-    return false;
-  }
-
-  bool OmniverseRenderEngine::HasSceneName(const std::string &name) const
-  {
-    std::cout << "HasSceneName" << std::endl;
-    return false;
-  }
-
-  ScenePtr OmniverseRenderEngine::SceneById(unsigned int id) const
-  {
-    std::cout << "SceneById" << std::endl;
-    return nullptr;
-  }
-
-  ScenePtr OmniverseRenderEngine::SceneByName(const std::string &name) const
-  {
-    std::cout << "SceneByName" << std::endl;
-    return nullptr;
-  }
-
-  ScenePtr OmniverseRenderEngine::SceneByIndex(unsigned int index) const
-  {
-    std::cout << "SceneByIndex" << std::endl;
-    return nullptr;
-  }
-
-  void OmniverseRenderEngine::DestroyScene(ScenePtr scene)
-  {
-    std::cout << "DestroyScene" << std::endl;
-  }
-
-  void OmniverseRenderEngine::DestroySceneById(unsigned int id)
-  {
-    std::cout << "DestroySceneById" << std::endl;
-  }
-
-  void OmniverseRenderEngine::DestroySceneByName(const std::string &name)
-  {
-    std::cout << "DestroySceneByName" << std::endl;
-  }
-
-  void OmniverseRenderEngine::DestroySceneByIndex(unsigned int index)
-  {
-    std::cout << "DestroySceneByIndex" << std::endl;
-  }
-
-  void OmniverseRenderEngine::DestroyScenes()
-  {
-    std::cout << "DestroyScenes" << std::endl;
-  }
-
-  ScenePtr OmniverseRenderEngine::CreateScene(const std::string &name)
-  {
-    std::cout << "CreateScene" << std::endl;
-    return nullptr;
-  }
-
-  ScenePtr OmniverseRenderEngine::CreateScene(unsigned int id, const std::string &name)
-  {
-    std::cout << "CreateSceneId" << std::endl;
-    return nullptr;
-  }
-
-  void OmniverseRenderEngine::SetHeadless(bool headless)
-  {
-    std::cout << "SetHeadless" << std::endl;
-  }
-
-  bool OmniverseRenderEngine::Headless() const
-  {
-    std::cout << "Headless" << std::endl;
-    return false;
-  }
-
-  void OmniverseRenderEngine::AddResourcePath(const std::string &path)
-  {
-    std::cout << "AddResourcePath" << std::endl;
-  }
-
-  RenderPassSystemPtr OmniverseRenderEngine::RenderPassSystem() const
-  {
-    std::cout << "RenderPassSystem" << std::endl;
-    return nullptr;
-  }
-
-  ConstScenePtr asd;
 };

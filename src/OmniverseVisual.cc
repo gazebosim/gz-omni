@@ -28,10 +28,10 @@ namespace ignition::rendering::omni
   GeometryPtr OmniverseVisual::RemoveGeometry(GeometryPtr _geometry) { throw std::runtime_error("not implemented"); }
   GeometryPtr OmniverseVisual::RemoveGeometryByIndex(unsigned int _index) { throw std::runtime_error("not implemented"); }
   void OmniverseVisual::RemoveGeometries() { throw std::runtime_error("not implemented"); }
-  void OmniverseVisual::SetMaterial(const std::string &_name, bool _unique = true) { throw std::runtime_error("not implemented"); }
-  void OmniverseVisual::SetMaterial(MaterialPtr _material, bool _unique = true) { throw std::runtime_error("not implemented"); }
-  void OmniverseVisual::SetChildMaterial(MaterialPtr _material, bool _unique = true) { throw std::runtime_error("not implemented"); }
-  void OmniverseVisual::SetGeometryMaterial(MaterialPtr _material, bool _unique = true) { throw std::runtime_error("not implemented"); }
+  void OmniverseVisual::SetMaterial(const std::string &_name, bool _unique) { throw std::runtime_error("not implemented"); }
+  void OmniverseVisual::SetMaterial(MaterialPtr _material, bool _unique) { throw std::runtime_error("not implemented"); }
+  void OmniverseVisual::SetChildMaterial(MaterialPtr _material, bool _unique) { throw std::runtime_error("not implemented"); }
+  void OmniverseVisual::SetGeometryMaterial(MaterialPtr _material, bool _unique) { throw std::runtime_error("not implemented"); }
   MaterialPtr OmniverseVisual::Material() const { throw std::runtime_error("not implemented"); }
   void OmniverseVisual::SetWireframe(bool _show) { throw std::runtime_error("not implemented"); }
   bool OmniverseVisual::Wireframe() const { throw std::runtime_error("not implemented"); }
