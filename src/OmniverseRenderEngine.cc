@@ -31,8 +31,7 @@ namespace ignition::rendering::omni
 
   bool OmniverseRenderEngine::LoadImpl(const std::map<std::string, std::string> &params)
   {
-    // TODO: create stage in omniverse
-    this->_stage->CreateInMemory();
+    // TODO: start omniverse
     return true;
   }
 
@@ -44,6 +43,6 @@ namespace ignition::rendering::omni
 
   ScenePtr OmniverseRenderEngine::CreateSceneImpl(unsigned int id, const std::string &name)
   {
-    return std::make_shared<OmniverseScene>(this, this->_stage, id, name);
+    return std::make_shared<OmniverseScene>(this, id, name);
   }
 };

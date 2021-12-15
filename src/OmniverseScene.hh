@@ -25,9 +25,7 @@ namespace ignition::rendering::omni
   class OmniverseScene : public BaseScene
   {
   public:
-    OmniverseScene(RenderEngine *engine, pxr::UsdStageRefPtr stage, unsigned int id, std::string name);
-
-    ~OmniverseScene() override;
+    OmniverseScene(RenderEngine *engine, unsigned int id, std::string name);
 
     inline RenderEngine *Engine() const override { return this->_engine; }
 
@@ -109,7 +107,6 @@ namespace ignition::rendering::omni
 
   private:
     pxr::UsdStageRefPtr _stage;
-    pxr::SdfLayerHandle _layer;
     RenderEngine *_engine;
   };
 }

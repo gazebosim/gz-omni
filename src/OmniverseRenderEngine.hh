@@ -41,7 +41,6 @@ namespace ignition::rendering::omni
     inline SceneStorePtr Scenes() const override { return this->_scenes; }
 
   private:
-    pxr::UsdStageRefPtr _stage;
     std::shared_ptr<OmniverseSceneStore> _scenes;
   };
 }

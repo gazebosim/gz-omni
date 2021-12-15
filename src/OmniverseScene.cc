@@ -21,23 +21,11 @@
 
 namespace ignition::rendering::omni
 {
-  OmniverseScene::OmniverseScene(RenderEngine *engine, pxr::UsdStageRefPtr stage, unsigned int id, std::string name)
-      : BaseScene(id, name), _engine(engine), _stage(stage)
+  OmniverseScene::OmniverseScene(RenderEngine *engine, unsigned int id, std::string name)
+      : BaseScene(id, name), _engine(engine)
   {
-    this->_stage->GetRootLayer()->InsertSubLayerPath(this->name + ".usdc");
-  }
-
-  OmniverseScene::~OmniverseScene()
-  {
-    auto layers = this->_stage->GetRootLayer()->GetSubLayerPaths();
-    auto result = layers.Find(this->name + ".usdc");
-    if (result != -1)
-      this->_stage->GetRootLayer()->RemoveSubLayerPath(result);
-    else
-    {
-      ignwarn << "Tried to remove layer '" << this->name << ".usdc"
-              << "' but it is not found." << std::endl;
-    }
+    // TODO: create stage in omniverse
+    this->_stage = pxr::UsdStage::CreateInMemory(name);
   }
 
   VisualPtr OmniverseScene::RootVisual() const { throw std::runtime_error("not implemented"); }
