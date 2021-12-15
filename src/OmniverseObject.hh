@@ -15,20 +15,26 @@
  *
  */
 
-#include "OmniverseVisual.hh"
+#ifndef IGNITION_RENDERING_OMNI_OMNIVERSEOBJECT_HH
+#define IGNITION_RENDERING_OMNI_OMNIVERSEOBJECT_HH
+
+#include <ignition/rendering/base/BaseObject.hh>
 
 namespace ignition::rendering::omni {
 
-GeometryStorePtr OmniverseVisual::Geometries() const {
-  // TODO: implement
-  return nullptr;
-}
+class OmniverseObject : public BaseObject {
+ public:
+  explicit OmniverseObject(ScenePtr _scene) : _scene(_scene) {}
 
-bool OmniverseVisual::AttachGeometry(GeometryPtr _geometry) {
-  // TODO: implement
-  return false;
-}
+  ScenePtr Scene() const override { return _scene; }
 
-bool OmniverseVisual::DetachGeometry(GeometryPtr _geometry) { return false; }
+ protected:
+  OmniverseObject() = default;
+
+ private:
+  ScenePtr _scene;
+};
 
 }  // namespace ignition::rendering::omni
+
+#endif

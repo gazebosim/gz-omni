@@ -15,20 +15,51 @@
  *
  */
 
-#include "OmniverseVisual.hh"
+#include "OmniverseNode.hh"
 
 namespace ignition::rendering::omni {
 
-GeometryStorePtr OmniverseVisual::Geometries() const {
+NodePtr OmniverseNode::Parent() const {
   // TODO: implement
   return nullptr;
 }
 
-bool OmniverseVisual::AttachGeometry(GeometryPtr _geometry) {
+math::Vector3d OmniverseNode::LocalScale() const {
+  // TODO: implement
+  return math::Vector3d::One;
+}
+
+bool OmniverseNode::InheritScale() const {
   // TODO: implement
   return false;
 }
 
-bool OmniverseVisual::DetachGeometry(GeometryPtr _geometry) { return false; }
+math::Pose3d OmniverseNode::RawLocalPose() const {
+  // TODO: implement
+  return math::Pose3d::Zero;
+}
+
+void OmniverseNode::SetRawLocalPose(const math::Pose3d &_pose) {
+  // TODO: implement
+}
+
+NodeStorePtr OmniverseNode::Children() const {
+  // TODO: implement
+  return nullptr;
+}
+
+bool OmniverseNode::AttachChild(NodePtr _child) {
+  // TODO: implement
+  return false;
+}
+
+bool OmniverseNode::DetachChild(NodePtr _child) {
+  // TODO: implement
+  return false;
+}
+
+void OmniverseNode::SetLocalScaleImpl(const math::Vector3d &_scale) {
+  // TODO: implement
+}
 
 }  // namespace ignition::rendering::omni

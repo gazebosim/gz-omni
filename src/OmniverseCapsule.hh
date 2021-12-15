@@ -18,16 +18,26 @@
 #ifndef IGNITION_RENDERING_OMNI_OMNIVERSECAPSULE_HH
 #define IGNITION_RENDERING_OMNI_OMNIVERSECAPSULE_HH
 
-#include <ignition/rendering.hh>
+#include <ignition/rendering/base/BaseCapsule.hh>
+
+#include "OmniverseGeometry.hh"
 
 namespace ignition::rendering::omni {
-class OmniverseCapsule : public Capsule {
+
+class OmniverseCapsule : public BaseCapsule<OmniverseGeometry> {
  public:
-  void SetRadius(double _radius) override;
-  void SetLength(double _length) override;
-  double Radius() const override;
-  double Length() const override;
+  using SharedPtr = std::shared_ptr<OmniverseCapsule>;
+
+  template <typename... Args>
+  static OmniverseCapsule::SharedPtr Make(Args&&... args) {
+    return std::shared_ptr<OmniverseCapsule>(
+        new OmniverseCapsule(std::forward<Args>(args)...));
+  }
+
+ private:
+  OmniverseCapsule(ScenePtr _scene, pxr::UsdGeomGprim _gprim);
 };
+
 }  // namespace ignition::rendering::omni
 
 #endif

@@ -18,19 +18,40 @@
 #ifndef IGNITION_RENDERING_OMNI_OMNIVERSECAMERA_HH
 #define IGNITION_RENDERING_OMNI_OMNIVERSECAMERA_HH
 
-#include <ignition/rendering.hh>
+#include <pxr/usd/usdGeom/gprim.h>
+
+#include <ignition/rendering/base/BaseGeometry.hh>
+
+#include "OmniverseObject.hh"
 
 namespace ignition::rendering::omni {
-class OmniverseGeometry : public Geometry {
+
+class OmniverseGeometry : public BaseGeometry<OmniverseObject> {
  public:
-  bool HasParent() const override;
+  using SharedPtr = std::shared_ptr<OmniverseGeometry>;
+
+  template <typename... Args>
+  static OmniverseGeometry::SharedPtr Make(Args&&... args) {
+    return std::shared_ptr<OmniverseGeometry>(
+        new OmniverseGeometry(std::forward<Args>(args)...));
+  }
+
   VisualPtr Parent() const override;
-  void RemoveParent() override;
-  void SetMaterial(const std::string &_name, bool _unique = true) override;
+
   void SetMaterial(MaterialPtr _material, bool _unique = true) override;
+
+  bool HasParent() const override;
+
   MaterialPtr Material() const override;
-  GeometryPtr Clone() const override;
+
+ protected:
+  OmniverseGeometry() = default;
+  OmniverseGeometry(ScenePtr _scene, pxr::UsdGeomGprim _gprim);
+
+ private:
+  pxr::UsdGeomGprim _gprim;
 };
+
 }  // namespace ignition::rendering::omni
 
 #endif

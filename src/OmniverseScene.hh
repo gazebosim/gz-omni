@@ -34,6 +34,7 @@ class OmniverseScene : public BaseScene {
 
   void SetAmbientLight(const math::Color &_color) override;
 
+ protected:
   COMVisualPtr CreateCOMVisualImpl(unsigned int _id,
                                    const std::string &_name) override;
 
@@ -67,8 +68,8 @@ class OmniverseScene : public BaseScene {
   ArrowVisualPtr CreateArrowVisualImpl(unsigned int _id,
                                        const std::string &_name) override;
 
-  AxisVisualPtr CreateAxisVisualImpl(unsigned int _id,
-                                     const std::string &_name) override;
+  AxisVisualPtr CreateAxisVisualImpl(unsigned int id,
+                                     const std::string &name) override;
 
   GeometryPtr CreateBoxImpl(unsigned int _id,
                             const std::string &_name) override;

@@ -17,19 +17,8 @@
 
 #include "OmniverseCapsule.hh"
 
-#include <exception>
-
 namespace ignition::rendering::omni {
-void OmniverseCapsule::SetRadius(double _radius) {
-  throw std::runtime_error("not implemented");
-}
-void OmniverseCapsule::SetLength(double _length) {
-  throw std::runtime_error("not implemented");
-}
-double OmniverseCapsule::Radius() const {
-  throw std::runtime_error("not implemented");
-}
-double OmniverseCapsule::Length() const {
-  throw std::runtime_error("not implemented");
-}
+
+OmniverseCapsule::OmniverseCapsule(ScenePtr _scene, pxr::UsdGeomGprim _gprim) {}
+
 }  // namespace ignition::rendering::omni

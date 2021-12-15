@@ -20,11 +20,13 @@
 
 #include <ignition/rendering/base/BaseStorage.hh>
 
+#include "OmniverseObject.hh"
 #include "OmniverseScene.hh"
 
 namespace ignition::rendering::omni {
+
 using OmniverseSceneStore = BaseSceneStore<OmniverseScene>;
-using OmniverseSceneStorePtr = BaseSceneStore<OmniverseScene>;
+
 }  // namespace ignition::rendering::omni
 
 #endif

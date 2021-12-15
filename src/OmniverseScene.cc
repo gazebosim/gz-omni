@@ -17,7 +17,16 @@
 
 #include "OmniverseScene.hh"
 
+#include <pxr/usd/usdGeom/capsule.h>
+#include <pxr/usd/usdGeom/cube.h>
+#include <pxr/usd/usdGeom/cylinder.h>
+#include <pxr/usd/usdGeom/mesh.h>
+#include <pxr/usd/usdGeom/sphere.h>
+
 #include <ignition/common/Console.hh>
+
+#include "OmniverseCapsule.hh"
+#include "OmniverseGeometry.hh"
 
 namespace ignition::rendering::omni {
 OmniverseScene::OmniverseScene(RenderEngine *engine, unsigned int id,
@@ -28,176 +37,205 @@ OmniverseScene::OmniverseScene(RenderEngine *engine, unsigned int id,
 }
 
 VisualPtr OmniverseScene::RootVisual() const {
-  throw std::runtime_error("not implemented");
+  // TODO: implement
+  return nullptr;
 }
 
 math::Color OmniverseScene::AmbientLight() const {
-  throw std::runtime_error("not implemented");
+  // TODO: implement
+  return math::Color();
 }
 
 void SetAmbientLight(const math::Color &_color) {
-  throw std::runtime_error("not implemented");
+  // TODO: implement
 }
 
 COMVisualPtr OmniverseScene::OmniverseScene::CreateCOMVisualImpl(
     unsigned int _id, const std::string &_name) {
-  throw std::runtime_error("not implemented");
+  // TODO: implement
+  return nullptr;
 }
 
 InertiaVisualPtr OmniverseScene::CreateInertiaVisualImpl(
     unsigned int _id, const std::string &_name) {
-  throw std::runtime_error("not implemented");
+  // TODO: implement
+  return nullptr;
 }
 
 JointVisualPtr OmniverseScene::CreateJointVisualImpl(unsigned int _id,
                                                      const std::string &_name) {
-  throw std::runtime_error("not implemented");
+  // TODO: implement
+  return nullptr;
 }
 
 LightVisualPtr OmniverseScene::CreateLightVisualImpl(unsigned int _id,
                                                      const std::string &_name) {
-  throw std::runtime_error("not implemented");
+  // TODO: implement
+  return nullptr;
 }
 
 DirectionalLightPtr OmniverseScene::CreateDirectionalLightImpl(
     unsigned int _id, const std::string &_name) {
-  throw std::runtime_error("not implemented");
+  // TODO: implement
+  return nullptr;
 }
 
 PointLightPtr OmniverseScene::CreatePointLightImpl(unsigned int _id,
                                                    const std::string &_name) {
-  throw std::runtime_error("not implemented");
+  // TODO: implement
+  return nullptr;
 }
 
 SpotLightPtr OmniverseScene::CreateSpotLightImpl(unsigned int _id,
                                                  const std::string &_name) {
-  throw std::runtime_error("not implemented");
+  // TODO: implement
+  return nullptr;
 }
 
 CameraPtr OmniverseScene::CreateCameraImpl(unsigned int _id,
                                            const std::string &_name) {
-  throw std::runtime_error("not implemented");
+  // TODO: implement
+  return nullptr;
 }
 
 DepthCameraPtr OmniverseScene::CreateDepthCameraImpl(unsigned int _id,
                                                      const std::string &_name) {
-  throw std::runtime_error("not implemented");
+  // TODO: implement
+  return nullptr;
 }
 
 VisualPtr OmniverseScene::CreateVisualImpl(unsigned int _id,
                                            const std::string &_name) {
-  throw std::runtime_error("not implemented");
+  // TODO: implement
+  return nullptr;
 }
 
 ArrowVisualPtr OmniverseScene::CreateArrowVisualImpl(unsigned int _id,
                                                      const std::string &_name) {
-  throw std::runtime_error("not implemented");
+  // TODO: implement
+  return nullptr;
 }
 
 AxisVisualPtr OmniverseScene::CreateAxisVisualImpl(unsigned int _id,
                                                    const std::string &_name) {
-  throw std::runtime_error("not implemented");
+  // TODO: implement
+  return nullptr;
 }
 
 GeometryPtr OmniverseScene::CreateBoxImpl(unsigned int _id,
                                           const std::string &_name) {
-  throw std::runtime_error("not implemented");
-}
-
-GeometryPtr OmniverseScene::CreateConeImpl(unsigned int _id,
-                                           const std::string &_name) {
-  throw std::runtime_error("not implemented");
+  auto cube = pxr::UsdGeomCube::Define(this->_stage, pxr::SdfPath(_name));
+  return OmniverseGeometry::Make(this->shared_from_this(), cube);
 }
 
 GeometryPtr OmniverseScene::CreateCylinderImpl(unsigned int _id,
                                                const std::string &_name) {
-  throw std::runtime_error("not implemented");
+  auto cylinder =
+      pxr::UsdGeomCylinder::Define(this->_stage, pxr::SdfPath(_name));
+  return OmniverseGeometry::Make(this->shared_from_this(), cylinder);
 }
 
 GeometryPtr OmniverseScene::CreatePlaneImpl(unsigned int _id,
                                             const std::string &_name) {
-  throw std::runtime_error("not implemented");
+  // TODO: implement
+  return nullptr;
 }
 
 GeometryPtr OmniverseScene::CreateSphereImpl(unsigned int _id,
                                              const std::string &_name) {
-  throw std::runtime_error("not implemented");
+  auto sphere = pxr::UsdGeomSphere::Define(this->_stage, pxr::SdfPath(_name));
+  return OmniverseGeometry::Make(this->shared_from_this(), sphere);
 }
 
 MeshPtr OmniverseScene::CreateMeshImpl(unsigned int _id,
                                        const std::string &_name,
                                        const MeshDescriptor &_desc) {
-  throw std::runtime_error("not implemented");
+  return nullptr;
 }
 
 CapsulePtr OmniverseScene::CreateCapsuleImpl(unsigned int _id,
                                              const std::string &_name) {
-  throw std::runtime_error("not implemented");
+  auto capsule = pxr::UsdGeomCapsule::Define(this->_stage, pxr::SdfPath(_name));
+  return OmniverseCapsule::Make(this->shared_from_this(), capsule);
 }
 
 GridPtr OmniverseScene::CreateGridImpl(unsigned int _id,
                                        const std::string &_name) {
-  throw std::runtime_error("not implemented");
+  // TODO: implement
+  return nullptr;
 }
 
 MarkerPtr OmniverseScene::CreateMarkerImpl(unsigned int _id,
                                            const std::string &_name) {
-  throw std::runtime_error("not implemented");
+  // TODO: implement
+  return nullptr;
 }
 
 LidarVisualPtr OmniverseScene::CreateLidarVisualImpl(unsigned int _id,
                                                      const std::string &_name) {
-  throw std::runtime_error("not implemented");
+  // TODO: implement
+  return nullptr;
 }
 
 HeightmapPtr OmniverseScene::CreateHeightmapImpl(
     unsigned int _id, const std::string &_name,
     const HeightmapDescriptor &_desc) {
-  throw std::runtime_error("not implemented");
+  // TODO: implement
+  return nullptr;
 }
 
 WireBoxPtr OmniverseScene::CreateWireBoxImpl(unsigned int _id,
                                              const std::string &_name) {
-  throw std::runtime_error("not implemented");
+  // TODO: implement
+  return nullptr;
 }
 
 MaterialPtr OmniverseScene::CreateMaterialImpl(unsigned int _id,
                                                const std::string &_name) {
-  throw std::runtime_error("not implemented");
+  // TODO: implement
+  return nullptr;
 }
 
 RenderTexturePtr OmniverseScene::CreateRenderTextureImpl(
     unsigned int _id, const std::string &_name) {
-  throw std::runtime_error("not implemented");
+  // TODO: implement
+  return nullptr;
 }
 
 RenderWindowPtr OmniverseScene::CreateRenderWindowImpl(
     unsigned int _id, const std::string &_name) {
-  throw std::runtime_error("not implemented");
+  // TODO: implement
+  return nullptr;
 }
 
 RayQueryPtr OmniverseScene::CreateRayQueryImpl(unsigned int _id,
                                                const std::string &_name) {
-  throw std::runtime_error("not implemented");
+  // TODO: implement
+  return nullptr;
 }
 
 LightStorePtr OmniverseScene::Lights() const {
-  throw std::runtime_error("not implemented");
+  // TODO: implement
+  return nullptr;
 }
 
 SensorStorePtr OmniverseScene::Sensors() const {
-  throw std::runtime_error("not implemented");
+  // TODO: implement
+  return nullptr;
 }
 
 VisualStorePtr OmniverseScene::Visuals() const {
-  throw std::runtime_error("not implemented");
+  // TODO: implement
+  return nullptr;
 }
 
 MaterialMapPtr OmniverseScene::Materials() const {
-  throw std::runtime_error("not implemented");
+  // TODO: implement
+  return nullptr;
 }
 
-bool OmniverseScene::LoadImpl() { throw std::runtime_error("not implemented"); }
+bool OmniverseScene::LoadImpl() { return true; }
 
-bool OmniverseScene::InitImpl() { throw std::runtime_error("not implemented"); }
+bool OmniverseScene::InitImpl() { return true; }
+
 }  // namespace ignition::rendering::omni

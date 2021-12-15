@@ -18,39 +18,24 @@
 #ifndef IGNITION_RENDERING_OMNI_OMNIVERSEMESH_HH
 #define IGNITION_RENDERING_OMNI_OMNIVERSEMESH_HH
 
-#include <ignition/rendering.hh>
+// FIXME: BaseMesh.hh is missing Console.hh include
+#include <ignition/common/Console.hh>
+#include <ignition/rendering/base/BaseMesh.hh>
+
+#include "OmniverseObject.hh"
 
 namespace ignition::rendering::omni {
-class OmniverseMesh : public Mesh {
+
+class OmniverseMesh : public BaseMesh<OmniverseObject> {
  public:
-  bool HasSkeleton() const override;
-  std::map<std::string, math::Matrix4d> SkeletonLocalTransforms()
-      const override;
-  void SetSkeletonLocalTransforms(
-      const std::map<std::string, math::Matrix4d> &_tfs) override;
-  std::unordered_map<std::string, float> SkeletonWeights() const override;
-  void SetSkeletonWeights(
-      const std::unordered_map<std::string, float> &_weights) override;
-  void SetSkeletonAnimationEnabled(const std::string &_name, bool _enabled,
-                                   bool _loop = true,
-                                   float _weight = 1.0) override;
-  bool SkeletonAnimationEnabled(const std::string &_name) const override;
-  void UpdateSkeletonAnimation(
-      std::chrono::steady_clock::duration _time) override;
-  unsigned int SubMeshCount() const override;
-  bool HasSubMesh(ConstSubMeshPtr _subMesh) const override;
-  bool HasSubMeshName(const std::string &_name) const override;
-  SubMeshPtr SubMeshByName(const std::string &_name) const override;
-  SubMeshPtr SubMeshByIndex(unsigned int _index) const override;
-  void SetDescriptor(const MeshDescriptor &_desc) override;
-  const MeshDescriptor &Descriptor() const override;
+  SubMeshStorePtr SubMeshes() const override;
 };
 
-class OmniverseSubMesh : public SubMesh {
-  MaterialPtr Material() const override;
-  void SetMaterial(const std::string &_name, bool _unique = true) override;
-  void SetMaterial(MaterialPtr _material, bool _unique = true) override;
+class OmniverseSubMesh : public BaseSubMesh<OmniverseObject> {
+ protected:
+  void SetMaterialImpl(MaterialPtr _material) override;
 };
+
 }  // namespace ignition::rendering::omni
 
 #endif

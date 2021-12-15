@@ -18,34 +18,28 @@
 #ifndef IGNITION_RENDERING_OMNI_OMNIVERSEVISUAL_HH
 #define IGNITION_RENDERING_OMNI_OMNIVERSEVISUAL_HH
 
-#include <ignition/rendering.hh>
+#include <ignition/rendering/base/BaseVisual.hh>
+
+#include "OmniverseNode.hh"
 
 namespace ignition::rendering::omni {
 
-class OmniverseVisual : public Visual {
+class OmniverseVisual : public BaseVisual<OmniverseNode> {
  public:
-  unsigned int GeometryCount() const override;
-  bool HasGeometry(ConstGeometryPtr _geometry) const override;
-  GeometryPtr GeometryByIndex(unsigned int _index) const override;
-  void AddGeometry(GeometryPtr _geometry) override;
-  GeometryPtr RemoveGeometry(GeometryPtr _geometry) override;
-  GeometryPtr RemoveGeometryByIndex(unsigned int _index) override;
-  void RemoveGeometries() override;
-  void SetMaterial(const std::string &_name, bool _unique = true) override;
-  void SetMaterial(MaterialPtr _material, bool _unique = true) override;
-  void SetChildMaterial(MaterialPtr _material, bool _unique = true) override;
-  void SetGeometryMaterial(MaterialPtr _material, bool _unique = true) override;
-  MaterialPtr Material() const override;
-  void SetWireframe(bool _show) override;
-  bool Wireframe() const override;
-  void SetVisible(bool _visible) override;
-  void SetVisibilityFlags(uint32_t _flags) override;
-  uint32_t VisibilityFlags() const override;
-  void AddVisibilityFlags(uint32_t _flags) override;
-  void RemoveVisibilityFlags(uint32_t _flags) override;
-  ignition::math::AxisAlignedBox BoundingBox() const override;
-  ignition::math::AxisAlignedBox LocalBoundingBox() const override;
-  VisualPtr Clone(const std::string &_name, NodePtr _newParent) const override;
+  using SharedPtr = std::shared_ptr<OmniverseVisual>;
+
+  template <typename... Args>
+  static OmniverseVisual::SharedPtr Make(Args&&... args) {
+    return std::shared_ptr<OmniverseVisual>(
+        new OmniverseVisual(std::forward<Args>(args)...));
+  }
+
+ protected:
+  GeometryStorePtr Geometries() const override;
+
+  bool AttachGeometry(GeometryPtr _geometry) override;
+
+  bool DetachGeometry(GeometryPtr _geometry) override;
 };
 
 }  // namespace ignition::rendering::omni

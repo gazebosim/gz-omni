@@ -17,28 +17,27 @@
 
 #include "OmniverseGeometry.hh"
 
-#include <exception>
-
 namespace ignition::rendering::omni {
-bool OmniverseGeometry::HasParent() const {
-  throw std::runtime_error("not implemented");
-}
+
 VisualPtr OmniverseGeometry::Parent() const {
-  throw std::runtime_error("not implemented");
+  // TODO: implement
+  return nullptr;
 }
-void OmniverseGeometry::RemoveParent() {
-  throw std::runtime_error("not implemented");
-}
-void OmniverseGeometry::SetMaterial(const std::string &_name, bool _unique) {
-  throw std::runtime_error("not implemented");
-}
+
 void OmniverseGeometry::SetMaterial(MaterialPtr _material, bool _unique) {
-  throw std::runtime_error("not implemented");
+  // TODO: implement
 }
+
+bool OmniverseGeometry::HasParent() const {
+  return this->_gprim.GetPrim().GetParent().IsValid();
+}
+
 MaterialPtr OmniverseGeometry::Material() const {
-  throw std::runtime_error("not implemented");
+  // TODO: implement
+  return nullptr;
 }
-GeometryPtr OmniverseGeometry::Clone() const {
-  throw std::runtime_error("not implemented");
-}
+
+OmniverseGeometry::OmniverseGeometry(ScenePtr _scene, pxr::UsdGeomGprim _gprim)
+    : OmniverseObject(_scene), _gprim(std::move(_gprim)) {}
+
 }  // namespace ignition::rendering::omni
