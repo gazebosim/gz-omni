@@ -24,25 +24,23 @@
 
 #include "OmniverseStorage.hh"
 
-namespace ignition::rendering::omni
-{
-  class OmniverseRenderEngine : public BaseRenderEngine
-  {
-  public:
-    static OmniverseRenderEngine *Instance();
+namespace ignition::rendering::omni {
+class OmniverseRenderEngine : public BaseRenderEngine {
+ public:
+  static OmniverseRenderEngine *Instance();
 
-    inline std::string Name() const override { return "OmniverseConnector"; }
+  inline std::string Name() const override { return "OmniverseConnector"; }
 
-  protected:
-    bool LoadImpl(const std::map<std::string, std::string> &_params) override;
-    bool InitImpl() override;
-    ScenePtr CreateSceneImpl(unsigned int _id, const std::string &_name) override;
+ protected:
+  bool LoadImpl(const std::map<std::string, std::string> &_params) override;
+  bool InitImpl() override;
+  ScenePtr CreateSceneImpl(unsigned int _id, const std::string &_name) override;
 
-    inline SceneStorePtr Scenes() const override { return this->_scenes; }
+  inline SceneStorePtr Scenes() const override { return this->_scenes; }
 
-  private:
-    std::shared_ptr<OmniverseSceneStore> _scenes;
-  };
-}
+ private:
+  std::shared_ptr<OmniverseSceneStore> _scenes;
+};
+}  // namespace ignition::rendering::omni
 
 #endif

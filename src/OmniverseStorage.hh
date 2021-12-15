@@ -22,10 +22,9 @@
 
 #include "OmniverseScene.hh"
 
-namespace ignition::rendering::omni
-{
-  using OmniverseSceneStore = BaseSceneStore<OmniverseScene>;
-  using OmniverseSceneStorePtr = BaseSceneStore<OmniverseScene>;
-} // namespace ignition::rendering::omni
+namespace ignition::rendering::omni {
+using OmniverseSceneStore = BaseSceneStore<OmniverseScene>;
+using OmniverseSceneStorePtr = BaseSceneStore<OmniverseScene>;
+}  // namespace ignition::rendering::omni
 
 #endif

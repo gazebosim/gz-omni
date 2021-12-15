@@ -20,19 +20,17 @@
 
 #include <ignition/rendering.hh>
 
-namespace ignition::rendering::omni
-{
-  class OmniverseGeometry : public Geometry
-  {
-  public:
-    bool HasParent() const override;
-    VisualPtr Parent() const override;
-    void RemoveParent() override;
-    void SetMaterial(const std::string &_name, bool _unique = true) override;
-    void SetMaterial(MaterialPtr _material, bool _unique = true) override;
-    MaterialPtr Material() const override;
-    GeometryPtr Clone() const override;
-  };
-} // namespace ignition::rendering::omni
+namespace ignition::rendering::omni {
+class OmniverseGeometry : public Geometry {
+ public:
+  bool HasParent() const override;
+  VisualPtr Parent() const override;
+  void RemoveParent() override;
+  void SetMaterial(const std::string &_name, bool _unique = true) override;
+  void SetMaterial(MaterialPtr _material, bool _unique = true) override;
+  MaterialPtr Material() const override;
+  GeometryPtr Clone() const override;
+};
+}  // namespace ignition::rendering::omni
 
 #endif

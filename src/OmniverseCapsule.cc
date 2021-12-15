@@ -15,14 +15,21 @@
  *
  */
 
-#include <exception>
-
 #include "OmniverseCapsule.hh"
 
-namespace ignition::rendering::omni
-{
-  void OmniverseCapsule::SetRadius(double _radius) { throw std::runtime_error("not implemented"); }
-  void OmniverseCapsule::SetLength(double _length) { throw std::runtime_error("not implemented"); }
-  double OmniverseCapsule::Radius() const { throw std::runtime_error("not implemented"); }
-  double OmniverseCapsule::Length() const { throw std::runtime_error("not implemented"); }
-} // namespace ignition::rendering::omni
+#include <exception>
+
+namespace ignition::rendering::omni {
+void OmniverseCapsule::SetRadius(double _radius) {
+  throw std::runtime_error("not implemented");
+}
+void OmniverseCapsule::SetLength(double _length) {
+  throw std::runtime_error("not implemented");
+}
+double OmniverseCapsule::Radius() const {
+  throw std::runtime_error("not implemented");
+}
+double OmniverseCapsule::Length() const {
+  throw std::runtime_error("not implemented");
+}
+}  // namespace ignition::rendering::omni

@@ -1,8 +1,9 @@
 /*
  * Copyright (C) 2021 Open Source Robotics Foundation
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License"); * you may not
+ * use this file except in compliance with the License. You may obtain a copy of
+ * the License at
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -19,16 +20,14 @@
 
 #include <ignition/rendering.hh>
 
-namespace ignition::rendering::omni
-{
-  class OmniverseCapsule : public Capsule
-  {
-  public:
-    void SetRadius(double _radius) override;
-    void SetLength(double _length) override;
-    double Radius() const override;
-    double Length() const override;
-  };
-} // namespace ignition::rendering::omni
+namespace ignition::rendering::omni {
+class OmniverseCapsule : public Capsule {
+ public:
+  void SetRadius(double _radius) override;
+  void SetLength(double _length) override;
+  double Radius() const override;
+  double Length() const override;
+};
+}  // namespace ignition::rendering::omni
 
 #endif

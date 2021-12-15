@@ -15,17 +15,30 @@
  *
  */
 
-#include <exception>
-
 #include "OmniverseGeometry.hh"
 
-namespace ignition::rendering::omni
-{
-  bool OmniverseGeometry::HasParent() const { throw std::runtime_error("not implemented"); }
-  VisualPtr OmniverseGeometry::Parent() const { throw std::runtime_error("not implemented"); }
-  void OmniverseGeometry::RemoveParent() { throw std::runtime_error("not implemented"); }
-  void OmniverseGeometry::SetMaterial(const std::string &_name, bool _unique) { throw std::runtime_error("not implemented"); }
-  void OmniverseGeometry::SetMaterial(MaterialPtr _material, bool _unique) { throw std::runtime_error("not implemented"); }
-  MaterialPtr OmniverseGeometry::Material() const { throw std::runtime_error("not implemented"); }
-  GeometryPtr OmniverseGeometry::Clone() const { throw std::runtime_error("not implemented"); }
-} // namespace ignition::rendering::omni
+#include <exception>
+
+namespace ignition::rendering::omni {
+bool OmniverseGeometry::HasParent() const {
+  throw std::runtime_error("not implemented");
+}
+VisualPtr OmniverseGeometry::Parent() const {
+  throw std::runtime_error("not implemented");
+}
+void OmniverseGeometry::RemoveParent() {
+  throw std::runtime_error("not implemented");
+}
+void OmniverseGeometry::SetMaterial(const std::string &_name, bool _unique) {
+  throw std::runtime_error("not implemented");
+}
+void OmniverseGeometry::SetMaterial(MaterialPtr _material, bool _unique) {
+  throw std::runtime_error("not implemented");
+}
+MaterialPtr OmniverseGeometry::Material() const {
+  throw std::runtime_error("not implemented");
+}
+GeometryPtr OmniverseGeometry::Clone() const {
+  throw std::runtime_error("not implemented");
+}
+}  // namespace ignition::rendering::omni

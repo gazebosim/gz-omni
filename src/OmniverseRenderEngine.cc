@@ -15,34 +15,32 @@
  *
  */
 
+#include "OmniverseRenderEngine.hh"
+
 #include <pxr/usd/usd/prim.h>
 #include <pxr/usd/usd/references.h>
 
 #include "OmniverseScene.hh"
-#include "OmniverseRenderEngine.hh"
 
-namespace ignition::rendering::omni
-{
-  OmniverseRenderEngine *OmniverseRenderEngine::Instance()
-  {
-    static OmniverseRenderEngine instance;
-    return &instance;
-  }
+namespace ignition::rendering::omni {
+OmniverseRenderEngine *OmniverseRenderEngine::Instance() {
+  static OmniverseRenderEngine instance;
+  return &instance;
+}
 
-  bool OmniverseRenderEngine::LoadImpl(const std::map<std::string, std::string> &params)
-  {
-    // TODO: start omniverse
-    return true;
-  }
+bool OmniverseRenderEngine::LoadImpl(
+    const std::map<std::string, std::string> &params) {
+  // TODO: start omniverse
+  return true;
+}
 
-  bool OmniverseRenderEngine::InitImpl()
-  {
-    // TODO: start omniverse
-    return true;
-  }
+bool OmniverseRenderEngine::InitImpl() {
+  // TODO: start omniverse
+  return true;
+}
 
-  ScenePtr OmniverseRenderEngine::CreateSceneImpl(unsigned int id, const std::string &name)
-  {
-    return std::make_shared<OmniverseScene>(this, id, name);
-  }
-};
+ScenePtr OmniverseRenderEngine::CreateSceneImpl(unsigned int id,
+                                                const std::string &name) {
+  return std::make_shared<OmniverseScene>(this, id, name);
+}
+};  // namespace ignition::rendering::omni

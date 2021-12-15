@@ -20,22 +20,16 @@
 
 #include "OmniverseRenderEngine.hh"
 
-namespace ignition::rendering::omni
-{
-  class OmniverseConnectorPlugin : public RenderEnginePlugin
-  {
-  public:
-    std::string Name() const override
-    {
-      return "OmniverseConnector";
-    }
+namespace ignition::rendering::omni {
+class OmniverseConnectorPlugin : public RenderEnginePlugin {
+ public:
+  std::string Name() const override { return "OmniverseConnector"; }
 
-  public:
-    RenderEngine *Engine() const override
-    {
-      return OmniverseRenderEngine::Instance();
-    }
-  };
+ public:
+  RenderEngine *Engine() const override {
+    return OmniverseRenderEngine::Instance();
+  }
+};
 
-  IGNITION_ADD_PLUGIN(OmniverseConnectorPlugin, RenderEnginePlugin)
-}
+IGNITION_ADD_PLUGIN(OmniverseConnectorPlugin, RenderEnginePlugin)
+}  // namespace ignition::rendering::omni

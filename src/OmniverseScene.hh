@@ -1,8 +1,9 @@
 /*
  * Copyright (C) 2021 Open Source Robotics Foundation
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License"); * you may not
+ * use this file except in compliance with the License. You may obtain a copy of
+ * the License at
  *
  *
  * Unless required by applicable law or agreed to in writing, software
@@ -20,95 +21,118 @@
 
 #include <ignition/rendering/base/BaseScene.hh>
 
-namespace ignition::rendering::omni
-{
-  class OmniverseScene : public BaseScene
-  {
-  public:
-    OmniverseScene(RenderEngine *engine, unsigned int id, std::string name);
+namespace ignition::rendering::omni {
+class OmniverseScene : public BaseScene {
+ public:
+  OmniverseScene(RenderEngine *engine, unsigned int id, std::string name);
 
-    inline RenderEngine *Engine() const override { return this->_engine; }
+  inline RenderEngine *Engine() const override { return this->_engine; }
 
-    VisualPtr RootVisual() const override;
+  VisualPtr RootVisual() const override;
 
-    math::Color AmbientLight() const override;
+  math::Color AmbientLight() const override;
 
-    void SetAmbientLight(const math::Color &_color) override;
+  void SetAmbientLight(const math::Color &_color) override;
 
-    COMVisualPtr CreateCOMVisualImpl(unsigned int _id, const std::string &_name) override;
+  COMVisualPtr CreateCOMVisualImpl(unsigned int _id,
+                                   const std::string &_name) override;
 
-    InertiaVisualPtr CreateInertiaVisualImpl(unsigned int _id, const std::string &_name) override;
+  InertiaVisualPtr CreateInertiaVisualImpl(unsigned int _id,
+                                           const std::string &_name) override;
 
-    JointVisualPtr CreateJointVisualImpl(unsigned int _id, const std::string &_name) override;
+  JointVisualPtr CreateJointVisualImpl(unsigned int _id,
+                                       const std::string &_name) override;
 
-    LightVisualPtr CreateLightVisualImpl(unsigned int _id, const std::string &_name) override;
+  LightVisualPtr CreateLightVisualImpl(unsigned int _id,
+                                       const std::string &_name) override;
 
-    DirectionalLightPtr CreateDirectionalLightImpl(unsigned int _id, const std::string &_name) override;
+  DirectionalLightPtr CreateDirectionalLightImpl(
+      unsigned int _id, const std::string &_name) override;
 
-    PointLightPtr CreatePointLightImpl(unsigned int _id, const std::string &_name) override;
+  PointLightPtr CreatePointLightImpl(unsigned int _id,
+                                     const std::string &_name) override;
 
-    SpotLightPtr CreateSpotLightImpl(unsigned int _id, const std::string &_name) override;
+  SpotLightPtr CreateSpotLightImpl(unsigned int _id,
+                                   const std::string &_name) override;
 
-    CameraPtr CreateCameraImpl(unsigned int _id, const std::string &_name) override;
+  CameraPtr CreateCameraImpl(unsigned int _id,
+                             const std::string &_name) override;
 
-    DepthCameraPtr CreateDepthCameraImpl(unsigned int _id, const std::string &_name) override;
+  DepthCameraPtr CreateDepthCameraImpl(unsigned int _id,
+                                       const std::string &_name) override;
 
-    VisualPtr CreateVisualImpl(unsigned int _id, const std::string &_name) override;
+  VisualPtr CreateVisualImpl(unsigned int _id,
+                             const std::string &_name) override;
 
-    ArrowVisualPtr CreateArrowVisualImpl(unsigned int _id, const std::string &_name) override;
+  ArrowVisualPtr CreateArrowVisualImpl(unsigned int _id,
+                                       const std::string &_name) override;
 
-    AxisVisualPtr CreateAxisVisualImpl(unsigned int _id, const std::string &_name) override;
+  AxisVisualPtr CreateAxisVisualImpl(unsigned int _id,
+                                     const std::string &_name) override;
 
-    GeometryPtr CreateBoxImpl(unsigned int _id, const std::string &_name) override;
+  GeometryPtr CreateBoxImpl(unsigned int _id,
+                            const std::string &_name) override;
 
-    GeometryPtr CreateConeImpl(unsigned int _id, const std::string &_name) override;
+  GeometryPtr CreateConeImpl(unsigned int _id,
+                             const std::string &_name) override;
 
-    GeometryPtr CreateCylinderImpl(unsigned int _id, const std::string &_name) override;
+  GeometryPtr CreateCylinderImpl(unsigned int _id,
+                                 const std::string &_name) override;
 
-    GeometryPtr CreatePlaneImpl(unsigned int _id, const std::string &_name) override;
+  GeometryPtr CreatePlaneImpl(unsigned int _id,
+                              const std::string &_name) override;
 
-    GeometryPtr CreateSphereImpl(unsigned int _id, const std::string &_name) override;
+  GeometryPtr CreateSphereImpl(unsigned int _id,
+                               const std::string &_name) override;
 
-    MeshPtr CreateMeshImpl(unsigned int _id,
-                           const std::string &_name, const MeshDescriptor &_desc) override;
+  MeshPtr CreateMeshImpl(unsigned int _id, const std::string &_name,
+                         const MeshDescriptor &_desc) override;
 
-    CapsulePtr CreateCapsuleImpl(unsigned int _id, const std::string &_name) override;
+  CapsulePtr CreateCapsuleImpl(unsigned int _id,
+                               const std::string &_name) override;
 
-    GridPtr CreateGridImpl(unsigned int _id, const std::string &_name) override;
+  GridPtr CreateGridImpl(unsigned int _id, const std::string &_name) override;
 
-    MarkerPtr CreateMarkerImpl(unsigned int _id, const std::string &_name) override;
+  MarkerPtr CreateMarkerImpl(unsigned int _id,
+                             const std::string &_name) override;
 
-    LidarVisualPtr CreateLidarVisualImpl(unsigned int _id, const std::string &_name) override;
+  LidarVisualPtr CreateLidarVisualImpl(unsigned int _id,
+                                       const std::string &_name) override;
 
-    HeightmapPtr CreateHeightmapImpl(unsigned int _id,
-                                     const std::string &_name, const HeightmapDescriptor &_desc) override;
+  HeightmapPtr CreateHeightmapImpl(unsigned int _id, const std::string &_name,
+                                   const HeightmapDescriptor &_desc) override;
 
-    WireBoxPtr CreateWireBoxImpl(unsigned int _id, const std::string &_name) override;
+  WireBoxPtr CreateWireBoxImpl(unsigned int _id,
+                               const std::string &_name) override;
 
-    MaterialPtr CreateMaterialImpl(unsigned int _id, const std::string &_name) override;
+  MaterialPtr CreateMaterialImpl(unsigned int _id,
+                                 const std::string &_name) override;
 
-    RenderTexturePtr CreateRenderTextureImpl(unsigned int _id, const std::string &_name) override;
+  RenderTexturePtr CreateRenderTextureImpl(unsigned int _id,
+                                           const std::string &_name) override;
 
-    RenderWindowPtr CreateRenderWindowImpl(unsigned int _id, const std::string &_name) override;
+  RenderWindowPtr CreateRenderWindowImpl(unsigned int _id,
+                                         const std::string &_name) override;
 
-    RayQueryPtr CreateRayQueryImpl(unsigned int _id, const std::string &_name) override;
+  RayQueryPtr CreateRayQueryImpl(unsigned int _id,
+                                 const std::string &_name) override;
 
-    LightStorePtr Lights() const override;
+  LightStorePtr Lights() const override;
 
-    SensorStorePtr Sensors() const override;
+  SensorStorePtr Sensors() const override;
 
-    VisualStorePtr Visuals() const override;
+  VisualStorePtr Visuals() const override;
 
-    MaterialMapPtr Materials() const override;
+  MaterialMapPtr Materials() const override;
 
-    bool LoadImpl() override;
+  bool LoadImpl() override;
 
-    bool InitImpl() override;
+  bool InitImpl() override;
 
-  private:
-    pxr::UsdStageRefPtr _stage;
-    RenderEngine *_engine;
-  };
-}
+ private:
+  pxr::UsdStageRefPtr _stage;
+  RenderEngine *_engine;
+};
+}  // namespace ignition::rendering::omni
 
 #endif
