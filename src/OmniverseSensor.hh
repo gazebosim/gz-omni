@@ -15,17 +15,28 @@
  *
  */
 
-#ifndef IGNITION_RENDERING_OMNI_OMNIVERSESTORAGE_HH
-#define IGNITION_RENDERING_OMNI_OMNIVERSESTORAGE_HH
+#ifndef IGNITION_RENDERING_OMNI_OMNIVERSESENSOR_HH
+#define IGNITION_RENDERING_OMNI_OMNIVERSESENSOR_HH
 
+#include <ignition/rendering/base/BaseSensor.hh>
 #include <ignition/rendering/base/BaseStorage.hh>
 
-#include "OmniverseObject.hh"
-#include "OmniverseScene.hh"
+#include "OmniverseNode.hh"
 
 namespace ignition::rendering::omni {
 
-using OmniverseSceneStore = BaseSceneStore<OmniverseScene>;
+class OmniverseSensor : public BaseSensor<OmniverseNode> {
+ public:
+  using SharedPtr = std::shared_ptr<OmniverseSensor>;
+
+  template <typename... Args>
+  static SharedPtr Make(Args&&... args) {
+    return std::shared_ptr<OmniverseSensor>(
+        new OmniverseSensor(std::forward<Args>(args)...));
+  }
+};
+
+using OmniverseSensorStore = BaseSensorStore<OmniverseSensor>;
 
 }  // namespace ignition::rendering::omni
 

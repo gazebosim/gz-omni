@@ -19,12 +19,24 @@
 #define IGNITION_RENDERING_OMNI_OMNIVERSEMATERIAL_HH
 
 #include <ignition/rendering/base/BaseMaterial.hh>
+#include <ignition/rendering/base/BaseStorage.hh>
 
 #include "OmniverseObject.hh"
 
 namespace ignition::rendering::omni {
 
-class OmniverseMaterial : public BaseMaterial<OmniverseObject> {};
+class OmniverseMaterial : public BaseMaterial<OmniverseObject> {
+ public:
+  using SharedPtr = std::shared_ptr<OmniverseMaterial>;
+
+  template <typename... Args>
+  static SharedPtr Make(Args&&... _args) {
+    return std::shared_ptr<OmniverseMaterial>(
+        new OmniverseMaterial(std::forward<Args>(_args)...));
+  }
+};
+
+using OmniverseMaterialMap = BaseMaterialMap<OmniverseMaterial>;
 
 }  // namespace ignition::rendering::omni
 

@@ -19,6 +19,7 @@
 #define IGNITION_RENDERING_OMNI_OMNIVERSELIGHT_HH
 
 #include <ignition/rendering/base/BaseLight.hh>
+#include <ignition/rendering/base/BaseStorage.hh>
 
 #include "OmniverseObject.hh"
 
@@ -39,6 +40,8 @@ class OmniverseLight : public BaseLight<OmniverseObject> {
 
   void SetCastShadows(bool _castShadows) override;
 };
+
+using OmniverseLightStore = BaseLightStore<OmniverseLight>;
 
 class OmniverseDirectionalLight : public BaseDirectionalLight<OmniverseLight> {
  public:

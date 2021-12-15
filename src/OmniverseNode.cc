@@ -19,6 +19,11 @@
 
 namespace ignition::rendering::omni {
 
+bool OmniverseNode::HasParent() const {
+  // TODO: implement
+  return false;
+}
+
 NodePtr OmniverseNode::Parent() const {
   // TODO: implement
   return nullptr;
@@ -32,6 +37,10 @@ math::Vector3d OmniverseNode::LocalScale() const {
 bool OmniverseNode::InheritScale() const {
   // TODO: implement
   return false;
+}
+
+void OmniverseNode::SetInheritScale(bool _inherit) {
+  // TODO: implement
 }
 
 math::Pose3d OmniverseNode::RawLocalPose() const {

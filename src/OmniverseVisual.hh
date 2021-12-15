@@ -18,6 +18,7 @@
 #ifndef IGNITION_RENDERING_OMNI_OMNIVERSEVISUAL_HH
 #define IGNITION_RENDERING_OMNI_OMNIVERSEVISUAL_HH
 
+#include <ignition/rendering/base/BaseStorage.hh>
 #include <ignition/rendering/base/BaseVisual.hh>
 
 #include "OmniverseNode.hh"
@@ -41,6 +42,8 @@ class OmniverseVisual : public BaseVisual<OmniverseNode> {
 
   bool DetachGeometry(GeometryPtr _geometry) override;
 };
+
+using OmniverseVisualStore = BaseVisualStore<OmniverseVisual>;
 
 }  // namespace ignition::rendering::omni
 

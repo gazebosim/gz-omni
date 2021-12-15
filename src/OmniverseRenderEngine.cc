@@ -20,6 +20,8 @@
 #include <pxr/usd/usd/prim.h>
 #include <pxr/usd/usd/references.h>
 
+#include <iostream>
+
 #include "OmniverseScene.hh"
 
 namespace ignition::rendering::omni {

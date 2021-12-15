@@ -22,7 +22,7 @@
 
 #include <ignition/rendering/base/BaseRenderEngine.hh>
 
-#include "OmniverseStorage.hh"
+#include "OmniverseScene.hh"
 
 namespace ignition::rendering::omni {
 class OmniverseRenderEngine : public BaseRenderEngine {

@@ -34,11 +34,15 @@ class OmniverseNode : public BaseNode<OmniverseObject> {
         new OmniverseNode(std::forward<Args>(args)...));
   }
 
+  bool HasParent() const override;
+
   NodePtr Parent() const override;
 
   math::Vector3d LocalScale() const override;
 
   bool InheritScale() const override;
+
+  void SetInheritScale(bool _inherit) override;
 
  protected:
   OmniverseNode() = default;

@@ -15,41 +15,29 @@
  *
  */
 
-#ifndef IGNITION_RENDERING_OMNI_OMNIVERSEGEOMETRY_HH
-#define IGNITION_RENDERING_OMNI_OMNIVERSEGEOMETRY_HH
+#ifndef IGNITION_RENDERING_OMNI_OMNIVERSECAMERA_HH
+#define IGNITION_RENDERING_OMNI_OMNIVERSECAMERA_HH
 
-#include <pxr/usd/usdGeom/gprim.h>
+#include <ignition/rendering/base/BaseCamera.hh>
 
-#include <ignition/rendering/base/BaseGeometry.hh>
-
-#include "OmniverseObject.hh"
+#include "OmniverseSensor.hh"
 
 namespace ignition::rendering::omni {
 
-class OmniverseGeometry : public BaseGeometry<OmniverseObject> {
+class OmniverseCamera : public BaseCamera<OmniverseSensor> {
  public:
-  using SharedPtr = std::shared_ptr<OmniverseGeometry>;
+  using SharedPtr = std::shared_ptr<OmniverseCamera>;
 
   template <typename... Args>
   static SharedPtr Make(Args&&... args) {
-    return std::shared_ptr<OmniverseGeometry>(
-        new OmniverseGeometry(std::forward<Args>(args)...));
+    return std::shared_ptr<OmniverseCamera>(
+        new OmniverseCamera(std::forward<Args>(args)...));
   }
 
-  VisualPtr Parent() const override;
-
-  void SetMaterial(MaterialPtr _material, bool _unique = true) override;
-
-  bool HasParent() const override;
-
-  MaterialPtr Material() const override;
+  void Render() override;
 
  protected:
-  OmniverseGeometry() = default;
-  OmniverseGeometry(ScenePtr _scene, pxr::UsdGeomGprim _gprim);
-
- private:
-  pxr::UsdGeomGprim _gprim;
+  RenderTargetPtr RenderTarget() const override;
 };
 
 }  // namespace ignition::rendering::omni

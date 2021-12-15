@@ -20,8 +20,15 @@
 #include <pxr/usd/usd/stage.h>
 
 #include <ignition/rendering/base/BaseScene.hh>
+#include <ignition/rendering/base/BaseStorage.hh>
+
+#include "OmniverseLight.hh"
+#include "OmniverseMaterial.hh"
+#include "OmniverseSensor.hh"
+#include "OmniverseVisual.hh"
 
 namespace ignition::rendering::omni {
+
 class OmniverseScene : public BaseScene {
  public:
   OmniverseScene(RenderEngine *engine, unsigned int id, std::string name);
@@ -133,7 +140,18 @@ class OmniverseScene : public BaseScene {
  private:
   pxr::UsdStageRefPtr _stage;
   RenderEngine *_engine;
+  std::shared_ptr<OmniverseMaterialMap> _materialMap =
+      std::make_shared<OmniverseMaterialMap>();
+  std::shared_ptr<OmniverseSensorStore> _sensorStore =
+      std::make_shared<OmniverseSensorStore>();
+  std::shared_ptr<OmniverseVisualStore> _visualStore =
+      std::make_shared<OmniverseVisualStore>();
+  std::shared_ptr<OmniverseLightStore> _lightStore =
+      std::make_shared<OmniverseLightStore>();
 };
+
+using OmniverseSceneStore = BaseSceneStore<OmniverseScene>;
+
 }  // namespace ignition::rendering::omni
 
 #endif

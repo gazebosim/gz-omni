@@ -29,7 +29,7 @@ class OmniverseCapsule : public BaseCapsule<OmniverseGeometry> {
   using SharedPtr = std::shared_ptr<OmniverseCapsule>;
 
   template <typename... Args>
-  static OmniverseCapsule::SharedPtr Make(Args&&... args) {
+  static SharedPtr Make(Args&&... args) {
     return std::shared_ptr<OmniverseCapsule>(
         new OmniverseCapsule(std::forward<Args>(args)...));
   }
