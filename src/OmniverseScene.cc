@@ -29,17 +29,13 @@
 #include "OmniverseCapsule.hh"
 #include "OmniverseGeometry.hh"
 #include "OmniverseMaterial.hh"
+#include "OmniverseRayQuery.hh"
+#include "OmniverseRenderTarget.hh"
 #include "OmniverseVisual.hh"
 
 namespace ignition::rendering::omni {
-OmniverseScene::OmniverseScene(RenderEngine *engine, unsigned int id,
-                               std::string name)
-    : BaseScene(id, name), _engine(engine) {
-  // TODO: create stage in omniverse
-  this->_stage = pxr::UsdStage::CreateInMemory(name);
-}
 
-VisualPtr OmniverseScene::RootVisual() const { return OmniverseVisual::Make(); }
+VisualPtr OmniverseScene::RootVisual() const { return this->rootVisual; }
 
 math::Color OmniverseScene::AmbientLight() const {
   // TODO: implement
@@ -94,7 +90,7 @@ SpotLightPtr OmniverseScene::CreateSpotLightImpl(unsigned int _id,
 
 CameraPtr OmniverseScene::CreateCameraImpl(unsigned int _id,
                                            const std::string &_name) {
-  return OmniverseCamera::Make();
+  return OmniverseCamera::Make(_id, _name, this->shared_from_this());
 }
 
 DepthCameraPtr OmniverseScene::CreateDepthCameraImpl(unsigned int _id,
@@ -123,7 +119,8 @@ AxisVisualPtr OmniverseScene::CreateAxisVisualImpl(unsigned int _id,
 
 GeometryPtr OmniverseScene::CreateBoxImpl(unsigned int _id,
                                           const std::string &_name) {
-  return OmniverseGeometry::Make(this->shared_from_this(), pxr::UsdGeomCube());
+  return OmniverseGeometry::Make(_id, _name, this->shared_from_this(),
+                                 pxr::UsdGeomCube());
 }
 
 GeometryPtr OmniverseScene::CreateConeImpl(unsigned int _id,
@@ -134,7 +131,7 @@ GeometryPtr OmniverseScene::CreateConeImpl(unsigned int _id,
 
 GeometryPtr OmniverseScene::CreateCylinderImpl(unsigned int _id,
                                                const std::string &_name) {
-  return OmniverseGeometry::Make(this->shared_from_this(),
+  return OmniverseGeometry::Make(_id, _name, this->shared_from_this(),
                                  pxr::UsdGeomCylinder());
 }
 
@@ -146,7 +143,7 @@ GeometryPtr OmniverseScene::CreatePlaneImpl(unsigned int _id,
 
 GeometryPtr OmniverseScene::CreateSphereImpl(unsigned int _id,
                                              const std::string &_name) {
-  return OmniverseGeometry::Make(this->shared_from_this(),
+  return OmniverseGeometry::Make(_id, _name, this->shared_from_this(),
                                  pxr::UsdGeomSphere());
 }
 
@@ -158,7 +155,7 @@ MeshPtr OmniverseScene::CreateMeshImpl(unsigned int _id,
 
 CapsulePtr OmniverseScene::CreateCapsuleImpl(unsigned int _id,
                                              const std::string &_name) {
-  return OmniverseCapsule::Make(this->shared_from_this(),
+  return OmniverseCapsule::Make(_id, _name, this->shared_from_this(),
                                 pxr::UsdGeomCapsule());
 }
 
@@ -195,13 +192,12 @@ WireBoxPtr OmniverseScene::CreateWireBoxImpl(unsigned int _id,
 
 MaterialPtr OmniverseScene::CreateMaterialImpl(unsigned int _id,
                                                const std::string &_name) {
-  return OmniverseMaterial::Make();
+  return OmniverseMaterial::Make(_id, _name, this->shared_from_this());
 }
 
 RenderTexturePtr OmniverseScene::CreateRenderTextureImpl(
     unsigned int _id, const std::string &_name) {
-  // TODO: implement
-  return nullptr;
+  return OmniverseRenderTexture::Make(_id, _name, this->shared_from_this());
 }
 
 RenderWindowPtr OmniverseScene::CreateRenderWindowImpl(
@@ -212,25 +208,22 @@ RenderWindowPtr OmniverseScene::CreateRenderWindowImpl(
 
 RayQueryPtr OmniverseScene::CreateRayQueryImpl(unsigned int _id,
                                                const std::string &_name) {
-  // TODO: implement
-  return nullptr;
+  return OmniverseRayQuery::Make(_id, _name, this->shared_from_this());
 }
 
-LightStorePtr OmniverseScene::Lights() const {
-  return this->_lightStore;
+LightStorePtr OmniverseScene::Lights() const { return this->lightStore; }
+
+SensorStorePtr OmniverseScene::Sensors() const { return this->sensorStore; }
+
+VisualStorePtr OmniverseScene::Visuals() const { return this->visualStore; }
+
+MaterialMapPtr OmniverseScene::Materials() const { return this->materialMap; }
+
+bool OmniverseScene::LoadImpl() {
+  // TODO: create stage in omniverse
+  this->stage = pxr::UsdStage::CreateInMemory(name);
+  return true;
 }
-
-SensorStorePtr OmniverseScene::Sensors() const {
-  return this->_sensorStore;
-}
-
-VisualStorePtr OmniverseScene::Visuals() const {
-  return this->_visualStore;
-}
-
-MaterialMapPtr OmniverseScene::Materials() const { return this->_materialMap; }
-
-bool OmniverseScene::LoadImpl() { return true; }
 
 bool OmniverseScene::InitImpl() { return true; }
 

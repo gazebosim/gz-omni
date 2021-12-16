@@ -23,6 +23,13 @@ void OmniverseCamera::Render() {
   // TODO: implement, or no need to do anything?
 }
 
-RenderTargetPtr OmniverseCamera::RenderTarget() const { return nullptr; }
+unsigned int OmniverseCamera::RenderTextureGLId() const {
+  // make base camera shut up about not supporting render texture glid
+  return 0u;
+}
+
+RenderTargetPtr OmniverseCamera::RenderTarget() const {
+  return this->renderTarget;
+}
 
 }  // namespace ignition::rendering::omni

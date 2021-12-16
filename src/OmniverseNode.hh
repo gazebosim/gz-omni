@@ -19,6 +19,7 @@
 #define IGNITION_RENDERING_OMNI_OMNIVERSENODE_HH
 
 #include <ignition/rendering/base/BaseNode.hh>
+#include <ignition/rendering/base/BaseStorage.hh>
 
 #include "OmniverseObject.hh"
 
@@ -26,12 +27,16 @@ namespace ignition::rendering::omni {
 
 class OmniverseNode : public BaseNode<OmniverseObject> {
  public:
+  using Store = BaseNodeStore<OmniverseNode>;
+  using StorePtr = std::shared_ptr<Store>;
   using SharedPtr = std::shared_ptr<OmniverseNode>;
 
-  template <typename... Args>
-  static OmniverseNode::SharedPtr Make(Args &&...args) {
-    return std::shared_ptr<OmniverseNode>(
-        new OmniverseNode(std::forward<Args>(args)...));
+  static OmniverseNode::SharedPtr Make(unsigned int _id,
+                                       const std::string &_name,
+                                       ScenePtr _scene) {
+    auto sp = std::make_shared<OmniverseNode>();
+    sp->InitObject(_id, _name, _scene);
+    return sp;
   }
 
   bool HasParent() const override;
@@ -45,8 +50,6 @@ class OmniverseNode : public BaseNode<OmniverseObject> {
   void SetInheritScale(bool _inherit) override;
 
  protected:
-  OmniverseNode() = default;
-
   math::Pose3d RawLocalPose() const override;
 
   void SetRawLocalPose(const math::Pose3d &_pose) override;
@@ -58,7 +61,12 @@ class OmniverseNode : public BaseNode<OmniverseObject> {
   bool DetachChild(NodePtr _child) override;
 
   void SetLocalScaleImpl(const math::Vector3d &_scale) override;
+
+ private:
+  StorePtr _store = std::make_shared<Store>();
 };
+
+using OmniverseNodeStore = OmniverseNode::Store;
 
 }  // namespace ignition::rendering::omni
 

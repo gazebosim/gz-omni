@@ -19,11 +19,6 @@
 
 namespace ignition::rendering::omni {
 
-GeometryStorePtr OmniverseVisual::Geometries() const {
-  // TODO: implement
-  return nullptr;
-}
-
 bool OmniverseVisual::AttachGeometry(GeometryPtr _geometry) {
   // TODO: implement
   return false;

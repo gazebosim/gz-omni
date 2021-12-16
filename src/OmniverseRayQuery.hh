@@ -15,26 +15,27 @@
  *
  */
 
-#include "OmniverseGeometry.hh"
+#ifndef IGNITION_RENDERING_OMNI_OMNIVERSERAYQUERY_HH
+#define IGNITION_RENDERING_OMNI_OMNIVERSERAYQUERY_HH
+
+#include <ignition/rendering/base/BaseRayQuery.hh>
+
+#include "OmniverseObject.hh"
 
 namespace ignition::rendering::omni {
 
-VisualPtr OmniverseGeometry::Parent() const {
-  // TODO: implement
-  return nullptr;
-}
+class OmniverseRayQuery : public BaseRayQuery<OmniverseObject> {
+ public:
+  using SharedPtr = std::shared_ptr<OmniverseRayQuery>;
 
-void OmniverseGeometry::SetMaterial(MaterialPtr _material, bool _unique) {
-  // TODO: implement
-}
-
-bool OmniverseGeometry::HasParent() const {
-  return this->gprim.GetPrim().GetParent().IsValid();
-}
-
-MaterialPtr OmniverseGeometry::Material() const {
-  // TODO: implement
-  return nullptr;
-}
+  static SharedPtr Make(unsigned int _id, const std::string& _name,
+                        ScenePtr _scene) {
+    auto sp = std::shared_ptr<OmniverseRayQuery>(new OmniverseRayQuery());
+    sp->InitObject(_id, _name, _scene);
+    return sp;
+  }
+};
 
 }  // namespace ignition::rendering::omni
+
+#endif

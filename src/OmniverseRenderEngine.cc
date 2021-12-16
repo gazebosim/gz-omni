@@ -25,6 +25,7 @@
 #include "OmniverseScene.hh"
 
 namespace ignition::rendering::omni {
+
 OmniverseRenderEngine *OmniverseRenderEngine::Instance() {
   static OmniverseRenderEngine instance;
   return &instance;
@@ -41,8 +42,11 @@ bool OmniverseRenderEngine::InitImpl() {
   return true;
 }
 
-ScenePtr OmniverseRenderEngine::CreateSceneImpl(unsigned int id,
-                                                const std::string &name) {
-  return std::make_shared<OmniverseScene>(this, id, name);
+ScenePtr OmniverseRenderEngine::CreateSceneImpl(unsigned int _id,
+                                                const std::string &_name) {
+  auto scene = OmniverseScene::Make(_id, _name, this);
+  this->_scenes->Add(scene);
+  return scene;
 }
+
 };  // namespace ignition::rendering::omni

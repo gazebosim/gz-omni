@@ -29,10 +29,11 @@ class OmniverseSensor : public BaseSensor<OmniverseNode> {
  public:
   using SharedPtr = std::shared_ptr<OmniverseSensor>;
 
-  template <typename... Args>
-  static SharedPtr Make(Args&&... args) {
-    return std::shared_ptr<OmniverseSensor>(
-        new OmniverseSensor(std::forward<Args>(args)...));
+  static SharedPtr Make(unsigned int _id, const std::string& _name,
+                        ScenePtr _scene) {
+    auto sp = std::shared_ptr<OmniverseSensor>(new OmniverseSensor());
+    sp->InitObject(_id, _name, _scene);
+    return sp;
   }
 };
 

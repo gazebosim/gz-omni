@@ -31,9 +31,17 @@ namespace ignition::rendering::omni {
 
 class OmniverseScene : public BaseScene {
  public:
-  OmniverseScene(RenderEngine *engine, unsigned int id, std::string name);
+  using SharedPtr = std::shared_ptr<OmniverseScene>;
 
-  inline RenderEngine *Engine() const override { return this->_engine; }
+  static SharedPtr Make(unsigned int _id, const std::string &_name,
+                        RenderEngine *_engine) {
+    auto sp = std::shared_ptr<OmniverseScene>(new OmniverseScene(_id, _name));
+    sp->engine = _engine;
+    sp->rootVisual = OmniverseVisual::Make(_id, _name, sp);
+    return sp;
+  }
+
+  inline RenderEngine *Engine() const override { return this->engine; }
 
   VisualPtr RootVisual() const override;
 
@@ -42,6 +50,9 @@ class OmniverseScene : public BaseScene {
   void SetAmbientLight(const math::Color &_color) override;
 
  protected:
+  OmniverseScene(unsigned int _id, const std::string &_name)
+      : BaseScene(_id, _name) {}
+
   COMVisualPtr CreateCOMVisualImpl(unsigned int _id,
                                    const std::string &_name) override;
 
@@ -138,15 +149,16 @@ class OmniverseScene : public BaseScene {
   bool InitImpl() override;
 
  private:
-  pxr::UsdStageRefPtr _stage;
-  RenderEngine *_engine;
-  std::shared_ptr<OmniverseMaterialMap> _materialMap =
+  pxr::UsdStageRefPtr stage;
+  RenderEngine *engine;
+  OmniverseVisual::SharedPtr rootVisual;
+  std::shared_ptr<OmniverseMaterialMap> materialMap =
       std::make_shared<OmniverseMaterialMap>();
-  std::shared_ptr<OmniverseSensorStore> _sensorStore =
+  std::shared_ptr<OmniverseSensorStore> sensorStore =
       std::make_shared<OmniverseSensorStore>();
-  std::shared_ptr<OmniverseVisualStore> _visualStore =
+  std::shared_ptr<OmniverseVisualStore> visualStore =
       std::make_shared<OmniverseVisualStore>();
-  std::shared_ptr<OmniverseLightStore> _lightStore =
+  std::shared_ptr<OmniverseLightStore> lightStore =
       std::make_shared<OmniverseLightStore>();
 };
 

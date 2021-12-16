@@ -19,6 +19,21 @@
 
 namespace ignition::rendering::omni {
 
+bool OmniverseMesh::HasParent() const {
+  if (!this->usdMesh.has_value()) return false;
+  // TODO: implement
+  return false;
+}
+
+VisualPtr OmniverseMesh::Parent() const {
+  // TODO: implement
+  return nullptr;
+}
+
+void OmniverseMesh::RemoveParent() {
+  // TODO: implement
+}
+
 SubMeshStorePtr OmniverseMesh::SubMeshes() const {
   // TODO: implement
   return nullptr;

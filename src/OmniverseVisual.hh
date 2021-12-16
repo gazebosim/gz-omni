@@ -21,6 +21,7 @@
 #include <ignition/rendering/base/BaseStorage.hh>
 #include <ignition/rendering/base/BaseVisual.hh>
 
+#include "OmniverseGeometry.hh"
 #include "OmniverseNode.hh"
 
 namespace ignition::rendering::omni {
@@ -29,18 +30,24 @@ class OmniverseVisual : public BaseVisual<OmniverseNode> {
  public:
   using SharedPtr = std::shared_ptr<OmniverseVisual>;
 
-  template <typename... Args>
-  static OmniverseVisual::SharedPtr Make(Args&&... args) {
-    return std::shared_ptr<OmniverseVisual>(
-        new OmniverseVisual(std::forward<Args>(args)...));
+  static OmniverseVisual::SharedPtr Make(unsigned int _id,
+                                         const std::string& _name,
+                                         ScenePtr _scene) {
+    auto sp = std::shared_ptr<OmniverseVisual>(new OmniverseVisual());
+    sp->InitObject(_id, _name, _scene);
+    return sp;
   }
 
  protected:
-  GeometryStorePtr Geometries() const override;
+  inline GeometryStorePtr Geometries() const { return this->_geomStore; }
 
   bool AttachGeometry(GeometryPtr _geometry) override;
 
   bool DetachGeometry(GeometryPtr _geometry) override;
+
+ private:
+  OmniverseGeometry::StorePtr _geomStore =
+      std::make_shared<OmniverseGeometry::Store>();
 };
 
 using OmniverseVisualStore = BaseVisualStore<OmniverseVisual>;

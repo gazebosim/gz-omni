@@ -19,6 +19,4 @@
 
 namespace ignition::rendering::omni {
 
-OmniverseCapsule::OmniverseCapsule(ScenePtr _scene, pxr::UsdGeomGprim _gprim) {}
-
 }  // namespace ignition::rendering::omni

@@ -52,10 +52,7 @@ void OmniverseNode::SetRawLocalPose(const math::Pose3d &_pose) {
   // TODO: implement
 }
 
-NodeStorePtr OmniverseNode::Children() const {
-  // TODO: implement
-  return nullptr;
-}
+NodeStorePtr OmniverseNode::Children() const { return this->_store; }
 
 bool OmniverseNode::AttachChild(NodePtr _child) {
   // TODO: implement

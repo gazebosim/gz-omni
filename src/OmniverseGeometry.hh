@@ -21,6 +21,7 @@
 #include <pxr/usd/usdGeom/gprim.h>
 
 #include <ignition/rendering/base/BaseGeometry.hh>
+#include <ignition/rendering/base/BaseStorage.hh>
 
 #include "OmniverseObject.hh"
 
@@ -28,12 +29,16 @@ namespace ignition::rendering::omni {
 
 class OmniverseGeometry : public BaseGeometry<OmniverseObject> {
  public:
+  using Store = BaseGeometryStore<OmniverseGeometry>;
+  using StorePtr = std::shared_ptr<Store>;
   using SharedPtr = std::shared_ptr<OmniverseGeometry>;
 
-  template <typename... Args>
-  static SharedPtr Make(Args&&... args) {
-    return std::shared_ptr<OmniverseGeometry>(
-        new OmniverseGeometry(std::forward<Args>(args)...));
+  static SharedPtr Make(unsigned int _id, const std::string& _name,
+                        ScenePtr _scene, pxr::UsdGeomGprim _gprim) {
+    auto sp = std::shared_ptr<OmniverseGeometry>(new OmniverseGeometry());
+    sp->InitObject(_id, _name, _scene);
+    sp->gprim = _gprim;
+    return sp;
   }
 
   VisualPtr Parent() const override;
@@ -45,11 +50,7 @@ class OmniverseGeometry : public BaseGeometry<OmniverseObject> {
   MaterialPtr Material() const override;
 
  protected:
-  OmniverseGeometry() = default;
-  OmniverseGeometry(ScenePtr _scene, pxr::UsdGeomGprim _gprim);
-
- private:
-  pxr::UsdGeomGprim _gprim;
+  pxr::UsdGeomGprim gprim;
 };
 
 }  // namespace ignition::rendering::omni

@@ -15,26 +15,12 @@
  *
  */
 
-#include "OmniverseGeometry.hh"
+#include "OmniverseRenderTarget.hh"
 
 namespace ignition::rendering::omni {
 
-VisualPtr OmniverseGeometry::Parent() const {
-  // TODO: implement
-  return nullptr;
-}
+void OmniverseRenderTarget::Copy(Image &_image) const {}
 
-void OmniverseGeometry::SetMaterial(MaterialPtr _material, bool _unique) {
-  // TODO: implement
-}
-
-bool OmniverseGeometry::HasParent() const {
-  return this->gprim.GetPrim().GetParent().IsValid();
-}
-
-MaterialPtr OmniverseGeometry::Material() const {
-  // TODO: implement
-  return nullptr;
-}
+void OmniverseRenderTarget::RebuildImpl() {}
 
 }  // namespace ignition::rendering::omni

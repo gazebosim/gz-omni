@@ -24,15 +24,16 @@ namespace ignition::rendering::omni {
 
 class OmniverseObject : public BaseObject {
  public:
-  explicit OmniverseObject(ScenePtr _scene) : _scene(_scene) {}
+  void InitObject(unsigned int _id, const std::string& _name, ScenePtr _scene) {
+    this->id = _id;
+    this->name = _name;
+    this->scene = _scene;
+  }
 
-  ScenePtr Scene() const override { return _scene; }
+  ScenePtr Scene() const override { return this->scene; }
 
  protected:
-  OmniverseObject() = default;
-
- private:
-  ScenePtr _scene;
+  ScenePtr scene;
 };
 
 }  // namespace ignition::rendering::omni

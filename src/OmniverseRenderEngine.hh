@@ -25,6 +25,7 @@
 #include "OmniverseScene.hh"
 
 namespace ignition::rendering::omni {
+
 class OmniverseRenderEngine : public BaseRenderEngine {
  public:
   static OmniverseRenderEngine *Instance();
@@ -33,14 +34,18 @@ class OmniverseRenderEngine : public BaseRenderEngine {
 
  protected:
   bool LoadImpl(const std::map<std::string, std::string> &_params) override;
+
   bool InitImpl() override;
+
   ScenePtr CreateSceneImpl(unsigned int _id, const std::string &_name) override;
 
   inline SceneStorePtr Scenes() const override { return this->_scenes; }
 
  private:
-  std::shared_ptr<OmniverseSceneStore> _scenes;
+  std::shared_ptr<OmniverseSceneStore> _scenes =
+      std::make_shared<OmniverseSceneStore>();
 };
+
 }  // namespace ignition::rendering::omni
 
 #endif

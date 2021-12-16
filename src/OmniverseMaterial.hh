@@ -29,10 +29,11 @@ class OmniverseMaterial : public BaseMaterial<OmniverseObject> {
  public:
   using SharedPtr = std::shared_ptr<OmniverseMaterial>;
 
-  template <typename... Args>
-  static SharedPtr Make(Args&&... _args) {
-    return std::shared_ptr<OmniverseMaterial>(
-        new OmniverseMaterial(std::forward<Args>(_args)...));
+  static SharedPtr Make(unsigned int _id, const std::string& _name,
+                        ScenePtr _scene) {
+    auto sp = std::shared_ptr<OmniverseMaterial>(new OmniverseMaterial());
+    sp->InitObject(_id, _name, _scene);
+    return sp;
   }
 };
 

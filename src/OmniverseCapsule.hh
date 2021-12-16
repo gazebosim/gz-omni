@@ -28,14 +28,11 @@ class OmniverseCapsule : public BaseCapsule<OmniverseGeometry> {
  public:
   using SharedPtr = std::shared_ptr<OmniverseCapsule>;
 
-  template <typename... Args>
-  static SharedPtr Make(Args&&... args) {
-    return std::shared_ptr<OmniverseCapsule>(
-        new OmniverseCapsule(std::forward<Args>(args)...));
+  static SharedPtr Make(unsigned int _id, const std::string& _name,
+                        ScenePtr _scene, pxr::UsdGeomGprim _gprim) {
+    auto sp = std::shared_ptr<OmniverseCapsule>(new OmniverseCapsule());
+    return sp;
   }
-
- private:
-  OmniverseCapsule(ScenePtr _scene, pxr::UsdGeomGprim _gprim);
 };
 
 }  // namespace ignition::rendering::omni

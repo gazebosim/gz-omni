@@ -20,6 +20,7 @@
 
 #include <ignition/rendering/base/BaseCamera.hh>
 
+#include "OmniverseRenderTarget.hh"
 #include "OmniverseSensor.hh"
 
 namespace ignition::rendering::omni {
@@ -28,16 +29,23 @@ class OmniverseCamera : public BaseCamera<OmniverseSensor> {
  public:
   using SharedPtr = std::shared_ptr<OmniverseCamera>;
 
-  template <typename... Args>
-  static SharedPtr Make(Args&&... args) {
-    return std::shared_ptr<OmniverseCamera>(
-        new OmniverseCamera(std::forward<Args>(args)...));
+  static SharedPtr Make(unsigned int _id, const std::string& _name,
+                        ScenePtr _scene) {
+    auto sp = std::shared_ptr<OmniverseCamera>(new OmniverseCamera());
+    sp->InitObject(_id, _name, _scene);
+    sp->renderTarget = _scene->CreateRenderTexture();
+    return sp;
   }
 
   void Render() override;
 
+  unsigned int RenderTextureGLId() const override;
+
  protected:
   RenderTargetPtr RenderTarget() const override;
+
+ private:
+  RenderTargetPtr renderTarget;
 };
 
 }  // namespace ignition::rendering::omni

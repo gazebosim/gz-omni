@@ -18,9 +18,11 @@
 #ifndef IGNITION_RENDERING_OMNI_OMNIVERSEMESH_HH
 #define IGNITION_RENDERING_OMNI_OMNIVERSEMESH_HH
 
-// FIXME: BaseMesh.hh is missing Console.hh include
-#include <ignition/common/Console.hh>
+#include <pxr/usd/usdGeom/mesh.h>
+
+#include <ignition/common/Console.hh>  // FIXTHEM: BaseMesh.hh is missing Console.hh include
 #include <ignition/rendering/base/BaseMesh.hh>
+#include <optional>
 
 #include "OmniverseObject.hh"
 
@@ -28,10 +30,39 @@ namespace ignition::rendering::omni {
 
 class OmniverseMesh : public BaseMesh<OmniverseObject> {
  public:
+  using SharedPtr = std::shared_ptr<OmniverseMesh>;
+
+  static SharedPtr Make(unsigned int _id, const std::string& _name,
+                        ScenePtr _scene, const MeshDescriptor& _desc) {
+    auto sp = std::shared_ptr<OmniverseMesh>(new OmniverseMesh());
+    sp->InitObject(_id, _name, _scene);
+    // TODO: create usdmesh
+    return sp;
+  }
+
+  bool HasParent() const override;
+
+  VisualPtr Parent() const override;
+
+  void RemoveParent() override;
+
   SubMeshStorePtr SubMeshes() const override;
+
+ private:
+  std::optional<pxr::UsdGeomMesh> usdMesh;
 };
 
 class OmniverseSubMesh : public BaseSubMesh<OmniverseObject> {
+ public:
+  using SharedPtr = std::shared_ptr<OmniverseSubMesh>;
+
+  static SharedPtr Make(unsigned int _id, const std::string& _name,
+                        ScenePtr _scene) {
+    auto sp = std::shared_ptr<OmniverseSubMesh>(new OmniverseSubMesh());
+    sp->InitObject(_id, _name, _scene);
+    return sp;
+  }
+
  protected:
   void SetMaterialImpl(MaterialPtr _material) override;
 };
