@@ -101,8 +101,7 @@ DepthCameraPtr OmniverseSceneImpl::CreateDepthCameraImpl(
 
 VisualPtr OmniverseSceneImpl::CreateVisualImpl(unsigned int _id,
                                                const std::string &_name) {
-  // TODO: implement
-  return nullptr;
+  return OmniverseVisual::Make(_id, _name, this->SharedFromThis());
 }
 
 ArrowVisualPtr OmniverseSceneImpl::CreateArrowVisualImpl(
@@ -221,11 +220,7 @@ MaterialMapPtr OmniverseSceneImpl::Materials() const {
   return this->materialMap;
 }
 
-bool OmniverseSceneImpl::LoadImpl() {
-  // TODO: create stage in omniverse
-  this->stage = pxr::UsdStage::CreateInMemory(name);
-  return true;
-}
+bool OmniverseSceneImpl::LoadImpl() { return true; }
 
 bool OmniverseSceneImpl::InitImpl() { return true; }
 

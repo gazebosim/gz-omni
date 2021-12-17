@@ -43,6 +43,8 @@ class OmniverseGeometry : public BaseGeometry<OmniverseObject> {
     return sp;
   }
 
+  pxr::UsdGeomGprim Gprim() { return this->gprim; }
+
   VisualPtr Parent() const override;
 
   void SetMaterial(MaterialPtr _material, bool _unique = true) override;

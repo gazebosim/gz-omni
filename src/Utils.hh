@@ -15,22 +15,25 @@
  *
  */
 
-#include "OmniverseVisual.hh"
+#ifndef IGNITION_RENDERING_OMNI_UTILS_HH
+#define IGNITION_RENDERING_OMNI_UTILS_HH
 
-#include "Utils.hh"
+#include <algorithm>
+#include <string>
 
 namespace ignition::rendering::omni {
 
-bool OmniverseVisual::AttachGeometry(GeometryPtr _geometry) {
-  // auto path = this->prim.GetPrimPath().AppendPath(
-  //     pxr::SdfPath(NameToSdfPath(_geometry->Name())));
-  // auto prim = this->Stage()->DefinePrim(path);
-  // auto geom = std::dynamic_pointer_cast<OmniverseGeometry>(_geometry);
-  // // this->Stage()->GetRootLayer()->InsertRootPrim
-  // assert(prim);
-  return true;
+/// \brief Convert a object name so that it is suitable as a sdf path.
+inline std::string NameToSdfPath(const std::string& _object_name) {
+  // example ign name "test_scene::Visual(65535)"
+  std::string result = _object_name.substr(_object_name.find_last_of(':') +
+                                           1);  // remove the scene namespace
+  std::replace(result.begin(), result.end(), '(', '_');
+  std::replace(result.begin(), result.end(), ')', '_');
+  std::replace(result.begin(), result.end(), '/', '_');
+  return result;
 }
 
-bool OmniverseVisual::DetachGeometry(GeometryPtr _geometry) { return false; }
-
 }  // namespace ignition::rendering::omni
+
+#endif

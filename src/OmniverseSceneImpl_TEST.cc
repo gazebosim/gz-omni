@@ -15,22 +15,25 @@
  *
  */
 
-#include "OmniverseVisual.hh"
+#include <gtest/gtest.h>
 
-#include "Utils.hh"
+#include "OmniverseGeometry.hh"
+#include "test/SceneTest.hh"
 
-namespace ignition::rendering::omni {
+namespace ignition::rendering::omni::test {
 
-bool OmniverseVisual::AttachGeometry(GeometryPtr _geometry) {
-  // auto path = this->prim.GetPrimPath().AppendPath(
-  //     pxr::SdfPath(NameToSdfPath(_geometry->Name())));
-  // auto prim = this->Stage()->DefinePrim(path);
-  // auto geom = std::dynamic_pointer_cast<OmniverseGeometry>(_geometry);
-  // // this->Stage()->GetRootLayer()->InsertRootPrim
-  // assert(prim);
-  return true;
+TEST_F(SceneTest, InitializeCorrectly) {
+  EXPECT_EQ(1, scene->VisualCount());
+  EXPECT_TRUE(scene->RootVisual());
 }
 
-bool OmniverseVisual::DetachGeometry(GeometryPtr _geometry) { return false; }
+TEST_F(SceneTest, CreateBox) {
+  auto box =
+      std::dynamic_pointer_cast<OmniverseGeometry>(this->scene->CreateBox());
+  scene->RootVisual()->AddGeometry(box);
+  std::string usda;
+  box->Stage()->ExportToString(&usda);
+  EXPECT_EQ("asd", usda);
+}
 
-}  // namespace ignition::rendering::omni
+}  // namespace ignition::rendering::omni::test

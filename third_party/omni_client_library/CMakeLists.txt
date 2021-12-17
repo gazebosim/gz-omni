@@ -2,7 +2,7 @@
 
 # FIXME: workaround to test usd while omniclient is not working
 find_package(pxr REQUIRED)
-add_library(omni_client INTERFACE)
+add_library(omni_client IMPORTED INTERFACE)
 target_link_libraries(omni_client INTERFACE usd usdGeom)
 
 # set(DOWNLOAD_DIR ${CMAKE_BINARY_DIR}/download)

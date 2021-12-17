@@ -15,22 +15,21 @@
  *
  */
 
-#include "OmniverseVisual.hh"
+#include <gtest/gtest.h>
 
-#include "Utils.hh"
+#include "../OmniverseSceneImpl.hh"
 
-namespace ignition::rendering::omni {
+namespace ignition::rendering::omni::test {
 
-bool OmniverseVisual::AttachGeometry(GeometryPtr _geometry) {
-  // auto path = this->prim.GetPrimPath().AppendPath(
-  //     pxr::SdfPath(NameToSdfPath(_geometry->Name())));
-  // auto prim = this->Stage()->DefinePrim(path);
-  // auto geom = std::dynamic_pointer_cast<OmniverseGeometry>(_geometry);
-  // // this->Stage()->GetRootLayer()->InsertRootPrim
-  // assert(prim);
-  return true;
-}
+class SceneTest : public ::testing::Test {
+ protected:
+  OmniverseScene::SharedPtr scene;
 
-bool OmniverseVisual::DetachGeometry(GeometryPtr _geometry) { return false; }
+  void SetUp() override {
+    this->scene = OmniverseSceneImpl::Make(0, "test_scene", nullptr);
+    this->scene->Load();
+    this->scene->Init();
+  }
+};
 
-}  // namespace ignition::rendering::omni
+}  // namespace ignition::rendering::omni::test

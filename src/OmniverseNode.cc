@@ -19,16 +19,6 @@
 
 namespace ignition::rendering::omni {
 
-bool OmniverseNode::HasParent() const {
-  // TODO: implement
-  return false;
-}
-
-NodePtr OmniverseNode::Parent() const {
-  // TODO: implement
-  return nullptr;
-}
-
 math::Vector3d OmniverseNode::LocalScale() const {
   // TODO: implement
   return math::Vector3d::One;

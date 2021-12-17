@@ -39,7 +39,9 @@ class OmniverseSceneImpl : public OmniverseScene {
     auto sp =
         std::shared_ptr<OmniverseSceneImpl>(new OmniverseSceneImpl(_id, _name));
     sp->engine = _engine;
-    sp->rootVisual = OmniverseVisual::Make(_id, _name, sp);
+    // TODO: create stage in omniverse
+    sp->stage = pxr::UsdStage::CreateInMemory(_name);
+    sp->rootVisual = sp->CreateVisual();
     return sp;
   }
 
@@ -159,7 +161,7 @@ class OmniverseSceneImpl : public OmniverseScene {
  private:
   pxr::UsdStageRefPtr stage;
   RenderEngine *engine;
-  OmniverseVisual::SharedPtr rootVisual;
+  VisualPtr rootVisual;
   std::shared_ptr<OmniverseMaterialMap> materialMap =
       std::make_shared<OmniverseMaterialMap>();
   std::shared_ptr<OmniverseSensorStore> sensorStore =
