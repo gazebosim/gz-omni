@@ -22,144 +22,17 @@
 #include <ignition/rendering/base/BaseScene.hh>
 #include <ignition/rendering/base/BaseStorage.hh>
 
-#include "OmniverseLight.hh"
-#include "OmniverseMaterial.hh"
-#include "OmniverseSensor.hh"
-#include "OmniverseVisual.hh"
-
 namespace ignition::rendering::omni {
 
 class OmniverseScene : public BaseScene {
  public:
   using SharedPtr = std::shared_ptr<OmniverseScene>;
 
-  static SharedPtr Make(unsigned int _id, const std::string &_name,
-                        RenderEngine *_engine) {
-    auto sp = std::shared_ptr<OmniverseScene>(new OmniverseScene(_id, _name));
-    sp->engine = _engine;
-    sp->rootVisual = OmniverseVisual::Make(_id, _name, sp);
-    return sp;
-  }
-
-  inline RenderEngine *Engine() const override { return this->engine; }
-
-  VisualPtr RootVisual() const override;
-
-  math::Color AmbientLight() const override;
-
-  void SetAmbientLight(const math::Color &_color) override;
+  virtual pxr::UsdStageRefPtr Stage() const = 0;
 
  protected:
   OmniverseScene(unsigned int _id, const std::string &_name)
       : BaseScene(_id, _name) {}
-
-  COMVisualPtr CreateCOMVisualImpl(unsigned int _id,
-                                   const std::string &_name) override;
-
-  InertiaVisualPtr CreateInertiaVisualImpl(unsigned int _id,
-                                           const std::string &_name) override;
-
-  JointVisualPtr CreateJointVisualImpl(unsigned int _id,
-                                       const std::string &_name) override;
-
-  LightVisualPtr CreateLightVisualImpl(unsigned int _id,
-                                       const std::string &_name) override;
-
-  DirectionalLightPtr CreateDirectionalLightImpl(
-      unsigned int _id, const std::string &_name) override;
-
-  PointLightPtr CreatePointLightImpl(unsigned int _id,
-                                     const std::string &_name) override;
-
-  SpotLightPtr CreateSpotLightImpl(unsigned int _id,
-                                   const std::string &_name) override;
-
-  CameraPtr CreateCameraImpl(unsigned int _id,
-                             const std::string &_name) override;
-
-  DepthCameraPtr CreateDepthCameraImpl(unsigned int _id,
-                                       const std::string &_name) override;
-
-  VisualPtr CreateVisualImpl(unsigned int _id,
-                             const std::string &_name) override;
-
-  ArrowVisualPtr CreateArrowVisualImpl(unsigned int _id,
-                                       const std::string &_name) override;
-
-  AxisVisualPtr CreateAxisVisualImpl(unsigned int id,
-                                     const std::string &name) override;
-
-  GeometryPtr CreateBoxImpl(unsigned int _id,
-                            const std::string &_name) override;
-
-  GeometryPtr CreateConeImpl(unsigned int _id,
-                             const std::string &_name) override;
-
-  GeometryPtr CreateCylinderImpl(unsigned int _id,
-                                 const std::string &_name) override;
-
-  GeometryPtr CreatePlaneImpl(unsigned int _id,
-                              const std::string &_name) override;
-
-  GeometryPtr CreateSphereImpl(unsigned int _id,
-                               const std::string &_name) override;
-
-  MeshPtr CreateMeshImpl(unsigned int _id, const std::string &_name,
-                         const MeshDescriptor &_desc) override;
-
-  CapsulePtr CreateCapsuleImpl(unsigned int _id,
-                               const std::string &_name) override;
-
-  GridPtr CreateGridImpl(unsigned int _id, const std::string &_name) override;
-
-  MarkerPtr CreateMarkerImpl(unsigned int _id,
-                             const std::string &_name) override;
-
-  LidarVisualPtr CreateLidarVisualImpl(unsigned int _id,
-                                       const std::string &_name) override;
-
-  HeightmapPtr CreateHeightmapImpl(unsigned int _id, const std::string &_name,
-                                   const HeightmapDescriptor &_desc) override;
-
-  WireBoxPtr CreateWireBoxImpl(unsigned int _id,
-                               const std::string &_name) override;
-
-  MaterialPtr CreateMaterialImpl(unsigned int _id,
-                                 const std::string &_name) override;
-
-  RenderTexturePtr CreateRenderTextureImpl(unsigned int _id,
-                                           const std::string &_name) override;
-
-  RenderWindowPtr CreateRenderWindowImpl(unsigned int _id,
-                                         const std::string &_name) override;
-
-  RayQueryPtr CreateRayQueryImpl(unsigned int _id,
-                                 const std::string &_name) override;
-
-  LightStorePtr Lights() const override;
-
-  SensorStorePtr Sensors() const override;
-
-  VisualStorePtr Visuals() const override;
-
-  MaterialMapPtr Materials() const override;
-
-  bool LoadImpl() override;
-
-  bool InitImpl() override;
-
- private:
-  pxr::UsdStageRefPtr stage;
-  RenderEngine *engine;
-  OmniverseVisual::SharedPtr rootVisual;
-  std::shared_ptr<OmniverseMaterialMap> materialMap =
-      std::make_shared<OmniverseMaterialMap>();
-  std::shared_ptr<OmniverseSensorStore> sensorStore =
-      std::make_shared<OmniverseSensorStore>();
-  std::shared_ptr<OmniverseVisualStore> visualStore =
-      std::make_shared<OmniverseVisualStore>();
-  std::shared_ptr<OmniverseLightStore> lightStore =
-      std::make_shared<OmniverseLightStore>();
 };
 
 using OmniverseSceneStore = BaseSceneStore<OmniverseScene>;

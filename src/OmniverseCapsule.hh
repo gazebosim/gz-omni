@@ -21,6 +21,7 @@
 #include <ignition/rendering/base/BaseCapsule.hh>
 
 #include "OmniverseGeometry.hh"
+#include "OmniverseScene.hh"
 
 namespace ignition::rendering::omni {
 
@@ -29,7 +30,8 @@ class OmniverseCapsule : public BaseCapsule<OmniverseGeometry> {
   using SharedPtr = std::shared_ptr<OmniverseCapsule>;
 
   static SharedPtr Make(unsigned int _id, const std::string& _name,
-                        ScenePtr _scene, pxr::UsdGeomGprim _gprim) {
+                        OmniverseScene::SharedPtr _scene,
+                        pxr::UsdGeomGprim _gprim) {
     auto sp = std::shared_ptr<OmniverseCapsule>(new OmniverseCapsule());
     return sp;
   }

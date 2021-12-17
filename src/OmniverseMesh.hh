@@ -25,6 +25,7 @@
 #include <optional>
 
 #include "OmniverseObject.hh"
+#include "OmniverseScene.hh"
 
 namespace ignition::rendering::omni {
 
@@ -33,7 +34,8 @@ class OmniverseMesh : public BaseMesh<OmniverseObject> {
   using SharedPtr = std::shared_ptr<OmniverseMesh>;
 
   static SharedPtr Make(unsigned int _id, const std::string& _name,
-                        ScenePtr _scene, const MeshDescriptor& _desc) {
+                        OmniverseScene::SharedPtr _scene,
+                        const MeshDescriptor& _desc) {
     auto sp = std::shared_ptr<OmniverseMesh>(new OmniverseMesh());
     sp->InitObject(_id, _name, _scene);
     // TODO: create usdmesh
@@ -57,7 +59,7 @@ class OmniverseSubMesh : public BaseSubMesh<OmniverseObject> {
   using SharedPtr = std::shared_ptr<OmniverseSubMesh>;
 
   static SharedPtr Make(unsigned int _id, const std::string& _name,
-                        ScenePtr _scene) {
+                        OmniverseScene::SharedPtr _scene) {
     auto sp = std::shared_ptr<OmniverseSubMesh>(new OmniverseSubMesh());
     sp->InitObject(_id, _name, _scene);
     return sp;

@@ -23,6 +23,7 @@
 
 #include "OmniverseGeometry.hh"
 #include "OmniverseNode.hh"
+#include "OmniverseScene.hh"
 
 namespace ignition::rendering::omni {
 
@@ -32,7 +33,7 @@ class OmniverseVisual : public BaseVisual<OmniverseNode> {
 
   static OmniverseVisual::SharedPtr Make(unsigned int _id,
                                          const std::string& _name,
-                                         ScenePtr _scene) {
+                                         OmniverseScene::SharedPtr _scene) {
     auto sp = std::shared_ptr<OmniverseVisual>(new OmniverseVisual());
     sp->InitObject(_id, _name, _scene);
     return sp;

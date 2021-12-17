@@ -21,6 +21,7 @@
 #include <ignition/rendering/base/BaseCamera.hh>
 
 #include "OmniverseRenderTarget.hh"
+#include "OmniverseScene.hh"
 #include "OmniverseSensor.hh"
 
 namespace ignition::rendering::omni {
@@ -30,7 +31,7 @@ class OmniverseCamera : public BaseCamera<OmniverseSensor> {
   using SharedPtr = std::shared_ptr<OmniverseCamera>;
 
   static SharedPtr Make(unsigned int _id, const std::string& _name,
-                        ScenePtr _scene) {
+                        OmniverseScene::SharedPtr _scene) {
     auto sp = std::shared_ptr<OmniverseCamera>(new OmniverseCamera());
     sp->InitObject(_id, _name, _scene);
     sp->renderTarget = _scene->CreateRenderTexture();

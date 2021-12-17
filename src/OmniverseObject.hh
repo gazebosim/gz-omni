@@ -18,13 +18,18 @@
 #ifndef IGNITION_RENDERING_OMNI_OMNIVERSEOBJECT_HH
 #define IGNITION_RENDERING_OMNI_OMNIVERSEOBJECT_HH
 
+#include <pxr/usd/usd/stage.h>
+
 #include <ignition/rendering/base/BaseObject.hh>
+
+#include "OmniverseScene.hh"
 
 namespace ignition::rendering::omni {
 
 class OmniverseObject : public BaseObject {
  public:
-  void InitObject(unsigned int _id, const std::string& _name, ScenePtr _scene) {
+  void InitObject(unsigned int _id, const std::string& _name,
+                  OmniverseScene::SharedPtr _scene) {
     this->id = _id;
     this->name = _name;
     this->scene = _scene;
@@ -32,8 +37,10 @@ class OmniverseObject : public BaseObject {
 
   ScenePtr Scene() const override { return this->scene; }
 
+  pxr::UsdStageRefPtr Stage() const { return this->scene->Stage(); }
+
  protected:
-  ScenePtr scene;
+  OmniverseScene::SharedPtr scene;
 };
 
 }  // namespace ignition::rendering::omni

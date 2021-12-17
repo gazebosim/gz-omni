@@ -22,6 +22,7 @@
 #include <ignition/rendering/base/BaseStorage.hh>
 
 #include "OmniverseObject.hh"
+#include "OmniverseScene.hh"
 
 namespace ignition::rendering::omni {
 
@@ -33,7 +34,7 @@ class OmniverseNode : public BaseNode<OmniverseObject> {
 
   static OmniverseNode::SharedPtr Make(unsigned int _id,
                                        const std::string &_name,
-                                       ScenePtr _scene) {
+                                       OmniverseScene::SharedPtr _scene) {
     auto sp = std::make_shared<OmniverseNode>();
     sp->InitObject(_id, _name, _scene);
     return sp;

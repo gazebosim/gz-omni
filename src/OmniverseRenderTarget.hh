@@ -22,6 +22,7 @@
 #include <ignition/rendering/base/BaseRenderTarget.hh>
 
 #include "OmniverseObject.hh"
+#include "OmniverseScene.hh"
 
 namespace ignition::rendering::omni {
 
@@ -30,7 +31,7 @@ class OmniverseRenderTarget : public BaseRenderTarget<OmniverseObject> {
   using SharedPtr = std::shared_ptr<OmniverseRenderTarget>;
 
   static SharedPtr Make(unsigned int _id, const std::string& _name,
-                        ScenePtr _scene) {
+                        OmniverseScene::SharedPtr _scene) {
     auto sp =
         std::shared_ptr<OmniverseRenderTarget>(new OmniverseRenderTarget());
     sp->InitObject(_id, _name, _scene);
@@ -48,7 +49,7 @@ class OmniverseRenderTexture : public BaseRenderTexture<OmniverseRenderTarget> {
   using SharedPtr = std::shared_ptr<OmniverseRenderTexture>;
 
   static SharedPtr Make(unsigned int _id, const std::string& _name,
-                        ScenePtr _scene) {
+                        OmniverseScene::SharedPtr _scene) {
     auto sp =
         std::shared_ptr<OmniverseRenderTexture>(new OmniverseRenderTexture());
     sp->InitObject(_id, _name, _scene);

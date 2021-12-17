@@ -22,7 +22,7 @@
 
 #include <iostream>
 
-#include "OmniverseScene.hh"
+#include "OmniverseSceneImpl.hh"
 
 namespace ignition::rendering::omni {
 
@@ -44,7 +44,7 @@ bool OmniverseRenderEngine::InitImpl() {
 
 ScenePtr OmniverseRenderEngine::CreateSceneImpl(unsigned int _id,
                                                 const std::string &_name) {
-  auto scene = OmniverseScene::Make(_id, _name, this);
+  auto scene = OmniverseSceneImpl::Make(_id, _name, this);
   this->_scenes->Add(scene);
   return scene;
 }

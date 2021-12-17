@@ -22,6 +22,7 @@
 #include <ignition/rendering/base/BaseStorage.hh>
 
 #include "OmniverseNode.hh"
+#include "OmniverseScene.hh"
 
 namespace ignition::rendering::omni {
 
@@ -30,7 +31,7 @@ class OmniverseSensor : public BaseSensor<OmniverseNode> {
   using SharedPtr = std::shared_ptr<OmniverseSensor>;
 
   static SharedPtr Make(unsigned int _id, const std::string& _name,
-                        ScenePtr _scene) {
+                        OmniverseScene::SharedPtr _scene) {
     auto sp = std::shared_ptr<OmniverseSensor>(new OmniverseSensor());
     sp->InitObject(_id, _name, _scene);
     return sp;
