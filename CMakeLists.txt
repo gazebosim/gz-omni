@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.21)
+cmake_minimum_required(VERSION 3.16)
 # FIXTHEM: ign-cmake does not support multiple hypens
 project(ignition-omniverse VERSION 0.0.1)
 
