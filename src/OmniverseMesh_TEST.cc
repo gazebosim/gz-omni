@@ -44,8 +44,19 @@ TEST_F(SceneTest, PointsMesh) {
 
   auto it = this->rootVisual->Prim().GetChildren();
   std::vector<pxr::UsdPrim> children{it.begin(), it.end()};
-  EXPECT_EQ(1, children.size());
-  EXPECT_EQ("Mesh", children[0].GetTypeName());
+  ASSERT_EQ(1, children.size());
+  pxr::UsdGeomMesh usdMesh{children[0]};
+  EXPECT_EQ("Mesh", usdMesh.GetPrim().GetTypeName());
+  EXPECT_EQ("test_mesh", usdMesh.GetPrim().GetName());
+  pxr::VtArray<pxr::GfVec3f> points;
+  usdMesh.GetPointsAttr().Get(&points);
+  EXPECT_EQ(4, points.size());
+  pxr::VtArray<int> faceVertexIndices;
+  usdMesh.GetFaceVertexIndicesAttr().Get(&faceVertexIndices);
+  EXPECT_EQ(4, faceVertexIndices.size());
+  pxr::VtArray<int> faceVertexCounts;
+  usdMesh.GetFaceVertexCountsAttr().Get(&faceVertexCounts);
+  EXPECT_EQ(1, faceVertexCounts.size());
 }
 
 }  // namespace ignition::rendering::omni::test

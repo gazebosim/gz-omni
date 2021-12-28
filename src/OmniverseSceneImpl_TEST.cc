@@ -34,7 +34,7 @@ TEST_F(SceneTest, CreateBox) {
   this->rootVisual->AddGeometry(this->scene->CreateBox());
   auto it = this->rootVisual->Prim().GetChildren();
   std::vector<pxr::UsdPrim> children{it.begin(), it.end()};
-  EXPECT_EQ(1, children.size());
+  ASSERT_EQ(1, children.size());
   EXPECT_EQ("Cube", children[0].GetTypeName());
 }
 
@@ -42,7 +42,7 @@ TEST_F(SceneTest, CreateCylinder) {
   this->rootVisual->AddGeometry(this->scene->CreateCylinder());
   auto it = this->rootVisual->Prim().GetChildren();
   std::vector<pxr::UsdPrim> children{it.begin(), it.end()};
-  EXPECT_EQ(1, children.size());
+  ASSERT_EQ(1, children.size());
   EXPECT_EQ("Cylinder", children[0].GetTypeName());
 }
 
@@ -50,7 +50,7 @@ TEST_F(SceneTest, CreateSphere) {
   this->rootVisual->AddGeometry(this->scene->CreateSphere());
   auto it = this->rootVisual->Prim().GetChildren();
   std::vector<pxr::UsdPrim> children{it.begin(), it.end()};
-  EXPECT_EQ(1, children.size());
+  ASSERT_EQ(1, children.size());
   EXPECT_EQ("Sphere", children[0].GetTypeName());
 }
 
@@ -58,7 +58,7 @@ TEST_F(SceneTest, CreateCapsule) {
   this->rootVisual->AddGeometry(this->scene->CreateCapsule());
   auto it = this->rootVisual->Prim().GetChildren();
   std::vector<pxr::UsdPrim> children{it.begin(), it.end()};
-  EXPECT_EQ(1, children.size());
+  ASSERT_EQ(1, children.size());
   EXPECT_EQ("Capsule", children[0].GetTypeName());
 }
 
