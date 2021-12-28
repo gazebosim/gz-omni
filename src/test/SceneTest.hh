@@ -24,11 +24,14 @@ namespace ignition::rendering::omni::test {
 class SceneTest : public ::testing::Test {
  protected:
   OmniverseScene::SharedPtr scene;
+  OmniverseVisual::SharedPtr root_visual;
 
   void SetUp() override {
     this->scene = OmniverseSceneImpl::Make(0, "test_scene", nullptr);
     this->scene->Load();
     this->scene->Init();
+    this->root_visual =
+        std::dynamic_pointer_cast<OmniverseVisual>(this->scene->RootVisual());
   }
 };
 

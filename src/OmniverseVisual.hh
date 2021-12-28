@@ -44,22 +44,21 @@ class OmniverseVisual : public BaseVisual<OmniverseNode> {
     if (_parent) {
       parentPath = _parent->Prim().GetPath().GetString();
     }
-    sp->prim = _scene->Stage()->DefinePrim(
-        pxr::SdfPath(parentPath + "/" + NameToSdfPath(_name)));
-    assert(sp->prim);
+    sp->SetPrim(_scene->Stage()->DefinePrim(
+        pxr::SdfPath(parentPath + "/" + NameToSdfPath(_name))));
+    assert(sp->Prim());
     return sp;
   }
 
  protected:
-  inline GeometryStorePtr Geometries() const { return this->_geomStore; }
+  inline GeometryStorePtr Geometries() const { return this->geomStore; }
 
   bool AttachGeometry(GeometryPtr _geometry) override;
 
   bool DetachGeometry(GeometryPtr _geometry) override;
 
  private:
-  pxr::UsdPrim prim;
-  OmniverseGeometry::StorePtr _geomStore =
+  OmniverseGeometry::StorePtr geomStore =
       std::make_shared<OmniverseGeometry::Store>();
 };
 

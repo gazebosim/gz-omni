@@ -34,16 +34,42 @@ class OmniverseGeometry : public BaseGeometry<OmniverseObject> {
   using StorePtr = std::shared_ptr<Store>;
   using SharedPtr = std::shared_ptr<OmniverseGeometry>;
 
+  enum class GeometryType { Box, Cone, Cylinder, Plane, Sphere, Mesh, Capsule };
+
+  static std::string GeometryTypeToString(GeometryType _type) {
+    switch (_type) {
+      case GeometryType::Box:
+        return "Box";
+      case GeometryType::Cone:
+        return "Cone";
+      case GeometryType::Cylinder:
+        return "Cylinder";
+      case GeometryType::Plane:
+        return "Plane";
+      case GeometryType::Sphere:
+        return "Sphere";
+      case GeometryType::Mesh:
+        return "Mesh";
+      case GeometryType::Capsule:
+        return "Capsule";
+      default:
+        return "Unknown";
+    }
+  }
+
   static SharedPtr Make(unsigned int _id, const std::string& _name,
-                        OmniverseScene::SharedPtr _scene,
-                        pxr::UsdGeomGprim _gprim) {
+                        OmniverseScene::SharedPtr _scene, GeometryType _type) {
     auto sp = std::shared_ptr<OmniverseGeometry>(new OmniverseGeometry());
     sp->InitObject(_id, _name, _scene);
-    sp->gprim = _gprim;
+    sp->type = _type;
     return sp;
   }
 
-  pxr::UsdGeomGprim Gprim() { return this->gprim; }
+  pxr::UsdGeomGprim Gprim() const { return this->gprim; }
+
+  void SetGprim(pxr::UsdGeomGprim _gprim) { this->gprim = _gprim; }
+
+  GeometryType Type() const { return this->type; }
 
   VisualPtr Parent() const override;
 
@@ -55,6 +81,7 @@ class OmniverseGeometry : public BaseGeometry<OmniverseObject> {
 
  protected:
   pxr::UsdGeomGprim gprim;
+  GeometryType type;
 };
 
 }  // namespace ignition::rendering::omni

@@ -17,23 +17,51 @@
 
 #include <gtest/gtest.h>
 
+#include <ignition/rendering/Capsule.hh>
+
 #include "OmniverseGeometry.hh"
 #include "test/SceneTest.hh"
 
 namespace ignition::rendering::omni::test {
 
 TEST_F(SceneTest, InitializeCorrectly) {
-  EXPECT_EQ(1, scene->VisualCount());
-  EXPECT_TRUE(scene->RootVisual());
+  EXPECT_EQ(1, this->scene->VisualCount());
+  ASSERT_TRUE(this->root_visual);
+  EXPECT_TRUE(this->root_visual->Prim());
 }
 
 TEST_F(SceneTest, CreateBox) {
-  auto box =
-      std::dynamic_pointer_cast<OmniverseGeometry>(this->scene->CreateBox());
-  scene->RootVisual()->AddGeometry(box);
-  std::string usda;
-  box->Stage()->ExportToString(&usda);
-  EXPECT_EQ("asd", usda);
+  auto ovvisual =
+      std::dynamic_pointer_cast<OmniverseVisual>(scene->RootVisual());
+  ovvisual->AddGeometry(this->scene->CreateBox());
+  auto it = this->root_visual->Prim().GetChildren();
+  std::vector<pxr::UsdPrim> children{it.begin(), it.end()};
+  EXPECT_EQ(1, children.size());
+  EXPECT_EQ("Cube", children[0].GetTypeName());
+}
+
+TEST_F(SceneTest, CreateCylinder) {
+  this->root_visual->AddGeometry(this->scene->CreateCylinder());
+  auto it = this->root_visual->Prim().GetChildren();
+  std::vector<pxr::UsdPrim> children{it.begin(), it.end()};
+  EXPECT_EQ(1, children.size());
+  EXPECT_EQ("Cylinder", children[0].GetTypeName());
+}
+
+TEST_F(SceneTest, CreateSphere) {
+  this->root_visual->AddGeometry(this->scene->CreateSphere());
+  auto it = this->root_visual->Prim().GetChildren();
+  std::vector<pxr::UsdPrim> children{it.begin(), it.end()};
+  EXPECT_EQ(1, children.size());
+  EXPECT_EQ("Sphere", children[0].GetTypeName());
+}
+
+TEST_F(SceneTest, CreateCapsule) {
+  this->root_visual->AddGeometry(this->scene->CreateCapsule());
+  auto it = this->root_visual->Prim().GetChildren();
+  std::vector<pxr::UsdPrim> children{it.begin(), it.end()};
+  EXPECT_EQ(1, children.size());
+  EXPECT_EQ("Capsule", children[0].GetTypeName());
 }
 
 }  // namespace ignition::rendering::omni::test

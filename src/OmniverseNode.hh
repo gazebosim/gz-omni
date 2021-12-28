@@ -45,6 +45,8 @@ class OmniverseNode : public BaseNode<OmniverseObject> {
 
   pxr::UsdPrim Prim() const { return this->prim; }
 
+  void SetPrim(pxr::UsdPrim _prim) { this->prim = _prim; }
+
   bool HasParent() const override { return (bool)this->parent; }
 
   NodePtr Parent() const override { return this->parent; }

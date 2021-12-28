@@ -17,12 +17,6 @@
 
 #include "OmniverseSceneImpl.hh"
 
-#include <pxr/usd/usdGeom/capsule.h>
-#include <pxr/usd/usdGeom/cube.h>
-#include <pxr/usd/usdGeom/cylinder.h>
-#include <pxr/usd/usdGeom/mesh.h>
-#include <pxr/usd/usdGeom/sphere.h>
-
 #include <ignition/common/Console.hh>
 
 #include "OmniverseCamera.hh"
@@ -119,7 +113,7 @@ AxisVisualPtr OmniverseSceneImpl::CreateAxisVisualImpl(
 GeometryPtr OmniverseSceneImpl::CreateBoxImpl(unsigned int _id,
                                               const std::string &_name) {
   return OmniverseGeometry::Make(_id, _name, this->SharedFromThis(),
-                                 pxr::UsdGeomCube());
+                                 OmniverseGeometry::GeometryType::Box);
 }
 
 GeometryPtr OmniverseSceneImpl::CreateConeImpl(unsigned int _id,
@@ -131,7 +125,7 @@ GeometryPtr OmniverseSceneImpl::CreateConeImpl(unsigned int _id,
 GeometryPtr OmniverseSceneImpl::CreateCylinderImpl(unsigned int _id,
                                                    const std::string &_name) {
   return OmniverseGeometry::Make(_id, _name, this->SharedFromThis(),
-                                 pxr::UsdGeomCylinder());
+                                 OmniverseGeometry::GeometryType::Cylinder);
 }
 
 GeometryPtr OmniverseSceneImpl::CreatePlaneImpl(unsigned int _id,
@@ -143,7 +137,7 @@ GeometryPtr OmniverseSceneImpl::CreatePlaneImpl(unsigned int _id,
 GeometryPtr OmniverseSceneImpl::CreateSphereImpl(unsigned int _id,
                                                  const std::string &_name) {
   return OmniverseGeometry::Make(_id, _name, this->SharedFromThis(),
-                                 pxr::UsdGeomSphere());
+                                 OmniverseGeometry::GeometryType::Sphere);
 }
 
 MeshPtr OmniverseSceneImpl::CreateMeshImpl(unsigned int _id,
@@ -154,8 +148,7 @@ MeshPtr OmniverseSceneImpl::CreateMeshImpl(unsigned int _id,
 
 CapsulePtr OmniverseSceneImpl::CreateCapsuleImpl(unsigned int _id,
                                                  const std::string &_name) {
-  return OmniverseCapsule::Make(_id, _name, this->SharedFromThis(),
-                                pxr::UsdGeomCapsule());
+  return OmniverseCapsule::Make(_id, _name, this->SharedFromThis());
 }
 
 GridPtr OmniverseSceneImpl::CreateGridImpl(unsigned int _id,

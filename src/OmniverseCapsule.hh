@@ -30,9 +30,10 @@ class OmniverseCapsule : public BaseCapsule<OmniverseGeometry> {
   using SharedPtr = std::shared_ptr<OmniverseCapsule>;
 
   static SharedPtr Make(unsigned int _id, const std::string& _name,
-                        OmniverseScene::SharedPtr _scene,
-                        pxr::UsdGeomGprim _gprim) {
+                        OmniverseScene::SharedPtr _scene) {
     auto sp = std::shared_ptr<OmniverseCapsule>(new OmniverseCapsule());
+    sp->InitObject(_id, _name, _scene);
+    sp->type = OmniverseGeometry::GeometryType::Capsule;
     return sp;
   }
 };
