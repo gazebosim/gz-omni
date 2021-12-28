@@ -24,34 +24,22 @@
 #include <ignition/rendering/base/BaseMesh.hh>
 #include <optional>
 
-#include "OmniverseObject.hh"
+#include "OmniverseGeometry.hh"
 #include "OmniverseScene.hh"
 
 namespace ignition::rendering::omni {
 
-class OmniverseMesh : public BaseMesh<OmniverseObject> {
+class OmniverseMesh : public BaseMesh<OmniverseGeometry> {
  public:
   using SharedPtr = std::shared_ptr<OmniverseMesh>;
 
   static SharedPtr Make(unsigned int _id, const std::string& _name,
-                        OmniverseScene::SharedPtr _scene,
-                        const MeshDescriptor& _desc) {
-    auto sp = std::shared_ptr<OmniverseMesh>(new OmniverseMesh());
-    sp->InitObject(_id, _name, _scene);
-    // TODO: create usdmesh
-    return sp;
-  }
-
-  bool HasParent() const override;
-
-  VisualPtr Parent() const override;
-
-  void RemoveParent() override;
+                        OmniverseScene::SharedPtr _scene, const MeshDescriptor& _desc);
 
   SubMeshStorePtr SubMeshes() const override;
 
  private:
-  std::optional<pxr::UsdGeomMesh> usdMesh;
+  MeshDescriptor meshDesc;
 };
 
 class OmniverseSubMesh : public BaseSubMesh<OmniverseObject> {

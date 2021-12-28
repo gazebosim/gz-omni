@@ -19,19 +19,14 @@
 
 namespace ignition::rendering::omni {
 
-bool OmniverseMesh::HasParent() const {
-  if (!this->usdMesh.has_value()) return false;
-  // TODO: implement
-  return false;
-}
-
-VisualPtr OmniverseMesh::Parent() const {
-  // TODO: implement
-  return nullptr;
-}
-
-void OmniverseMesh::RemoveParent() {
-  // TODO: implement
+OmniverseMesh::SharedPtr OmniverseMesh::Make(unsigned int _id,
+                                             const std::string& _name,
+                                             OmniverseScene::SharedPtr _scene,
+                                             const MeshDescriptor& _desc) {
+  auto sp = std::shared_ptr<OmniverseMesh>(new OmniverseMesh());
+  sp->InitObject(_id, _name, _scene);
+  // TODO: create usdmesh
+  return sp;
 }
 
 SubMeshStorePtr OmniverseMesh::SubMeshes() const {

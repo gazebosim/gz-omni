@@ -17,52 +17,53 @@
 
 #include "OmniverseVisual.hh"
 
-#include <pxr/usd/usdGeom/capsule.h>
-#include <pxr/usd/usdGeom/cube.h>
-#include <pxr/usd/usdGeom/cylinder.h>
-#include <pxr/usd/usdGeom/sphere.h>
+#include <ignition/rendering/base/BaseStorage.hh>
 
+#include "OmniverseGeometry.hh"
 #include "Utils.hh"
 
 namespace ignition::rendering::omni {
 
+OmniverseVisual::SharedPtr OmniverseVisual::Make(
+    unsigned int _id, const std::string& _name,
+    OmniverseScene::SharedPtr _scene, OmniverseNode::SharedPtr _parent) {
+  auto sp = std::shared_ptr<OmniverseVisual>(new OmniverseVisual());
+  sp->InitObject(_id, _name, _scene);
+  sp->SetParent(_parent);
+  std::string parentPath = "";
+  if (_parent) {
+    parentPath = _parent->Prim().GetPath().GetString();
+  }
+  sp->SetPrim(_scene->Stage()->DefinePrim(
+      pxr::SdfPath(parentPath + "/" + NameToSdfPath(_name))));
+  assert(sp->Prim());
+  sp->geomStore = std::make_shared<BaseGeometryStore<OmniverseGeometry>>();
+  return sp;
+}
+
 bool OmniverseVisual::AttachGeometry(GeometryPtr _geometry) {
-  auto ovgeom = std::dynamic_pointer_cast<OmniverseGeometry>(_geometry);
-  if (!ovgeom) {
+  auto ovGeom = std::dynamic_pointer_cast<OmniverseGeometry>(_geometry);
+  if (!ovGeom) {
     ignerr << "Failed to attach geometry '" << _geometry->Id()
            << "' (not an omniverse geometry)" << std::endl;
     return false;
   }
-  if (ovgeom->Gprim().GetPrim().IsValid()) {
-    ignwarn << "Geometry already has a prim associated, overriding it"
-            << std::endl;
-  }
-
-  auto path = this->Prim().GetPrimPath().AppendPath(
-      pxr::SdfPath(NameToSdfPath(_geometry->Name())));
-  switch (ovgeom->Type()) {
-    case OmniverseGeometry::GeometryType::Box:
-      ovgeom->SetGprim(pxr::UsdGeomCube::Define(this->Stage(), path));
-      break;
-    case OmniverseGeometry::GeometryType::Cylinder:
-      ovgeom->SetGprim(pxr::UsdGeomCylinder::Define(this->Stage(), path));
-      break;
-    case OmniverseGeometry::GeometryType::Sphere:
-      ovgeom->SetGprim(pxr::UsdGeomSphere::Define(this->Stage(), path));
-      break;
-    case OmniverseGeometry::GeometryType::Capsule:
-      ovgeom->SetGprim(pxr::UsdGeomCapsule::Define(this->Stage(), path));
-      break;
-    default:
-      ignerr << "Failed to attach geometry (unsuported geometry type '"
-             << OmniverseGeometry::GeometryTypeToString(ovgeom->Type()) << "')"
-             << std::endl;
-      return false;
-  }
-
-  return true;
+  return ovGeom->AttachToVisual(
+      std::dynamic_pointer_cast<OmniverseVisual>(this->shared_from_this()));
 }
 
-bool OmniverseVisual::DetachGeometry(GeometryPtr _geometry) { return false; }
+bool OmniverseVisual::DetachGeometry(GeometryPtr _geometry) {
+  auto ovGeom = std::dynamic_pointer_cast<OmniverseGeometry>(_geometry);
+  if (!ovGeom) {
+    ignerr << "Failed to detach geometry '" << _geometry->Id()
+           << "' (not an omniverse geometry)" << std::endl;
+    return false;
+  }
+  auto path = ovGeom->Gprim().GetPath();
+  // NOTE: This does not guarantee the prim is removed due to usd's complex
+  // composing system, see the docs for `RemovePrim` for more info.
+  this->Stage()->RemovePrim(path);
+  return true;
+}
 
 }  // namespace ignition::rendering::omni

@@ -17,19 +17,89 @@
 
 #include "OmniverseGeometry.hh"
 
+#include <pxr/usd/usdGeom/capsule.h>
+#include <pxr/usd/usdGeom/cube.h>
+#include <pxr/usd/usdGeom/cylinder.h>
+#include <pxr/usd/usdGeom/sphere.h>
+
+#include "OmniverseVisual.hh"
+
 namespace ignition::rendering::omni {
 
-VisualPtr OmniverseGeometry::Parent() const {
-  // TODO: implement
-  return nullptr;
+OmniverseGeometry::SharedPtr OmniverseGeometry::Make(
+    unsigned int _id, const std::string& _name,
+    OmniverseScene::SharedPtr _scene, GeometryType _type) {
+  auto sp = std::shared_ptr<OmniverseGeometry>(new OmniverseGeometry());
+  sp->InitObject(_id, _name, _scene);
+  sp->type = _type;
+  return sp;
 }
+
+std::string OmniverseGeometry::GeometryTypeToString(GeometryType _type) {
+  switch (_type) {
+    case GeometryType::Box:
+      return "Box";
+    case GeometryType::Cone:
+      return "Cone";
+    case GeometryType::Cylinder:
+      return "Cylinder";
+    case GeometryType::Plane:
+      return "Plane";
+    case GeometryType::Sphere:
+      return "Sphere";
+    case GeometryType::Mesh:
+      return "Mesh";
+    case GeometryType::Capsule:
+      return "Capsule";
+    default:
+      return "Unknown";
+  }
+}
+
+bool OmniverseGeometry::AttachToVisual(VisualPtr _visual) {
+  auto ovVisual = std::dynamic_pointer_cast<OmniverseVisual>(_visual);
+  if (!ovVisual) {
+    ignerr << "Failed to attach to visual '" << _visual->Id()
+           << "' (not an omniverse visual)" << std::endl;
+    return false;
+  }
+
+  auto path = ovVisual->Prim().GetPrimPath().AppendPath(
+      pxr::SdfPath(NameToSdfPath(this->Name())));
+  switch (this->Type()) {
+    case OmniverseGeometry::GeometryType::Box:
+      this->gprim = pxr::UsdGeomCube::Define(this->Stage(), path);
+      break;
+    // TODO: Support cone
+    // case OmniverseGeometry::GeometryType::Cone:
+    case OmniverseGeometry::GeometryType::Cylinder:
+      this->gprim = pxr::UsdGeomCylinder::Define(this->Stage(), path);
+      break;
+    // TODO: Support plane
+    // case OmniverseGeometry::GeometryType::Plane:
+    case OmniverseGeometry::GeometryType::Sphere:
+      this->gprim = pxr::UsdGeomSphere::Define(this->Stage(), path);
+      break;
+    case OmniverseGeometry::GeometryType::Capsule:
+      this->gprim = pxr::UsdGeomCapsule::Define(this->Stage(), path);
+      break;
+    default:
+      ignerr << "Failed to attach geometry (unsuported geometry type '"
+             << this->GeometryTypeToString(this->Type()) << "')" << std::endl;
+      return false;
+  }
+  this->parent = std::move(_visual);
+  return true;
+}
+
+VisualPtr OmniverseGeometry::Parent() const { return this->parent; }
 
 void OmniverseGeometry::SetMaterial(MaterialPtr _material, bool _unique) {
   // TODO: implement
 }
 
 bool OmniverseGeometry::HasParent() const {
-  return this->gprim.GetPrim().GetParent().IsValid();
+  return static_cast<bool>(this->parent);
 }
 
 MaterialPtr OmniverseGeometry::Material() const {

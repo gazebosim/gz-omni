@@ -118,8 +118,8 @@ GeometryPtr OmniverseSceneImpl::CreateBoxImpl(unsigned int _id,
 
 GeometryPtr OmniverseSceneImpl::CreateConeImpl(unsigned int _id,
                                                const std::string &_name) {
-  // TODO: implement
-  return nullptr;
+  return OmniverseGeometry::Make(_id, _name, this->SharedFromThis(),
+                                 OmniverseGeometry::GeometryType::Cone);
 }
 
 GeometryPtr OmniverseSceneImpl::CreateCylinderImpl(unsigned int _id,
@@ -130,8 +130,8 @@ GeometryPtr OmniverseSceneImpl::CreateCylinderImpl(unsigned int _id,
 
 GeometryPtr OmniverseSceneImpl::CreatePlaneImpl(unsigned int _id,
                                                 const std::string &_name) {
-  // TODO: implement
-  return nullptr;
+  return OmniverseGeometry::Make(_id, _name, this->SharedFromThis(),
+                                 OmniverseGeometry::GeometryType::Plane);
 }
 
 GeometryPtr OmniverseSceneImpl::CreateSphereImpl(unsigned int _id,
