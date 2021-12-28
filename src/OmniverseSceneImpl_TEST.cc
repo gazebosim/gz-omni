@@ -26,39 +26,37 @@ namespace ignition::rendering::omni::test {
 
 TEST_F(SceneTest, InitializeCorrectly) {
   EXPECT_EQ(1, this->scene->VisualCount());
-  ASSERT_TRUE(this->root_visual);
-  EXPECT_TRUE(this->root_visual->Prim());
+  ASSERT_TRUE(this->rootVisual);
+  EXPECT_TRUE(this->rootVisual->Prim());
 }
 
 TEST_F(SceneTest, CreateBox) {
-  auto ovvisual =
-      std::dynamic_pointer_cast<OmniverseVisual>(scene->RootVisual());
-  ovvisual->AddGeometry(this->scene->CreateBox());
-  auto it = this->root_visual->Prim().GetChildren();
+  this->rootVisual->AddGeometry(this->scene->CreateBox());
+  auto it = this->rootVisual->Prim().GetChildren();
   std::vector<pxr::UsdPrim> children{it.begin(), it.end()};
   EXPECT_EQ(1, children.size());
   EXPECT_EQ("Cube", children[0].GetTypeName());
 }
 
 TEST_F(SceneTest, CreateCylinder) {
-  this->root_visual->AddGeometry(this->scene->CreateCylinder());
-  auto it = this->root_visual->Prim().GetChildren();
+  this->rootVisual->AddGeometry(this->scene->CreateCylinder());
+  auto it = this->rootVisual->Prim().GetChildren();
   std::vector<pxr::UsdPrim> children{it.begin(), it.end()};
   EXPECT_EQ(1, children.size());
   EXPECT_EQ("Cylinder", children[0].GetTypeName());
 }
 
 TEST_F(SceneTest, CreateSphere) {
-  this->root_visual->AddGeometry(this->scene->CreateSphere());
-  auto it = this->root_visual->Prim().GetChildren();
+  this->rootVisual->AddGeometry(this->scene->CreateSphere());
+  auto it = this->rootVisual->Prim().GetChildren();
   std::vector<pxr::UsdPrim> children{it.begin(), it.end()};
   EXPECT_EQ(1, children.size());
   EXPECT_EQ("Sphere", children[0].GetTypeName());
 }
 
 TEST_F(SceneTest, CreateCapsule) {
-  this->root_visual->AddGeometry(this->scene->CreateCapsule());
-  auto it = this->root_visual->Prim().GetChildren();
+  this->rootVisual->AddGeometry(this->scene->CreateCapsule());
+  auto it = this->rootVisual->Prim().GetChildren();
   std::vector<pxr::UsdPrim> children{it.begin(), it.end()};
   EXPECT_EQ(1, children.size());
   EXPECT_EQ("Capsule", children[0].GetTypeName());

@@ -1,3 +1,5 @@
+configure_file(TestConfig.hh.in TestConfig.hh)
+
 set(gtest_dir googletest-release-1.11.0/googletest)
 add_library(gtest STATIC ${gtest_dir}/src/gtest-all.cc)
 target_include_directories(gtest PUBLIC ${gtest_dir} ${gtest_dir}/include)

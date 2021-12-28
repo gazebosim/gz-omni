@@ -17,22 +17,31 @@
 
 #include <gtest/gtest.h>
 
+#include <fstream>
+
 #include "../OmniverseSceneImpl.hh"
+#include "test/TestConfig.hh"
 
 namespace ignition::rendering::omni::test {
 
 class SceneTest : public ::testing::Test {
  protected:
   OmniverseScene::SharedPtr scene;
-  OmniverseVisual::SharedPtr root_visual;
+  OmniverseVisual::SharedPtr rootVisual;
 
   void SetUp() override {
-    this->scene = OmniverseSceneImpl::Make(0, "test_scene", nullptr);
+    auto test_info = testing::UnitTest::GetInstance()->current_test_info();
+    auto stage = pxr::UsdStage::CreateNew(TestOutputDir + "/SceneTest/" +
+                                          test_info->name() + ".usda");
+    this->scene =
+        OmniverseSceneImpl::Make(0, "test_scene", nullptr, std::move(stage));
     this->scene->Load();
     this->scene->Init();
-    this->root_visual =
+    this->rootVisual =
         std::dynamic_pointer_cast<OmniverseVisual>(this->scene->RootVisual());
   }
+
+  void TearDown() override { this->scene->Stage()->Save(); }
 };
 
 }  // namespace ignition::rendering::omni::test
