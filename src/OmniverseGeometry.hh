@@ -40,7 +40,7 @@ class OmniverseGeometry : public BaseGeometry<OmniverseObject> {
 
   pxr::UsdGeomGprim Gprim() const { return this->gprim; }
 
-  bool AttachToVisual(VisualPtr _visual);
+  virtual bool AttachToVisual(VisualPtr _visual);
 
   GeometryType Type() const { return this->type; }
 

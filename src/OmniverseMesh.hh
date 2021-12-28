@@ -21,8 +21,8 @@
 #include <pxr/usd/usdGeom/mesh.h>
 
 #include <ignition/common/Console.hh>  // FIXTHEM: BaseMesh.hh is missing Console.hh include
+#include <ignition/common/SubMesh.hh>
 #include <ignition/rendering/base/BaseMesh.hh>
-#include <optional>
 
 #include "OmniverseGeometry.hh"
 #include "OmniverseScene.hh"
@@ -34,12 +34,18 @@ class OmniverseMesh : public BaseMesh<OmniverseGeometry> {
   using SharedPtr = std::shared_ptr<OmniverseMesh>;
 
   static SharedPtr Make(unsigned int _id, const std::string& _name,
-                        OmniverseScene::SharedPtr _scene, const MeshDescriptor& _desc);
+                        OmniverseScene::SharedPtr _scene,
+                        const MeshDescriptor& _desc);
 
-  SubMeshStorePtr SubMeshes() const override;
+  bool AttachToVisual(VisualPtr _visual) override;
+
+  SubMeshStorePtr SubMeshes() const override { return this->subMeshes; }
 
  private:
-  MeshDescriptor meshDesc;
+  SubMeshStorePtr subMeshes;
+  pxr::VtArray<pxr::GfVec3f> meshPoints;
+  pxr::VtArray<int> faceVertexIndices;
+  pxr::VtArray<int> faceVertexCounts;
 };
 
 class OmniverseSubMesh : public BaseSubMesh<OmniverseObject> {
@@ -47,11 +53,7 @@ class OmniverseSubMesh : public BaseSubMesh<OmniverseObject> {
   using SharedPtr = std::shared_ptr<OmniverseSubMesh>;
 
   static SharedPtr Make(unsigned int _id, const std::string& _name,
-                        OmniverseScene::SharedPtr _scene) {
-    auto sp = std::shared_ptr<OmniverseSubMesh>(new OmniverseSubMesh());
-    sp->InitObject(_id, _name, _scene);
-    return sp;
-  }
+                        OmniverseScene::SharedPtr _scene);
 
  protected:
   void SetMaterialImpl(MaterialPtr _material) override;
