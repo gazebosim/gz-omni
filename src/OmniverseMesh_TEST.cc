@@ -23,7 +23,7 @@
 
 namespace ignition::rendering::omni::test {
 
-TEST_F(SceneTest, PointsMesh) {
+TEST_F(SceneTest, TrianglesMesh) {
   ignition::common::SubMesh subMesh{"test_sub_mesh"};
   subMesh.AddVertex(0, 0, 0);
   subMesh.AddVertex(0, 1, 0);
@@ -32,7 +32,10 @@ TEST_F(SceneTest, PointsMesh) {
   subMesh.AddIndex(0);
   subMesh.AddIndex(1);
   subMesh.AddIndex(2);
+  subMesh.AddIndex(2);
   subMesh.AddIndex(3);
+  subMesh.AddIndex(0);
+  subMesh.SetPrimitiveType(ignition::common::SubMesh::PrimitiveType::TRIANGLES);
 
   ignition::common::Mesh mesh;
   mesh.SetName("test_mesh");
@@ -53,10 +56,10 @@ TEST_F(SceneTest, PointsMesh) {
   EXPECT_EQ(4, points.size());
   pxr::VtArray<int> faceVertexIndices;
   usdMesh.GetFaceVertexIndicesAttr().Get(&faceVertexIndices);
-  EXPECT_EQ(4, faceVertexIndices.size());
+  EXPECT_EQ(6, faceVertexIndices.size());
   pxr::VtArray<int> faceVertexCounts;
   usdMesh.GetFaceVertexCountsAttr().Get(&faceVertexCounts);
-  EXPECT_EQ(1, faceVertexCounts.size());
+  EXPECT_EQ(2, faceVertexCounts.size());
 }
 
 }  // namespace ignition::rendering::omni::test
