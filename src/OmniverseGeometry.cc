@@ -21,6 +21,7 @@
 #include <pxr/usd/usdGeom/cube.h>
 #include <pxr/usd/usdGeom/cylinder.h>
 #include <pxr/usd/usdGeom/sphere.h>
+#include <pxr/usd/usdGeom/xformCommonAPI.h>
 
 #include "OmniverseVisual.hh"
 
@@ -67,23 +68,43 @@ bool OmniverseGeometry::AttachToVisual(VisualPtr _visual) {
   auto path = ovVisual->Xformable().GetPath().AppendPath(
       pxr::SdfPath(NameToSdfPath(this->Name())));
   switch (this->Type()) {
-    // transforms and extents etc are handled at the node level
-    case OmniverseGeometry::GeometryType::Box:
+    case OmniverseGeometry::GeometryType::Box: {
       this->gprim = pxr::UsdGeomCube::Define(this->Stage(), path);
+      // usd cube is 2x2 by default
+      pxr::VtArray<pxr::GfVec3f> extent;
+      extent.push_back(pxr::GfVec3f(-1.0f));
+      extent.push_back(pxr::GfVec3f(1.0f));
+      this->gprim.CreateExtentAttr(pxr::VtValue(extent));
       break;
+    }
     // TODO: Support cone
     // case OmniverseGeometry::GeometryType::Cone:
-    case OmniverseGeometry::GeometryType::Cylinder:
+    case OmniverseGeometry::GeometryType::Cylinder: {
       this->gprim = pxr::UsdGeomCylinder::Define(this->Stage(), path);
+      pxr::VtArray<pxr::GfVec3f> extent;
+      extent.push_back(pxr::GfVec3f(-1.0f));
+      extent.push_back(pxr::GfVec3f(1.0f));
+      this->gprim.CreateExtentAttr(pxr::VtValue(extent));
       break;
+    }
     // TODO: Support plane
     // case OmniverseGeometry::GeometryType::Plane:
-    case OmniverseGeometry::GeometryType::Sphere:
+    case OmniverseGeometry::GeometryType::Sphere: {
       this->gprim = pxr::UsdGeomSphere::Define(this->Stage(), path);
+      pxr::VtArray<pxr::GfVec3f> extent;
+      extent.push_back(pxr::GfVec3f(-1.0f));
+      extent.push_back(pxr::GfVec3f(1.0f));
+      this->gprim.CreateExtentAttr(pxr::VtValue(extent));
       break;
-    case OmniverseGeometry::GeometryType::Capsule:
+    }
+    case OmniverseGeometry::GeometryType::Capsule: {
       this->gprim = pxr::UsdGeomCapsule::Define(this->Stage(), path);
+      pxr::VtArray<pxr::GfVec3f> extent;
+      extent.push_back(pxr::GfVec3f(-0.5f, -0.5f, -1.0f));
+      extent.push_back(pxr::GfVec3f(0.5f, 0.5f, 1.0f));
+      this->gprim.CreateExtentAttr(pxr::VtValue(extent));
       break;
+    }
     default:
       ignerr << "Failed to attach geometry (unsuported geometry type '"
              << this->GeometryTypeToString(this->Type()) << "')" << std::endl;
