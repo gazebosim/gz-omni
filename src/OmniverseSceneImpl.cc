@@ -51,7 +51,7 @@ OmniverseSceneImpl::SharedPtr OmniverseSceneImpl::Make(
       std::dynamic_pointer_cast<OmniverseVisual>(sp->CreateVisual());
   auto prim = sp->stage->DefinePrim(
       pxr::SdfPath("/" + NameToSdfPath(rootVisual->Name())));
-  prim.GetReferences().AddInternalReference(rootVisual->Gprim().GetPath());
+  prim.GetReferences().AddInternalReference(rootVisual->Xformable().GetPath());
   sp->rootVisual = rootVisual;
   return sp;
 }

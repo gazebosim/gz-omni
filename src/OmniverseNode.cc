@@ -28,30 +28,30 @@ void OmniverseNode::InitNode(unsigned int _id, const std::string &_name,
   this->InitObject(_id, _name, _scene);
   auto prim = this->Stage()->DefinePrim(
       pxr::SdfPath("/_nodes/" + NameToSdfPath(_name)));
-  this->gprim = pxr::UsdGeomGprim(prim);
+  this->xformable = pxr::UsdGeomXformable(prim);
 }
 
 math::Vector3d OmniverseNode::LocalScale() const {
   pxr::GfMatrix4d xform;
   bool resetXformStack = false;
-  this->gprim.GetLocalTransformation(&xform, &resetXformStack,
-                                     pxr::UsdTimeCode::Default());
+  this->xformable.GetLocalTransformation(&xform, &resetXformStack,
+                                         pxr::UsdTimeCode::Default());
   return math::Vector3d{xform[0][0], xform[1][1], xform[2][2]};
 }
 
 bool OmniverseNode::InheritScale() const {
-  return !this->gprim.GetResetXformStack();
+  return !this->xformable.GetResetXformStack();
 }
 
 void OmniverseNode::SetInheritScale(bool _inherit) {
-  this->gprim.SetResetXformStack(!_inherit);
+  this->xformable.SetResetXformStack(!_inherit);
 }
 
 math::Pose3d OmniverseNode::RawLocalPose() const {
   bool resetXformStack = false;
   pxr::GfMatrix4d xform;
-  this->gprim.GetLocalTransformation(&xform, &resetXformStack,
-                                     pxr::UsdTimeCode::Default());
+  this->xformable.GetLocalTransformation(&xform, &resetXformStack,
+                                         pxr::UsdTimeCode::Default());
   auto pos = xform.ExtractTranslation();
   auto rot = xform.ExtractRotationQuat();
   auto &imag = rot.GetImaginary();
@@ -69,7 +69,7 @@ math::Pose3d OmniverseNode::RawLocalPose() const {
 }
 
 void OmniverseNode::SetRawLocalPose(const math::Pose3d &_pose) {
-  pxr::UsdGeomXformCommonAPI xform{this->gprim.GetPrim()};
+  pxr::UsdGeomXformCommonAPI xform{this->xformable.GetPrim()};
   xform.SetTranslate({_pose.X(), _pose.Y(), _pose.Z()});
   xform.SetRotate({math::Angle{_pose.Roll()}.Degree(),
                    math::Angle{_pose.Pitch()}.Degree(),
@@ -86,20 +86,20 @@ bool OmniverseNode::AttachChild(NodePtr _child) {
            << this->Name() << "' (not an omniverse node)" << std::endl;
     return false;
   }
-  auto prim = this->Stage()->DefinePrim(this->gprim.GetPath().AppendPath(
+  auto prim = this->Stage()->DefinePrim(this->xformable.GetPath().AppendPath(
       pxr::SdfPath(NameToSdfPath(ovChild->Name()))));
-  prim.GetReferences().AddInternalReference(ovChild->gprim.GetPath());
+  prim.GetReferences().AddInternalReference(ovChild->xformable.GetPath());
   return true;
 }
 
 bool OmniverseNode::DetachChild(NodePtr _child) {
-  this->Stage()->RemovePrim(this->gprim.GetPath().AppendPath(
+  this->Stage()->RemovePrim(this->xformable.GetPath().AppendPath(
       pxr::SdfPath(NameToSdfPath(_child->Name()))));
   return true;
 }
 
 void OmniverseNode::SetLocalScaleImpl(const math::Vector3d &_scale) {
-  pxr::UsdGeomXformCommonAPI xform(this->gprim.GetPrim());
+  pxr::UsdGeomXformCommonAPI xform(this->xformable.GetPrim());
   xform.SetScale({_scale.X(), _scale.Y(), _scale.Z()});
   return;
 }

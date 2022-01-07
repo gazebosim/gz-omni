@@ -109,7 +109,7 @@ bool OmniverseMesh::AttachToVisual(VisualPtr _visual) {
     return false;
   }
 
-  auto path = ovVisual->Gprim().GetPath().AppendPath(
+  auto path = ovVisual->Xformable().GetPath().AppendPath(
       pxr::SdfPath(NameToSdfPath(this->Name())));
   this->gprim = pxr::UsdGeomMesh::Define(this->Stage(), path);
   auto& usdMesh = static_cast<pxr::UsdGeomMesh&>(this->gprim);

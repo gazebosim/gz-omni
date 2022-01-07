@@ -27,7 +27,7 @@ namespace ignition::rendering::omni::test {
 TEST_F(SceneTest, InitializeCorrectly) {
   EXPECT_EQ(1, this->scene->VisualCount());
   ASSERT_TRUE(this->rootVisual);
-  EXPECT_TRUE(this->rootVisual->Gprim().GetPrim());
+  EXPECT_TRUE(this->rootVisual->Xformable().GetPrim());
 }
 
 TEST_F(SceneTest, CreateBox) {
