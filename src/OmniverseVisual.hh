@@ -35,8 +35,7 @@ class OmniverseVisual : public BaseVisual<OmniverseNode> {
 
   static OmniverseVisual::SharedPtr Make(unsigned int _id,
                                          const std::string& _name,
-                                         OmniverseScene::SharedPtr _scene,
-                                         OmniverseNode::SharedPtr _parent = {});
+                                         OmniverseScene::SharedPtr _scene);
 
  protected:
   GeometryStorePtr Geometries() const { return this->geomStore; }

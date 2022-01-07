@@ -26,17 +26,9 @@ namespace ignition::rendering::omni {
 
 OmniverseVisual::SharedPtr OmniverseVisual::Make(
     unsigned int _id, const std::string& _name,
-    OmniverseScene::SharedPtr _scene, OmniverseNode::SharedPtr _parent) {
+    OmniverseScene::SharedPtr _scene) {
   auto sp = std::shared_ptr<OmniverseVisual>(new OmniverseVisual());
-  std::string parentPath = "";
-  if (_parent) {
-    parentPath = _parent->Gprim().GetPath().GetString();
-  }
-  auto prim = _scene->Stage()->DefinePrim(
-      pxr::SdfPath(parentPath + "/" + NameToSdfPath(_name)));
-  pxr::UsdGeomGprim gprim{prim};
-  sp->InitNode(_id, _name, _scene, gprim);
-  sp->SetParent(_parent);
+  sp->InitNode(_id, _name, _scene);
   sp->geomStore = std::make_shared<BaseGeometryStore<OmniverseGeometry>>();
   return sp;
 }

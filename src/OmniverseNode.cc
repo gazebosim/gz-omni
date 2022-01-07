@@ -19,13 +19,16 @@
 
 #include <pxr/usd/usdGeom/xformCommonAPI.h>
 
+#include "Utils.hh"
+
 namespace ignition::rendering::omni {
 
 void OmniverseNode::InitNode(unsigned int _id, const std::string &_name,
-                             OmniverseScene::SharedPtr _scene,
-                             pxr::UsdGeomGprim _gprim) {
+                             OmniverseScene::SharedPtr _scene) {
   this->InitObject(_id, _name, _scene);
-  this->gprim = _gprim;
+  auto prim = this->Stage()->DefinePrim(
+      pxr::SdfPath("/_nodes/" + NameToSdfPath(_name)));
+  this->gprim = pxr::UsdGeomGprim(prim);
 }
 
 math::Vector3d OmniverseNode::LocalScale() const {
@@ -73,26 +76,32 @@ void OmniverseNode::SetRawLocalPose(const math::Pose3d &_pose) {
                    math::Angle{_pose.Yaw()}.Degree()});
 }
 
-NodeStorePtr OmniverseNode::Children() const { return this->_store; }
+NodeStorePtr OmniverseNode::Children() const { return this->store; }
 
 bool OmniverseNode::AttachChild(NodePtr _child) {
   // TODO: Implement
-  return false;
-  // auto ovNode = std::dynamic_pointer_cast<OmniverseNode>(_child);
-  // if (!ovNode) {
-  //   ignerr << "Unable to attach child '" << _child->Name() << "' to parent '"
-  //          << this->Name() << "' (not an omniverse node)" << std::endl;
-  //   return false;
-  // }
-  // this->gprim.GetPath();
-  // return true;
+  auto ovChild = std::dynamic_pointer_cast<OmniverseNode>(_child);
+  if (!ovChild) {
+    ignerr << "Unable to attach child '" << _child->Name() << "' to parent '"
+           << this->Name() << "' (not an omniverse node)" << std::endl;
+    return false;
+  }
+  auto prim = this->Stage()->DefinePrim(this->gprim.GetPath().AppendPath(
+      pxr::SdfPath(NameToSdfPath(ovChild->Name()))));
+  prim.GetReferences().AddInternalReference(ovChild->gprim.GetPath());
+  return true;
 }
 
 bool OmniverseNode::DetachChild(NodePtr _child) {
-  // TODO: implement
-  return false;
+  this->Stage()->RemovePrim(this->gprim.GetPath().AppendPath(
+      pxr::SdfPath(NameToSdfPath(_child->Name()))));
+  return true;
 }
 
-void OmniverseNode::SetLocalScaleImpl(const math::Vector3d &_scale) {}
+void OmniverseNode::SetLocalScaleImpl(const math::Vector3d &_scale) {
+  pxr::UsdGeomXformCommonAPI xform(this->gprim.GetPrim());
+  xform.SetScale({_scale.X(), _scale.Y(), _scale.Z()});
+  return;
+}
 
 }  // namespace ignition::rendering::omni

@@ -35,7 +35,7 @@ class OmniverseNode : public BaseNode<OmniverseObject> {
   using SharedPtr = std::shared_ptr<OmniverseNode>;
 
   void InitNode(unsigned int _id, const std::string &_name,
-                OmniverseScene::SharedPtr _scene, pxr::UsdGeomGprim _gprim);
+                OmniverseScene::SharedPtr _scene);
 
   void SetParent(OmniverseNode::SharedPtr _parent) { this->parent = parent; }
 
@@ -64,10 +64,12 @@ class OmniverseNode : public BaseNode<OmniverseObject> {
 
   void SetLocalScaleImpl(const math::Vector3d &_scale) override;
 
- private:
+ protected:
   pxr::UsdGeomGprim gprim;
   OmniverseNode::SharedPtr parent;
-  StorePtr _store = std::make_shared<Store>();
+
+ private:
+  StorePtr store = std::make_shared<Store>();
 };
 
 using OmniverseNodeStore = OmniverseNode::Store;

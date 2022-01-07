@@ -32,34 +32,28 @@ TEST_F(SceneTest, InitializeCorrectly) {
 
 TEST_F(SceneTest, CreateBox) {
   this->rootVisual->AddGeometry(this->scene->CreateBox());
-  auto it = this->rootVisual->Gprim().GetPrim().GetChildren();
-  std::vector<pxr::UsdPrim> children{it.begin(), it.end()};
-  ASSERT_EQ(1, children.size());
-  EXPECT_EQ("Cube", children[0].GetTypeName());
+  EXPECT_TRUE(this->HasPrim(
+      [](const pxr::UsdPrim& prim) { return prim.GetTypeName() == "Cube"; }));
 }
 
 TEST_F(SceneTest, CreateCylinder) {
   this->rootVisual->AddGeometry(this->scene->CreateCylinder());
-  auto it = this->rootVisual->Gprim().GetPrim().GetChildren();
-  std::vector<pxr::UsdPrim> children{it.begin(), it.end()};
-  ASSERT_EQ(1, children.size());
-  EXPECT_EQ("Cylinder", children[0].GetTypeName());
+  EXPECT_TRUE(this->HasPrim([](const pxr::UsdPrim& prim) {
+    return prim.GetTypeName() == "Cylinder";
+  }));
 }
 
 TEST_F(SceneTest, CreateSphere) {
   this->rootVisual->AddGeometry(this->scene->CreateSphere());
-  auto it = this->rootVisual->Gprim().GetPrim().GetChildren();
-  std::vector<pxr::UsdPrim> children{it.begin(), it.end()};
-  ASSERT_EQ(1, children.size());
-  EXPECT_EQ("Sphere", children[0].GetTypeName());
+  EXPECT_TRUE(this->HasPrim(
+      [](const pxr::UsdPrim& prim) { return prim.GetTypeName() == "Sphere"; }));
 }
 
 TEST_F(SceneTest, CreateCapsule) {
   this->rootVisual->AddGeometry(this->scene->CreateCapsule());
-  auto it = this->rootVisual->Gprim().GetPrim().GetChildren();
-  std::vector<pxr::UsdPrim> children{it.begin(), it.end()};
-  ASSERT_EQ(1, children.size());
-  EXPECT_EQ("Capsule", children[0].GetTypeName());
+  EXPECT_TRUE(this->HasPrim([](const pxr::UsdPrim& prim) {
+    return prim.GetTypeName() == "Capsule";
+  }));
 }
 
 }  // namespace ignition::rendering::omni::test

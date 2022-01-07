@@ -16,7 +16,9 @@
  */
 
 #include <gtest/gtest.h>
+#include <pxr/usd/usd/primRange.h>
 
+#include <algorithm>
 #include <fstream>
 
 #include "../OmniverseSceneImpl.hh"
@@ -42,6 +44,14 @@ class SceneTest : public ::testing::Test {
   }
 
   void TearDown() override { this->scene->Stage()->Save(); }
+
+  template <typename Predicate>
+  bool HasPrim(const Predicate& pred) {
+    auto it = this->scene->Stage()->Traverse();
+    return std::find_if(it.begin(), it.end(), [&pred](const auto& prim) {
+             return pred(prim);
+           }) != it.end();
+  }
 };
 
 }  // namespace ignition::rendering::omni::test
