@@ -43,7 +43,7 @@ OmniverseMesh::SharedPtr OmniverseMesh::Make(unsigned int _id,
     auto subMesh = ignMesh->SubMeshByIndex(i).lock();
     if (!subMesh) {
       ignerr << "Unable to get a shared pointer to submesh at index [" << i
-                << "] of parent mesh [" << ignMesh->Name() << "]\n";
+             << "] of parent mesh [" << ignMesh->Name() << "]\n";
       return nullptr;
     }
 
@@ -109,7 +109,7 @@ bool OmniverseMesh::AttachToVisual(VisualPtr _visual) {
     return false;
   }
 
-  auto path = ovVisual->Prim().GetPrimPath().AppendPath(
+  auto path = ovVisual->Gprim().GetPath().AppendPath(
       pxr::SdfPath(NameToSdfPath(this->Name())));
   this->gprim = pxr::UsdGeomMesh::Define(this->Stage(), path);
   auto& usdMesh = static_cast<pxr::UsdGeomMesh&>(this->gprim);

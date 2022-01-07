@@ -17,36 +17,75 @@
 
 #include "OmniverseNode.hh"
 
+#include <pxr/usd/usdGeom/xformCommonAPI.h>
+
 namespace ignition::rendering::omni {
 
+void OmniverseNode::InitNode(unsigned int _id, const std::string &_name,
+                             OmniverseScene::SharedPtr _scene,
+                             pxr::UsdGeomGprim _gprim) {
+  this->InitObject(_id, _name, _scene);
+  this->gprim = _gprim;
+}
+
 math::Vector3d OmniverseNode::LocalScale() const {
-  // TODO: implement
-  return math::Vector3d::One;
+  pxr::GfMatrix4d xform;
+  bool resetXformStack = false;
+  this->gprim.GetLocalTransformation(&xform, &resetXformStack,
+                                     pxr::UsdTimeCode::Default());
+  return math::Vector3d{xform[0][0], xform[1][1], xform[2][2]};
 }
 
 bool OmniverseNode::InheritScale() const {
-  // TODO: implement
-  return false;
+  return !this->gprim.GetResetXformStack();
 }
 
 void OmniverseNode::SetInheritScale(bool _inherit) {
-  // TODO: implement
+  this->gprim.SetResetXformStack(!_inherit);
 }
 
 math::Pose3d OmniverseNode::RawLocalPose() const {
-  // TODO: implement
-  return math::Pose3d::Zero;
+  bool resetXformStack = false;
+  pxr::GfMatrix4d xform;
+  this->gprim.GetLocalTransformation(&xform, &resetXformStack,
+                                     pxr::UsdTimeCode::Default());
+  auto pos = xform.ExtractTranslation();
+  auto rot = xform.ExtractRotationQuat();
+  auto &imag = rot.GetImaginary();
+  math::Angle w;
+  math::Angle x;
+  math::Angle y;
+  math::Angle z;
+  w.SetDegree(rot.GetReal());
+  x.SetDegree(imag[0]);
+  y.SetDegree(imag[1]);
+  z.SetDegree(imag[2]);
+  // TODO: Check correctness
+  return math::Pose3d{{pos[0], pos[1], pos[2]},
+                      {w.Radian(), x.Radian(), y.Radian(), z.Radian()}};
 }
 
 void OmniverseNode::SetRawLocalPose(const math::Pose3d &_pose) {
-  // TODO: implement
+  pxr::UsdGeomXformCommonAPI xform{this->gprim.GetPrim()};
+  xform.SetTranslate({_pose.X(), _pose.Y(), _pose.Z()});
+  xform.SetRotate({math::Angle{_pose.Roll()}.Degree(),
+                   math::Angle{_pose.Pitch()}.Degree(),
+                   math::Angle{_pose.Yaw()}.Degree()});
 }
 
 NodeStorePtr OmniverseNode::Children() const { return this->_store; }
 
 bool OmniverseNode::AttachChild(NodePtr _child) {
-  // TODO: implement
+  // TODO: Implement
   return false;
+  // auto ovNode = std::dynamic_pointer_cast<OmniverseNode>(_child);
+  // if (!ovNode) {
+  //   ignerr << "Unable to attach child '" << _child->Name() << "' to parent '"
+  //          << this->Name() << "' (not an omniverse node)" << std::endl;
+  //   return false;
+  // }
+  // this->gprim.GetPath();
+  // return true;
 }
 
 bool OmniverseNode::DetachChild(NodePtr _child) {
@@ -54,8 +93,6 @@ bool OmniverseNode::DetachChild(NodePtr _child) {
   return false;
 }
 
-void OmniverseNode::SetLocalScaleImpl(const math::Vector3d &_scale) {
-  // TODO: implement
-}
+void OmniverseNode::SetLocalScaleImpl(const math::Vector3d &_scale) {}
 
 }  // namespace ignition::rendering::omni

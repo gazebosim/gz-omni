@@ -29,6 +29,25 @@
 
 namespace ignition::rendering::omni {
 
+OmniverseSceneImpl::SharedPtr OmniverseSceneImpl::Make(
+    unsigned int _id, const std::string &_name, RenderEngine *_engine,
+    pxr::UsdStageRefPtr _stage) {
+  auto sp =
+      std::shared_ptr<OmniverseSceneImpl>(new OmniverseSceneImpl(_id, _name));
+  sp->engine = _engine;
+  // TODO: In memory stage should not be a thing as there should be no valid
+  // use case, we are doing it now because the nvidia omniverse client library
+  // is not working atm.
+  if (!_stage) {
+    ignwarn << "Using in memory stage" << std::endl;
+    sp->stage = pxr::UsdStage::CreateInMemory(_name);
+  } else {
+    sp->stage = _stage;
+  }
+  sp->rootVisual = sp->CreateVisual();
+  return sp;
+}
+
 VisualPtr OmniverseSceneImpl::RootVisual() const { return this->rootVisual; }
 
 math::Color OmniverseSceneImpl::AmbientLight() const {

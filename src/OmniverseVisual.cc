@@ -28,15 +28,15 @@ OmniverseVisual::SharedPtr OmniverseVisual::Make(
     unsigned int _id, const std::string& _name,
     OmniverseScene::SharedPtr _scene, OmniverseNode::SharedPtr _parent) {
   auto sp = std::shared_ptr<OmniverseVisual>(new OmniverseVisual());
-  sp->InitObject(_id, _name, _scene);
-  sp->SetParent(_parent);
   std::string parentPath = "";
   if (_parent) {
-    parentPath = _parent->Prim().GetPath().GetString();
+    parentPath = _parent->Gprim().GetPath().GetString();
   }
-  sp->SetPrim(_scene->Stage()->DefinePrim(
-      pxr::SdfPath(parentPath + "/" + NameToSdfPath(_name))));
-  assert(sp->Prim());
+  auto prim = _scene->Stage()->DefinePrim(
+      pxr::SdfPath(parentPath + "/" + NameToSdfPath(_name)));
+  pxr::UsdGeomGprim gprim{prim};
+  sp->InitNode(_id, _name, _scene, gprim);
+  sp->SetParent(_parent);
   sp->geomStore = std::make_shared<BaseGeometryStore<OmniverseGeometry>>();
   return sp;
 }

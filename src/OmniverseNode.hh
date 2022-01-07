@@ -18,7 +18,7 @@
 #ifndef IGNITION_RENDERING_OMNI_OMNIVERSENODE_HH
 #define IGNITION_RENDERING_OMNI_OMNIVERSENODE_HH
 
-#include <pxr/usd/usd/prim.h>
+#include <pxr/usd/usdGeom/gprim.h>
 
 #include <ignition/rendering/base/BaseNode.hh>
 #include <ignition/rendering/base/BaseStorage.hh>
@@ -34,18 +34,12 @@ class OmniverseNode : public BaseNode<OmniverseObject> {
   using StorePtr = std::shared_ptr<Store>;
   using SharedPtr = std::shared_ptr<OmniverseNode>;
 
-  static SharedPtr Make(unsigned int _id, const std::string &_name,
-                        OmniverseScene::SharedPtr _scene) {
-    auto sp = std::make_shared<OmniverseNode>();
-    sp->InitObject(_id, _name, _scene);
-    return sp;
-  }
+  void InitNode(unsigned int _id, const std::string &_name,
+                OmniverseScene::SharedPtr _scene, pxr::UsdGeomGprim _gprim);
 
   void SetParent(OmniverseNode::SharedPtr _parent) { this->parent = parent; }
 
-  pxr::UsdPrim Prim() const { return this->prim; }
-
-  void SetPrim(pxr::UsdPrim _prim) { this->prim = _prim; }
+  pxr::UsdGeomGprim Gprim() const { return this->gprim; }
 
   bool HasParent() const override { return (bool)this->parent; }
 
@@ -71,7 +65,7 @@ class OmniverseNode : public BaseNode<OmniverseObject> {
   void SetLocalScaleImpl(const math::Vector3d &_scale) override;
 
  private:
-  pxr::UsdPrim prim;
+  pxr::UsdGeomGprim gprim;
   OmniverseNode::SharedPtr parent;
   StorePtr _store = std::make_shared<Store>();
 };

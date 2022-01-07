@@ -64,9 +64,10 @@ bool OmniverseGeometry::AttachToVisual(VisualPtr _visual) {
     return false;
   }
 
-  auto path = ovVisual->Prim().GetPrimPath().AppendPath(
+  auto path = ovVisual->Gprim().GetPath().AppendPath(
       pxr::SdfPath(NameToSdfPath(this->Name())));
   switch (this->Type()) {
+    // transforms and extents etc are handled at the node level
     case OmniverseGeometry::GeometryType::Box:
       this->gprim = pxr::UsdGeomCube::Define(this->Stage(), path);
       break;
