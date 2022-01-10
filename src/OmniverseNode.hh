@@ -39,7 +39,7 @@ class OmniverseNode : public BaseNode<OmniverseObject> {
 
   void SetParent(OmniverseNode::SharedPtr _parent) { this->parent = parent; }
 
-  pxr::UsdGeomXformable Xformable() const { return this->xformable; }
+  pxr::UsdGeomXformable Xformable() const { return this->xform; }
 
   bool HasParent() const override { return (bool)this->parent; }
 
@@ -65,7 +65,7 @@ class OmniverseNode : public BaseNode<OmniverseObject> {
   void SetLocalScaleImpl(const math::Vector3d &_scale) override;
 
  protected:
-  pxr::UsdGeomXformable xformable;
+  pxr::UsdGeomXformable xform;
   OmniverseNode::SharedPtr parent;
 
  private:

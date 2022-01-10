@@ -30,6 +30,7 @@ class SceneTest : public ::testing::Test {
  protected:
   OmniverseScene::SharedPtr scene;
   OmniverseVisual::SharedPtr rootVisual;
+  pxr::UsdPrim rootVisualPrim;
 
   void SetUp() override {
     auto test_info = testing::UnitTest::GetInstance()->current_test_info();
@@ -41,6 +42,8 @@ class SceneTest : public ::testing::Test {
     this->scene->Init();
     this->rootVisual =
         std::dynamic_pointer_cast<OmniverseVisual>(this->scene->RootVisual());
+    this->rootVisualPrim =
+        this->scene->Stage()->GetPrimAtPath(pxr::SdfPath("/root_visual"));
   }
 
   void TearDown() override { this->scene->Stage()->Save(); }

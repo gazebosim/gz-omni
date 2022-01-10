@@ -17,7 +17,7 @@
 
 #include "OmniverseSceneImpl.hh"
 
-#include <pxr/usd/sdf/copyUtils.h>
+#include <pxr/usd/usd/inherits.h>
 
 #include <ignition/common/Console.hh>
 
@@ -49,8 +49,7 @@ OmniverseSceneImpl::SharedPtr OmniverseSceneImpl::Make(
   sp->stage->CreateClassPrim(pxr::SdfPath("/_nodes"));
   auto rootVisual =
       std::dynamic_pointer_cast<OmniverseVisual>(sp->CreateVisual());
-  auto prim = sp->stage->DefinePrim(
-      pxr::SdfPath("/" + NameToSdfPath(rootVisual->Name())));
+  auto prim = sp->stage->DefinePrim(pxr::SdfPath("/root_visual"));
   prim.GetReferences().AddInternalReference(rootVisual->Xformable().GetPath());
   sp->rootVisual = rootVisual;
   return sp;

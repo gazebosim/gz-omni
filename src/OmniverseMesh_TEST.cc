@@ -45,7 +45,7 @@ TEST_F(SceneTest, TrianglesMesh) {
   auto ovMesh = OmniverseMesh::Make(0, "test_mesh", this->scene, meshDesc);
   this->rootVisual->AddGeometry(ovMesh);
 
-  auto it = this->rootVisual->Xformable().GetPrim().GetChildren();
+  auto it = this->rootVisualPrim.GetChildren();
   std::vector<pxr::UsdPrim> children{it.begin(), it.end()};
   ASSERT_EQ(1, children.size());
   pxr::UsdGeomMesh usdMesh{children[0]};
