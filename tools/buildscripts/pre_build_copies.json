@@ -1,0 +1,16 @@
+{
+    "linux-x86_64": {
+        "_build/target-deps/nv_usd/debug/lib/**/*.*" : "_build/linux-x86_64/debug",
+        "_build/target-deps/nv_usd/release/lib/**/*.*" : "_build/linux-x86_64/release",
+        "_build/target-deps/omni_client_library/debug/**/*.*" : "_build/linux-x86_64/debug",
+        "_build/target-deps/omni_client_library/release/**/*.*" : "_build/linux-x86_64/release",
+        "_build/target-deps/python/lib/*.*" : "_build/linux-x86_64/release"
+    },
+    "windows-x86_64": {
+        "_build/target-deps/nv_usd/debug/lib/**/*.*" : "_build/windows-x86_64/debug",
+        "_build/target-deps/nv_usd/release/lib/**/*.*" : "_build/windows-x86_64/release",
+        "_build/target-deps/omni_client_library/debug/**/*.*" : "_build/windows-x86_64/debug",
+        "_build/target-deps/omni_client_library/release/**/*.*" : "_build/windows-x86_64/release",
+        "_build/host-deps/vc/bin/HostX64/x64/vcruntime*.*" : "_build/windows-x86_64/release"
+    }
+}

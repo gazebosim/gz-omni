@@ -1,0 +1,69 @@
+<project toolsVersion="5.6">
+  <dependency name="premake" linkPath="../_build/host-deps/premake">
+    <package name="premake" version="5.0.9-nv-main-68e9a88a-${platform}" />
+  </dependency>
+
+  <dependency name="downloaded_msvc" linkPath="../_build/host-deps/downloaded_msvc">
+    <package name="msvc" version="2019-16.7.6-license" platforms="windows-x86_64" />
+  </dependency>
+
+  <dependency name="downloaded_winsdk" linkPath="../_build/host-deps/downloaded_winsdk">
+    <package name="winsdk" version="10.0.18362.0-license" platforms="windows-x86_64"/>
+  </dependency>
+
+  <!--
+    Change the paths below *if you want to provide your own* VS 2019 toolchain or your own Windows SDK 10.17763.
+    The VS 2019 toolchain can be downloaded from here:
+     https://aka.ms/vs/16/release/vs_buildtools.exe
+     (Choose Desktop Development with C++, you can uncheck the included Windows SDK)
+    The Windows SDK 10.17763 can be downloaded from here:
+     https://go.microsoft.com/fwlink/p/?LinkID=2033908
+  -->
+  <dependency name="buildtools" linkPath="../_build/host-deps/buildtools">
+    <!--
+      If you have installed the VS 2019 toolchain to the default path replace the package element with the following:
+      <source path="C:/Program Files (x86)/Microsoft Visual Studio/2019/BuildTools" platforms="windows-x86_64" />
+    -->
+      <source path="../_build/host-deps/downloaded_msvc" platforms="windows-x86_64" />
+  </dependency>
+  <dependency name="vc" linkPath="../_build/host-deps/vc">
+    <!--
+      If you have installed the VS 2019 toolchain to the default path replace the source element below as follows:
+      <source path="../_build/host-deps/buildtools/VC/Tools/MSVC/14.27.29110" platforms="windows-x86_64" />
+    -->
+      <source path="../_build/host-deps/buildtools/VC/Tools/MSVC/14.27.29110" platforms="windows-x86_64" />
+  </dependency>
+
+  <!-- WINDOWS SDK -->
+  <dependency name="winsdk" linkPath="../_build/host-deps/.winsdk">
+    <!--
+      If you have installed the Windows SDK to the default path replace the package element below with this:
+      <source path="C:/Program Files (x86)/Windows Kits/10" platforms="windows-x86_64" />
+    -->
+      <source path="../_build/host-deps/downloaded_winsdk" platforms="windows-x86_64" />
+  </dependency>
+  
+  <dependency name="winsdk_bin" linkPath="../_build/host-deps/winsdk/bin">
+    <!--
+      If you have installed the Windows SDK to the default path replace the source element below with this:
+      <source path="../_build/host-deps/.winsdk/bin/10.0.17763.0" platforms="windows-x86_64" />
+    -->
+      <source path="../_build/host-deps/.winsdk/bin" platforms="windows-x86_64" />
+  </dependency>
+
+  <dependency name="winsdk_include" linkPath="../_build/host-deps/winsdk/include">
+    <!--
+      If you have installed the Windows SDK to the default path replace the source element below with this:
+      <source path="../_build/host-deps/.winsdk/include/10.0.17763.0" platforms="windows-x86_64" />
+    -->
+      <source path="../_build/host-deps/.winsdk/include" platforms="windows-x86_64" />
+  </dependency>
+
+  <dependency name="winsdk_lib" linkPath="../_build/host-deps/winsdk/lib">
+    <!--
+      If you have installed the Windows SDK to the default path replace the source element below with this:
+      <source path="../_build/host-deps/.winsdk/lib/10.0.17763.0" platforms="windows-x86_64" />
+    -->
+      <source path="../_build/host-deps/.winsdk/lib" platforms="windows-x86_64" />
+  </dependency>
+</project>

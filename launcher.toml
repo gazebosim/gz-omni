@@ -1,0 +1,71 @@
+#displayed application name
+name = "Connect Sample"
+#displayed before application name in launcher
+productArea = "Omniverse"
+
+#unique identifier for component, all lower case, persists between versions
+slug = "connectsample"
+
+## install and launch instructions by environment
+# Windows
+# [defaults.windows-x86_64]
+# entrypoint = "explorer.exe"
+# args = ["${productRoot}"]
+
+[defaults.windows-x86_64.environment]
+
+[defaults.windows-x86_64.install]
+pre-install = ""
+pre-install-args = []
+install = ""
+install-args = []
+post-install = ""
+post-install-args = []
+
+[defaults.windows-x86_64.uninstall]
+pre-uninstall = ""
+pre-uninstall-args = []
+uninstall = ""
+uninstall-args = []
+post-uninstall = ""
+post-uninstall-args = []
+
+[defaults.windows-x86_64.register]
+command = ''
+args = []
+
+[defaults.windows-x86_64.unregister]
+command = ''
+args = []
+
+
+# Linux
+#[defaults.linux-x86_64]
+#entrypoint = "gnome-terminal"
+#args = ["--working-directory=${productRoot}"]
+
+[defaults.linux-x86_64.environment]
+
+[defaults.linux-x86_64.install]
+pre-install = ""
+pre-install-args = []
+install = ""
+install-args = []
+post-install = ""
+post-install-args = []
+
+[defaults.linux-x86_64.uninstall]
+pre-uninstall = ""
+pre-uninstall-args = []
+uninstall = ""
+uninstall-args = []
+post-uninstall = ""
+post-uninstall-args = []
+
+[defaults.linux-x86_64.register]
+command = ''
+args = []
+
+[defaults.linux-x86_64.unregister]
+command = ''
+args = []
