@@ -8,5 +8,5 @@ echo Running script in ${SCRIPT_DIR}
 export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${SCRIPT_DIR}/_build/linux-x86_64/release"
 
 pushd $SCRIPT_DIR > /dev/null
-./_build/linux-x86_64/release/HelloWorld "$@"
+./_build/linux-x86_64/release/ignition "$@"
 popd > /dev/null

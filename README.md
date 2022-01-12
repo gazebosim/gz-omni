@@ -2,7 +2,29 @@
 
 To compile this you should modify `ignitionInstallDir` in premake5.lua with your path to ignition.
 
+Define the environment variable
+
+```bash
+export IGNITION_INSTALL_DIR=~/ignition_ws/install
+```
+
 Then you should run the script `bash build.sh`
+
+If you are compiling ignition from sources remember to:
+
+```bash
+source ~/ignition_ws/install/setup.bash
+```
+
+Launch `IssacSim` and activate the `live sync`
+
+![](live_sync.gif)
+
+And finally run:
+
+```bash
+bash run_ignition.bash
+```
 
 # Connect Samples for the Omniverse Client Library
 
