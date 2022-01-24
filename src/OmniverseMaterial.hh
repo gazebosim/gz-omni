@@ -33,7 +33,7 @@ class OmniverseMaterial : public BaseMaterial<OmniverseObject> {
   static SharedPtr Make(unsigned int _id, const std::string& _name,
                         OmniverseScene::SharedPtr _scene) {
     auto sp = std::shared_ptr<OmniverseMaterial>(new OmniverseMaterial());
-    sp->InitObject(_id, _name, _scene);
+    sp->Init(_id, _name, _scene);
     return sp;
   }
 };

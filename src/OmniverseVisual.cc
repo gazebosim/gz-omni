@@ -28,7 +28,7 @@ OmniverseVisual::SharedPtr OmniverseVisual::Make(
     unsigned int _id, const std::string& _name,
     OmniverseScene::SharedPtr _scene) {
   auto sp = std::shared_ptr<OmniverseVisual>(new OmniverseVisual());
-  sp->InitNode(_id, _name, _scene);
+  sp->Init(_id, _name, _scene);
   sp->geomStore = std::make_shared<BaseGeometryStore<OmniverseGeometry>>();
   return sp;
 }

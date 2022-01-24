@@ -48,13 +48,19 @@ class SceneTest : public ::testing::Test {
 
   void TearDown() override { this->scene->Stage()->Save(); }
 
+  /// \brief Traverses the stage to find a prim that match the given predicate.
+  /// \returns The first prim that matches the predicate, or an invalid prim if
+  /// there are no matches.
   template <typename Predicate>
-  bool HasPrim(const Predicate& pred) {
-    auto it = this->scene->Stage()->Traverse();
-    return std::find_if(it.begin(), it.end(), [&pred](const auto& prim) {
-             return pred(prim);
-           }) != it.end();
-  }
+  pxr::UsdPrim FindPrim(const Predicate& pred) {
+    const auto it = this->scene->Stage()->Traverse();
+    const auto result = std::find_if(
+        it.begin(), it.end(), [&pred](const auto& prim) { return pred(prim); });
+    if (result == it.end()) {
+      return pxr::UsdPrim();
+    }
+    return *result;
+  };
 };
 
 }  // namespace ignition::rendering::omni::test

@@ -30,7 +30,7 @@ OmniverseMesh::SharedPtr OmniverseMesh::Make(unsigned int _id,
                                              OmniverseScene::SharedPtr _scene,
                                              const MeshDescriptor& _desc) {
   auto sp = std::shared_ptr<OmniverseMesh>(new OmniverseMesh());
-  sp->InitObject(_id, _name, _scene);
+  sp->Init(_id, _name, _scene);
   sp->subMeshes = std::make_shared<BaseSubMeshStore<OmniverseSubMesh>>();
   for (size_t i = 0; i < _desc.mesh->SubMeshCount(); i++) {
     auto ovSubMesh = OmniverseSubMesh::Make(_id, _name, _scene);
@@ -123,7 +123,7 @@ OmniverseSubMesh::SharedPtr OmniverseSubMesh::Make(
     unsigned int _id, const std::string& _name,
     OmniverseScene::SharedPtr _scene) {
   auto sp = std::shared_ptr<OmniverseSubMesh>(new OmniverseSubMesh());
-  sp->InitObject(_id, _name, _scene);
+  sp->Init(_id, _name, _scene);
   return sp;
 }
 

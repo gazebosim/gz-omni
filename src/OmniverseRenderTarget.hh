@@ -34,7 +34,7 @@ class OmniverseRenderTarget : public BaseRenderTarget<OmniverseObject> {
                         OmniverseScene::SharedPtr _scene) {
     auto sp =
         std::shared_ptr<OmniverseRenderTarget>(new OmniverseRenderTarget());
-    sp->InitObject(_id, _name, _scene);
+    sp->Init(_id, _name, _scene);
     return sp;
   }
 
@@ -52,7 +52,7 @@ class OmniverseRenderTexture : public BaseRenderTexture<OmniverseRenderTarget> {
                         OmniverseScene::SharedPtr _scene) {
     auto sp =
         std::shared_ptr<OmniverseRenderTexture>(new OmniverseRenderTexture());
-    sp->InitObject(_id, _name, _scene);
+    sp->Init(_id, _name, _scene);
     return sp;
   }
 };

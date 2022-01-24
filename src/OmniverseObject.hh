@@ -28,19 +28,19 @@ namespace ignition::rendering::omni {
 
 class OmniverseObject : public BaseObject {
  public:
-  void InitObject(unsigned int _id, const std::string& _name,
-                  OmniverseScene::SharedPtr _scene) {
-    this->id = _id;
-    this->name = _name;
-    this->scene = _scene;
-  }
-
   ScenePtr Scene() const override { return this->scene; }
 
   pxr::UsdStageRefPtr Stage() const { return this->scene->Stage(); }
 
  protected:
   OmniverseScene::SharedPtr scene;
+
+  void Init(unsigned int _id, const std::string& _name,
+            OmniverseScene::SharedPtr _scene) {
+    this->id = _id;
+    this->name = _name;
+    this->scene = _scene;
+  }
 };
 
 }  // namespace ignition::rendering::omni

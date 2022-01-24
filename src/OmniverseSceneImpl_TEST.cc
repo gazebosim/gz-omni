@@ -32,26 +32,26 @@ TEST_F(SceneTest, InitializeCorrectly) {
 
 TEST_F(SceneTest, CreateBox) {
   this->rootVisual->AddGeometry(this->scene->CreateBox());
-  EXPECT_TRUE(this->HasPrim(
+  EXPECT_TRUE(this->FindPrim(
       [](const pxr::UsdPrim& prim) { return prim.GetTypeName() == "Cube"; }));
 }
 
 TEST_F(SceneTest, CreateCylinder) {
   this->rootVisual->AddGeometry(this->scene->CreateCylinder());
-  EXPECT_TRUE(this->HasPrim([](const pxr::UsdPrim& prim) {
+  EXPECT_TRUE(this->FindPrim([](const pxr::UsdPrim& prim) {
     return prim.GetTypeName() == "Cylinder";
   }));
 }
 
 TEST_F(SceneTest, CreateSphere) {
   this->rootVisual->AddGeometry(this->scene->CreateSphere());
-  EXPECT_TRUE(this->HasPrim(
+  EXPECT_TRUE(this->FindPrim(
       [](const pxr::UsdPrim& prim) { return prim.GetTypeName() == "Sphere"; }));
 }
 
 TEST_F(SceneTest, CreateCapsule) {
   this->rootVisual->AddGeometry(this->scene->CreateCapsule());
-  EXPECT_TRUE(this->HasPrim([](const pxr::UsdPrim& prim) {
+  EXPECT_TRUE(this->FindPrim([](const pxr::UsdPrim& prim) {
     return prim.GetTypeName() == "Capsule";
   }));
 }

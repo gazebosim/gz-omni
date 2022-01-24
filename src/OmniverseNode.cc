@@ -24,13 +24,6 @@
 
 namespace ignition::rendering::omni {
 
-void OmniverseNode::InitNode(unsigned int _id, const std::string &_name,
-                             OmniverseScene::SharedPtr _scene) {
-  this->InitObject(_id, _name, _scene);
-  this->xform = pxr::UsdGeomXform::Define(
-      this->Stage(), pxr::SdfPath("/_nodes/" + NameToSdfPath(_name)));
-}
-
 math::Vector3d OmniverseNode::LocalScale() const {
   pxr::GfMatrix4d xform;
   bool resetXformStack = false;
@@ -45,6 +38,13 @@ bool OmniverseNode::InheritScale() const {
 
 void OmniverseNode::SetInheritScale(bool _inherit) {
   this->xform.SetResetXformStack(!_inherit);
+}
+
+void OmniverseNode::Init(unsigned int _id, const std::string &_name,
+                         OmniverseScene::SharedPtr _scene) {
+  OmniverseObject::Init(_id, _name, _scene);
+  this->xform = pxr::UsdGeomXform::Define(
+      this->Stage(), pxr::SdfPath("/_nodes/" + NameToSdfPath(_name)));
 }
 
 math::Pose3d OmniverseNode::RawLocalPose() const {

@@ -31,7 +31,7 @@ OmniverseGeometry::SharedPtr OmniverseGeometry::Make(
     unsigned int _id, const std::string& _name,
     OmniverseScene::SharedPtr _scene, GeometryType _type) {
   auto sp = std::shared_ptr<OmniverseGeometry>(new OmniverseGeometry());
-  sp->InitObject(_id, _name, _scene);
+  sp->Init(_id, _name, _scene);
   sp->type = _type;
   return sp;
 }

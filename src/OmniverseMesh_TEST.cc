@@ -45,11 +45,10 @@ TEST_F(SceneTest, TrianglesMesh) {
   auto ovMesh = OmniverseMesh::Make(0, "test_mesh", this->scene, meshDesc);
   this->rootVisual->AddGeometry(ovMesh);
 
-  auto it = this->rootVisualPrim.GetChildren();
-  std::vector<pxr::UsdPrim> children{it.begin(), it.end()};
-  ASSERT_EQ(1, children.size());
-  pxr::UsdGeomMesh usdMesh{children[0]};
-  EXPECT_EQ("Mesh", usdMesh.GetPrim().GetTypeName());
+  const auto prim = this->FindPrim(
+      [](const pxr::UsdPrim& p) { return p.GetTypeName() == "Mesh"; });
+  ASSERT_TRUE(prim);
+  pxr::UsdGeomMesh usdMesh(prim);
   EXPECT_EQ("test_mesh", usdMesh.GetPrim().GetName());
   pxr::VtArray<pxr::GfVec3f> points;
   usdMesh.GetPointsAttr().Get(&points);
