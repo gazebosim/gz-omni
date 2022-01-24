@@ -26,7 +26,8 @@
 
 namespace ignition::rendering::omni::test {
 
-class SceneTest : public ::testing::Test {
+template <typename SuiteName>
+class SceneFixture : public ::testing::Test {
  protected:
   OmniverseScene::SharedPtr scene;
   OmniverseVisual::SharedPtr rootVisual;
@@ -34,8 +35,9 @@ class SceneTest : public ::testing::Test {
 
   void SetUp() override {
     auto test_info = testing::UnitTest::GetInstance()->current_test_info();
-    auto stage = pxr::UsdStage::CreateNew(TestOutputDir + "/SceneTest/" +
-                                          test_info->name() + ".usda");
+    auto stage =
+        pxr::UsdStage::CreateNew(TestOutputDir + "/" + SuiteName::Value + "/" +
+                                 test_info->name() + ".usda");
     this->scene =
         OmniverseSceneImpl::Make(0, "test_scene", nullptr, std::move(stage));
     this->scene->Load();

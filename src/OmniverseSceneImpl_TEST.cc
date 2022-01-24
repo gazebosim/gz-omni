@@ -20,9 +20,14 @@
 #include <ignition/rendering/Capsule.hh>
 
 #include "OmniverseGeometry.hh"
-#include "test/SceneTest.hh"
+#include "test/SceneFixture.hh"
 
 namespace ignition::rendering::omni::test {
+
+struct SuiteName {
+  inline static const std::string Value = "SceneTest";
+};
+using SceneTest = SceneFixture<SuiteName>;
 
 TEST_F(SceneTest, InitializeCorrectly) {
   EXPECT_EQ(1, this->scene->VisualCount());

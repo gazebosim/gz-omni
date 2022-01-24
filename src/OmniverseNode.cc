@@ -24,20 +24,30 @@
 
 namespace ignition::rendering::omni {
 
-math::Vector3d OmniverseNode::LocalScale() const {
-  pxr::GfMatrix4d xform;
-  bool resetXformStack = false;
-  this->xform.GetLocalTransformation(&xform, &resetXformStack,
-                                     pxr::UsdTimeCode::Default());
-  return math::Vector3d{xform[0][0], xform[1][1], xform[2][2]};
+OmniverseNode::SharedPtr OmniverseNode::Make(unsigned int _id,
+                                             const std::string &_name,
+                                             OmniverseScene::SharedPtr _scene) {
+  auto sp = std::make_shared<OmniverseNode>();
+  sp->Init(_id, _name, _scene);
+  return sp;
 }
 
-bool OmniverseNode::InheritScale() const {
-  return !this->xform.GetResetXformStack();
+math::Vector3d OmniverseNode::LocalScale() const {
+  pxr::UsdGeomXformCommonAPI xformApi(this->xform.GetPrim());
+  pxr::GfVec3d translate;
+  pxr::GfVec3f rotation;
+  pxr::GfVec3f scale;
+  pxr::GfVec3f pivot;
+  pxr::UsdGeomXformCommonAPI::RotationOrder rotOrder;
+  xformApi.GetXformVectors(&translate, &rotation, &scale, &pivot, &rotOrder,
+                           pxr::UsdTimeCode::Default());
+  return math::Vector3d(scale[0], scale[1], scale[2]);
 }
+
+bool OmniverseNode::InheritScale() const { return this->inheritScale; }
 
 void OmniverseNode::SetInheritScale(bool _inherit) {
-  this->xform.SetResetXformStack(!_inherit);
+  this->inheritScale = _inherit;
 }
 
 void OmniverseNode::Init(unsigned int _id, const std::string &_name,
@@ -48,32 +58,31 @@ void OmniverseNode::Init(unsigned int _id, const std::string &_name,
 }
 
 math::Pose3d OmniverseNode::RawLocalPose() const {
-  bool resetXformStack = false;
-  pxr::GfMatrix4d xformMat;
-  this->xform.GetLocalTransformation(&xformMat, &resetXformStack,
-                                     pxr::UsdTimeCode::Default());
-  auto pos = xformMat.ExtractTranslation();
-  auto rot = xformMat.ExtractRotationQuat();
-  auto &imag = rot.GetImaginary();
-  math::Angle w;
-  math::Angle x;
+  pxr::UsdGeomXformCommonAPI xformApi(this->xform.GetPrim());
+  pxr::GfVec3d translate;
+  pxr::GfVec3f rotation;
+  pxr::GfVec3f scale;
+  pxr::GfVec3f pivot;
+  pxr::UsdGeomXformCommonAPI::RotationOrder rotOrder;
+  xformApi.GetXformVectors(&translate, &rotation, &scale, &pivot, &rotOrder,
+                           pxr::UsdTimeCode::Default());
+  math::Angle r;
+  r.SetDegree(rotation[0]);
+  math::Angle p;
+  p.SetDegree(rotation[1]);
   math::Angle y;
-  math::Angle z;
-  w.SetDegree(rot.GetReal());
-  x.SetDegree(imag[0]);
-  y.SetDegree(imag[1]);
-  z.SetDegree(imag[2]);
-  // TODO: Check correctness
-  return math::Pose3d{{pos[0], pos[1], pos[2]},
-                      {w.Radian(), x.Radian(), y.Radian(), z.Radian()}};
+  y.SetDegree(rotation[2]);
+  return math::Pose3d(math::Vector3d(translate[0], translate[1], translate[2]),
+                      math::Quaterniond(r.Radian(), p.Radian(), y.Radian()));
 }
 
 void OmniverseNode::SetRawLocalPose(const math::Pose3d &_pose) {
-  pxr::UsdGeomXformCommonAPI xformApi{this->xform.GetPrim()};
-  xformApi.SetTranslate({_pose.X(), _pose.Y(), _pose.Z()});
-  xformApi.SetRotate({math::Angle{_pose.Roll()}.Degree(),
-                      math::Angle{_pose.Pitch()}.Degree(),
-                      math::Angle{_pose.Yaw()}.Degree()});
+  pxr::UsdGeomXformCommonAPI xformApi(this->xform.GetPrim());
+  xformApi.SetTranslate(pxr::GfVec3d(_pose.X(), _pose.Y(), _pose.Z()));
+  xformApi.SetRotate(pxr::GfVec3f(math::Angle(_pose.Roll()).Degree(),
+                                  math::Angle(_pose.Pitch()).Degree(),
+                                  math::Angle(_pose.Yaw()).Degree()),
+                     pxr::UsdGeomXformCommonAPI::RotationOrderXYZ);
 }
 
 NodeStorePtr OmniverseNode::Children() const { return this->store; }

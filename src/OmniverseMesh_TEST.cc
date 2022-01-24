@@ -19,11 +19,16 @@
 
 #include <gtest/gtest.h>
 
-#include "test/SceneTest.hh"
+#include "test/SceneFixture.hh"
 
 namespace ignition::rendering::omni::test {
 
-TEST_F(SceneTest, TrianglesMesh) {
+struct SuiteName {
+  inline static const std::string Value = "MeshTest";
+};
+using MeshTest = SceneFixture<SuiteName>;
+
+TEST_F(MeshTest, TrianglesMesh) {
   ignition::common::SubMesh subMesh{"test_sub_mesh"};
   subMesh.AddVertex(0, 0, 0);
   subMesh.AddVertex(0, 1, 0);

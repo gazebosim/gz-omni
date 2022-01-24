@@ -34,6 +34,9 @@ class OmniverseNode : public BaseNode<OmniverseObject> {
   using StorePtr = std::shared_ptr<Store>;
   using SharedPtr = std::shared_ptr<OmniverseNode>;
 
+  static SharedPtr Make(unsigned int _id, const std::string &_name,
+                        OmniverseScene::SharedPtr _scene);
+
   void SetParent(OmniverseNode::SharedPtr _parent) { this->parent = parent; }
 
   pxr::UsdGeomXformable Xformable() const { return this->xform; }
@@ -67,12 +70,11 @@ class OmniverseNode : public BaseNode<OmniverseObject> {
  protected:
   pxr::UsdGeomXformable xform;
   OmniverseNode::SharedPtr parent;
+  bool inheritScale = false;
 
  private:
   StorePtr store = std::make_shared<Store>();
 };
-
-using OmniverseNodeStore = OmniverseNode::Store;
 
 }  // namespace ignition::rendering::omni
 
