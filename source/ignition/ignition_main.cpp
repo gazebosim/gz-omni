@@ -124,6 +124,7 @@ static std::string createOmniverseModel(const std::string& destinationPath)
 	gStage = pxr::UsdStage::CreateNew(stageUrl);
 	if (!gStage)
 	{
+		exit(-1);
 		failNotify("Failure to create model in Omniverse", stageUrl.c_str());
 		return std::string();
 	}
@@ -164,12 +165,7 @@ static void checkpointFile(const char* stageUrl, const char* comment)
 // The program expects one argument, a path to a USD file
 int main(int argc, char* argv[])
 {
-	sdf::Element elem;
-	// ignition::common::cwd();
-	ignition::math::Vector3d v();
 	ignition::common::Console::SetVerbosity(4);
-
-	std::cerr << "v " << v << '\n';
 
 	std::string destinationPath = "omniverse://localhost/Users/ignition";
 
@@ -185,16 +181,6 @@ int main(int argc, char* argv[])
 	// Print the username for the server
 	printConnectedUsername(stageUrl);
 
-
-	// // Open the live stage
-  // auto stage = pxr::UsdStage::Open("salida.usd");
-	// if (!stage)
-	// {
-	// 	std::cout << "Failure to open stage.  Exiting." << std::endl;
-	// 	exit(1);
-	// }
-
-  // gstage->SetMetadata(pxr::UsdGeomTokens->upAxis, pxr::UsdGeomTokens->z);
   gStage->SetEndTimeCode(100);
   gStage->SetMetadata(pxr::TfToken("metersPerUnit"), 1.0);
   gStage->SetStartTimeCode(0);
@@ -219,7 +205,7 @@ int main(int argc, char* argv[])
 	// Commit the changes to the USD
 	gStage->Save();
 	omniUsdLiveProcess();
-
+	std::cerr << "1" << '\n';
 	checkpointFile(stageUrl.c_str(), "Add box and light to stage");
 
   // auto usdPhysics = pxr::UsdPhysicsScene::Define(stage,
@@ -237,11 +223,10 @@ int main(int argc, char* argv[])
   //   std::cerr << "Issue saving USD to salida.usd\n";
   //   exit(-6);
   // }
-  // The stage is a sophisticated object that needs to be destroyed properly.
-	// Since stage is a smart pointer we can just reset it
 
 	// Process any updates that may have happened to the stage from another client
 	omniUsdLiveWaitForPendingUpdates();
+	std::cerr << "2" << '\n';
 
 	// Define storage for the different xform ops that Omniverse Kit likes to use
 	pxr::UsdGeomXformOp translateOp;
@@ -253,39 +238,43 @@ int main(int argc, char* argv[])
 
 	while (true)
 	{
+		// std::cerr << "3" << '\n';
+
 		omniUsdLiveWaitForPendingUpdates();
 
 		// Process any updates that may have happened to the stage from another client
 		// omniUsdLiveWaitForPendingUpdates();
 		auto cylinder = gStage->GetPrimAtPath(pxr::SdfPath("/World/Cylinder"));
 
-		// Get the xform ops stack
-		bool resetXformStack = false;
-		pxr::UsdGeomXformable xForm = pxr::UsdGeomXformable(cylinder);
-		std::vector<pxr::UsdGeomXformOp> xFormOps = xForm.GetOrderedXformOps(&resetXformStack);
-
-		// Get the current xform op values
-		for (size_t i = 0; i < xFormOps.size(); i++)
+		if (cylinder)
 		{
-			switch (xFormOps[i].GetOpType()) {
-			case pxr::UsdGeomXformOp::TypeTranslate:
-				translateOp = xFormOps[i];
-				translateOp.Get(&position);
-				break;
-			case pxr::UsdGeomXformOp::TypeRotateZYX:
-				rotateOp = xFormOps[i];
-				rotateOp.Get(&rotZYX);
-				break;
-			case pxr::UsdGeomXformOp::TypeScale:
-				scaleOp = xFormOps[i];
-				scaleOp.Get(&scale);
-				break;
+			// Get the xform ops stack
+			bool resetXformStack = false;
+			pxr::UsdGeomXformable xForm = pxr::UsdGeomXformable(cylinder);
+			std::vector<pxr::UsdGeomXformOp> xFormOps = xForm.GetOrderedXformOps(&resetXformStack);
+
+			// Get the current xform op values
+			for (size_t i = 0; i < xFormOps.size(); i++)
+			{
+				switch (xFormOps[i].GetOpType()) {
+				case pxr::UsdGeomXformOp::TypeTranslate:
+					translateOp = xFormOps[i];
+					translateOp.Get(&position);
+					break;
+				case pxr::UsdGeomXformOp::TypeRotateZYX:
+					rotateOp = xFormOps[i];
+					rotateOp.Get(&rotZYX);
+					break;
+				case pxr::UsdGeomXformOp::TypeScale:
+					scaleOp = xFormOps[i];
+					scaleOp.Get(&scale);
+					break;
+				}
 			}
+
+			std::cerr << "position " << position << '\n';
+			gStage->Save();
 		}
-
-		std::cerr << "position " << position << '\n';
-
-		gStage->Save();
 	}
 
 	// Shut down Omniverse connection
