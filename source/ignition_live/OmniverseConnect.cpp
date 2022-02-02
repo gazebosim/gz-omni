@@ -63,10 +63,72 @@ namespace omniverse
   	}
   }
 
+  // This struct is context for the omniClientStatSubscribe() callbacks
+  struct StatSubscribeContext
+  {
+  	std::string* stageUrlPtr;
+  	pxr::UsdStageRefPtr stage;
+  };
+
+  // Called immediately due to the stat subscribe function
+  static void clientStatCallback(void* userData, OmniClientResult result, struct OmniClientListEntry const* entry) noexcept
+  {
+  	StatSubscribeContext* context = static_cast<StatSubscribeContext*>(userData);
+
+  	if (result != OmniClientResult::eOmniClientResult_Ok)
+  	{
+  		std::cout << "Error: stage not found: " << *context->stageUrlPtr << std::endl;
+  		exit(1);
+  	}
+  }
+
+
+  // Called due to the stat subscribe function when the file is updated
+  static void clientStatSubscribeCallback(void* userData, OmniClientResult result, OmniClientListEvent listEvent, struct OmniClientListEntry const* entry) noexcept
+  {
+  	StatSubscribeContext* context = static_cast<StatSubscribeContext*>(userData);
+
+  	switch (listEvent)
+  	{
+  	case eOmniClientListEvent_Updated:
+  	{
+  		std::cout << "Updated - user: " << entry->modifiedBy << " version: " << entry->version << std::endl;
+
+  		// Mark the last updated time
+  		// *context->lastUpdatedTimePtr = std::time(0);
+  		break;
+  	}
+  	case eOmniClientListEvent_Created:
+  		std::cout << "Created: " << entry->createdBy << std::endl;
+  		break;
+  	case eOmniClientListEvent_Deleted:
+  		std::cout << "Deleted: " << entry->createdBy << std::endl;
+  		exit(1);
+  		break;
+  	case eOmniClientListEvent_Locked:
+  		std::cout << "Locked: " << entry->createdBy << std::endl;
+  		break;
+  	default:
+  		break;
+
+  	}
+  }
+
   // Create a new connection for this model in Omniverse, returns the created stage URL
   std::string createOmniverseModel(const std::string& destinationPath, pxr::UsdStageRefPtr &_gstage)
   {
-  	std::string stageUrl = destinationPath + "/shapes.usd";
+  	std::string stageUrl = destinationPath;
+
+  	// Normalize the URL because the omniUsdLiveSetModeForUrl() interface keys off of the _normalized_ stage path
+  	std::string normalizedStageUrl;
+  	char *normalizedStageBuffer = nullptr;
+  	size_t bufferSize = 0;
+  	omniClientNormalizeUrl(stageUrl.c_str(), normalizedStageUrl.data(), &bufferSize);
+  	normalizedStageUrl.reserve(bufferSize);
+  	normalizedStageUrl += omniClientNormalizeUrl(stageUrl.c_str(), normalizedStageUrl.data(), &bufferSize);
+
+    std::cout << "Original Stage URL  : " << stageUrl << std::endl;
+  	std::cout << "Normalized Stage URL: " << normalizedStageUrl << std::endl;
 
   	// // Delete the old version of this file on Omniverse and wait for the operation to complete
   	// {
@@ -81,13 +143,30 @@ namespace omniverse
 
   	// Create this file in Omniverse cleanly
   	// gStage = pxr::UsdStage::CreateNew(stageUrl);
-  	_gstage = pxr::UsdStage::Open(stageUrl);
+    omniUsdLiveSetModeForUrl(normalizedStageUrl.c_str(), OmniUsdLiveMode::eOmniUsdLiveModeEnabled);
+  	_gstage = pxr::UsdStage::Open(normalizedStageUrl);
   	if (!_gstage)
   	{
   		failNotify("Failure to create model in Omniverse", stageUrl.c_str());
       exit(-1);
   		return std::string();
   	}
+
+    // Initialize "user data" for the stat subscribe callbacks
+  	StatSubscribeContext userData;
+  	userData.stageUrlPtr = &normalizedStageUrl;
+  	userData.stage = _gstage;
+
+    // Subscribe to stat callbacks for the live stage that we're watching
+  	// This isn't absolutely necessary since we have the USD Notices, but
+  	//  this would work well for texture or material reload
+  	OmniClientRequestId statSubscribeRequestId = omniClientStatSubscribe(
+  		stageUrl.c_str(),
+  		&userData,
+  		clientStatCallback,
+  		clientStatSubscribeCallback
+  	);
+
 
   	{
   		std::unique_lock<std::mutex> lk(gLogMutex);

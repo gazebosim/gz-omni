@@ -68,7 +68,7 @@ workspace "Samples"
 
     --local externalsDir = targetDepsDir..""
     local targetDir = "_build/"..platform.."/%{cfg.buildcfg}"
-    local ignitionInstallDir = "/home/ahcorde/.local/share/ov/pkg/connectsample-103.1.0/ignition/install"
+    local ignitionInstallDir = "/home/ahcorde/.local/share/ov/pkg/connectsample-ignition/ignition/install"
     -- os.getenv("IGNITION_INSTALL_DIR")
 
     -- adding dependencies
