@@ -1,3 +1,31 @@
+#
+
+To compile this you should modify `ignitionInstallDir` in premake5.lua with your path to ignition.
+
+Define the environment variable
+
+```bash
+export IGNITION_INSTALL_DIR=~/ignition_ws/install
+```
+
+Then you should run the script `bash build.sh`
+
+If you are compiling ignition from sources remember to:
+
+```bash
+source ~/ignition_ws/install/setup.bash
+```
+
+Launch `IssacSim` and activate the `live sync`
+
+![](live_sync.gif)
+
+And finally run:
+
+```bash
+bash run_ignition.bash
+```
+
 # Connect Samples for the Omniverse Client Library
 
 Currently there are two examples in the source folder:
@@ -40,7 +68,7 @@ Run the produced executable to see the result (note, the bash file is provided s
 ./run_sample.sh
 ```
 
-Note, for command line argument help, use `--help` 
+Note, for command line argument help, use `--help`
 ```bash
 ./run_sample.sh --help
 ```
@@ -57,7 +85,7 @@ Run the produced executable to see the result (note, the batch file is provided 
 run_sample.bat
 ```
 
-Note, for command line argument help, use `--help` 
+Note, for command line argument help, use `--help`
 ```bash
 run_sample.bat --help
 ```
