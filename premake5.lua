@@ -51,7 +51,7 @@ local targetDepsDir = "_build/target-deps"
 local currentAbsPath = get_abs_path(".");
 
 -- premake5.lua
-workspace "Samples"
+workspace "ignition-omni1"
 
     configurations { "debug", "release" }
     platforms { "x86_64" }
@@ -68,15 +68,16 @@ workspace "Samples"
 
     --local externalsDir = targetDepsDir..""
     local targetDir = "_build/"..platform.."/%{cfg.buildcfg}"
-    local ignitionInstallDir = "/home/ahcorde/.local/share/ov/pkg/connectsample-ignition/ignition/install"
-    -- os.getenv("IGNITION_INSTALL_DIR")
+
+    -- ignition deps
+    local ignitionInstallDir = "../../install"
+
 
     -- adding dependencies
     filter { "system:linux" }
         linkoptions { '-Wl,--disable-new-dtags -Wl,-rpath,../../../_build/target-deps/nv_usd/%{cfg.buildcfg}/lib:../../../_build/target-deps/omni_client_library/%{cfg.buildcfg}:../../../_build/target-deps/python/lib:' }
         includedirs { targetDepsDir.."/nv_usd/%{cfg.buildcfg}/include", targetDepsDir.."/omni_client_library/include", targetDepsDir.."/python/include/python3.7m",
                       ignitionInstallDir.."/include",
-                      ignitionInstallDir.."/include/ignition/sdformat12",
                       ignitionInstallDir.."/include/ignition/math6",
                       ignitionInstallDir.."/include/ignition/utils1",
                       ignitionInstallDir.."/include/ignition/transport11",
@@ -161,7 +162,7 @@ function sample(projectName, sourceFolder)
         links { "ar","arch","gf","js","kind","pcp","plug","sdf","tf","trace","usd","usdGeom", "vt","work","usdShade","usdLux","omniclient","python37","boost_python37-vc141-mt-x64-1_68" }
     filter { "system:linux" }
         links { "ar","arch","gf","js","kind","pcp","plug","sdf","tf","trace","usd","usdGeom", "vt","work","usdShade","usdLux","omniclient","python3.7m","boost_python37", "pthread", "stdc++fs",
-                "sdformat12", "ignition-math6", "ignition-utils1", "ignition-common4","ignition-transport11", "ignition-msgs8", "protobuf", "protoc", "tinyxml2" }
+                "ignition-math6", "ignition-utils1", "ignition-common4","ignition-transport11", "ignition-msgs8", "protobuf", "protoc", "tinyxml2" }
     filter {}
     location (workspaceDir.."/%{prj.name}")
     files { "source/"..sourceFolder.."/**.*" }
@@ -172,4 +173,4 @@ end
 
 -- sample("omnicli", "omnicli")
 -- sample("ignition", "ignition")
-sample("ignition_live", "ignition_live")
+sample("ignition-omni1", "ignition_live")

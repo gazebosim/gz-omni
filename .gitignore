@@ -1,3 +1,4 @@
 _build
 _compiler
 cross_compile
+__pycache__/
