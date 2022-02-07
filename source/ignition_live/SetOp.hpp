@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
-*/
+ */
 
 #ifndef SET_OP_HPP
 #define SET_OP_HPP
@@ -25,26 +25,26 @@ namespace ignition
 {
 namespace omniverse
 {
-  // A utility class to set the position, rotation, or scale values
-  class SetOp
+// A utility class to set the position, rotation, or scale values
+class SetOp
+{
+ public:
+  SetOp(pxr::UsdGeomXformable& xForm, pxr::UsdGeomXformOp& op,
+        pxr::UsdGeomXformOp::Type opType, const pxr::GfVec3d& value,
+        const pxr::UsdGeomXformOp::Precision precision)
   {
-  public:
-    SetOp(pxr::UsdGeomXformable& xForm, pxr::UsdGeomXformOp& op,
-          pxr::UsdGeomXformOp::Type opType, const pxr::GfVec3d& value,
-          const pxr::UsdGeomXformOp::Precision precision)
+    if (!op)
     {
-      if (!op)
-      {
-        op = xForm.AddXformOp(opType, precision);
-      }
-
-      if (op.GetPrecision() == pxr::UsdGeomXformOp::Precision::PrecisionFloat)
-        op.Set(pxr::GfVec3f(value));
-      else
-        op.Set(value);
+      op = xForm.AddXformOp(opType, precision);
     }
-  };
-}
-}
+
+    if (op.GetPrecision() == pxr::UsdGeomXformOp::Precision::PrecisionFloat)
+      op.Set(pxr::GfVec3f(value));
+    else
+      op.Set(value);
+  }
+};
+}  // namespace omniverse
+}  // namespace ignition
 
 #endif

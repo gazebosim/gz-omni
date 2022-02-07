@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
-*/
+ */
 #ifndef OMNIVERSE_IGNITION_MODEL_HPP
 #define OMNIVERSE_IGNITION_MODEL_HPP
 
@@ -29,18 +29,18 @@ namespace omniverse
 {
 class IgnitionModel
 {
-public:
-
+ public:
   IgnitionModel() = default;
 
-	ignition::math::Pose3d pose;
+  ignition::math::Pose3d pose;
   uint id;
   std::string name;
-	std::unordered_map<std::string, std::shared_ptr<IgnitionJoint>> ignitionJoints;
+  std::unordered_map<std::string, std::shared_ptr<IgnitionJoint>>
+      ignitionJoints;
   // std::vector<IgnitionVisual::SharedPtr> visuals;
 };
-}
-}
+}  // namespace omniverse
+}  // namespace ignition
 // std::vector<std::shared_ptr<IgnitionVisual>> visuals;
 
 #endif

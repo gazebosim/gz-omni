@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
-*/
+ */
 #ifndef OMNIVERSE_FUSDLAYERNOTICELISTENER_HPP
 #define OMNIVERSE_FUSDLAYERNOTICELISTENER_HPP
 
@@ -26,192 +26,200 @@ namespace ignition
 {
 namespace omniverse
 {
-	class FUSDLayerNoticeListener : public pxr::TfWeakBase
-	{
-	public:
-		FUSDLayerNoticeListener(
-			Scene::SharedPtr &_scene, const std::string &_worldName)
-	    : scene(_scene), worldName(_worldName)
-	  {
-	  }
+class FUSDLayerNoticeListener : public pxr::TfWeakBase
+{
+ public:
+  FUSDLayerNoticeListener(Scene::SharedPtr& _scene,
+                          const std::string& _worldName)
+      : scene(_scene), worldName(_worldName)
+  {
+  }
 
-		void HandleGlobalLayerReload(const pxr::SdfNotice::LayerDidReloadContent& n)
-		{
-			std::cout << "HandleGlobalLayerReload called" << std::endl;
-		}
+  void HandleGlobalLayerReload(const pxr::SdfNotice::LayerDidReloadContent& n)
+  {
+    std::cout << "HandleGlobalLayerReload called" << std::endl;
+  }
 
-		// Print some interesting info about the LayerNotice
-		void HandleRootOrSubLayerChange(const class pxr::SdfNotice::LayersDidChangeSentPerLayer& LayerNotice, const pxr::TfWeakPtr<pxr::SdfLayer>& Sender)
-		{
-			auto Iter = LayerNotice.find(Sender);
-			for (auto& ChangeEntry : Iter->second.GetEntryList())
-			{
-				const pxr::SdfPath &sdfPath = ChangeEntry.first;
+  // Print some interesting info about the LayerNotice
+  void HandleRootOrSubLayerChange(
+      const class pxr::SdfNotice::LayersDidChangeSentPerLayer& LayerNotice,
+      const pxr::TfWeakPtr<pxr::SdfLayer>& Sender)
+  {
+    auto Iter = LayerNotice.find(Sender);
+    for (auto& ChangeEntry : Iter->second.GetEntryList())
+    {
+      const pxr::SdfPath& sdfPath = ChangeEntry.first;
 
-				pxr::SdfPathVector vectorPath = sdfPath.GetPrefixes();
+      pxr::SdfPathVector vectorPath = sdfPath.GetPrefixes();
 
-				// for (auto &v : vectorPath)
-				// {
-				// 	std::cerr << "v " << v.GetName() << '\n';
-				// }
+      // for (auto &v : vectorPath)
+      // {
+      // 	std::cerr << "v " << v.GetName() << '\n';
+      // }
 
-				if (ChangeEntry.second.flags.didRemoveNonInertPrim)
-				{
-					std::unordered_map<std::string, IgnitionModel> models;
-					models = this->scene->GetModels();
-					ignition::msgs::Entity req;
+      if (ChangeEntry.second.flags.didRemoveNonInertPrim)
+      {
+        std::unordered_map<std::string, IgnitionModel> models;
+        models = this->scene->GetModels();
+        ignition::msgs::Entity req;
 
-					auto it = models.find(sdfPath.GetName());
-					if (it == models.end())
-					{
-						std::cerr << "Not able to remove [" << sdfPath.GetName() << "]" << '\n';
-					}
+        auto it = models.find(sdfPath.GetName());
+        if (it == models.end())
+        {
+          std::cerr << "Not able to remove [" << sdfPath.GetName() << "]"
+                    << '\n';
+        }
 
-					req.set_id(it->second.id);
-					req.set_name(it->second.name);
-					// req.set_name(ignition::msgs::Entity::Type::MODEL);
+        req.set_id(it->second.id);
+        req.set_name(it->second.name);
+        // req.set_name(ignition::msgs::Entity::Type::MODEL);
 
-				  ignition::msgs::Boolean rep;
-				  bool result;
-				  unsigned int timeout = 5000;
-				  bool executed = node.Request(
-			      "/world/" + this->worldName + "/remove", req, timeout, rep, result);
-					if (executed)
-				  {
-						if (rep.data())
-						{
-							std::cerr << "model was removed [" << sdfPath.GetName() << "]" << '\n';
-							this->scene->RemoveModel(sdfPath.GetName());
-						}
-						else
-						{
-							std::cerr << "Error model was not remnoved [" << sdfPath.GetName() << "]" << '\n';
-						}
-					}
-					// std::cout << " deleted " << sdfPath.GetName() << std::endl;
-				}
-				else if (ChangeEntry.second.flags.didAddNonInertPrim)
-				{
-					std::cout << " added" << sdfPath.GetName() << std::endl;
-				}
+        ignition::msgs::Boolean rep;
+        bool result;
+        unsigned int timeout = 5000;
+        bool executed = node.Request("/world/" + this->worldName + "/remove",
+                                     req, timeout, rep, result);
+        if (executed)
+        {
+          if (rep.data())
+          {
+            std::cerr << "model was removed [" << sdfPath.GetName() << "]"
+                      << '\n';
+            this->scene->RemoveModel(sdfPath.GetName());
+          }
+          else
+          {
+            std::cerr << "Error model was not remnoved [" << sdfPath.GetName()
+                      << "]" << '\n';
+          }
+        }
+        // std::cout << " deleted " << sdfPath.GetName() << std::endl;
+      }
+      else if (ChangeEntry.second.flags.didAddNonInertPrim)
+      {
+        std::cout << " added" << sdfPath.GetName() << std::endl;
+      }
 
-				for (auto Info : ChangeEntry.second.infoChanged)
-				{
-					if (Info.second.second.IsArrayValued() && Info.second.second.GetArraySize() > 4)
-					{
-						std::cout << " : " << Info.second.second.GetTypeName() << "[" << Info.second.second.GetArraySize() << "]" << std::endl;
-					}
-					else
-					{
-	          std::unordered_map<std::string, IgnitionModel> models;
-	          models = this->scene->GetModels();
+      for (auto Info : ChangeEntry.second.infoChanged)
+      {
+        if (Info.second.second.IsArrayValued() &&
+            Info.second.second.GetArraySize() > 4)
+        {
+          std::cout << " : " << Info.second.second.GetTypeName() << "["
+                    << Info.second.second.GetArraySize() << "]" << std::endl;
+        }
+        else
+        {
+          std::unordered_map<std::string, IgnitionModel> models;
+          models = this->scene->GetModels();
 
-						IgnitionModel ignitionModel;
-						auto it = models.find(vectorPath[1].GetName());
-						if (it == models.end())
-						{
-							return;
-						}
-						ignitionModel = it->second;
+          IgnitionModel ignitionModel;
+          auto it = models.find(vectorPath[1].GetName());
+          if (it == models.end())
+          {
+            return;
+          }
+          ignitionModel = it->second;
 
-						// Prepare the input parameters.
-						ignition::msgs::Pose req;
-						ignition::msgs::Boolean rep;
+          // Prepare the input parameters.
+          ignition::msgs::Pose req;
+          ignition::msgs::Boolean rep;
 
-						req.set_name(vectorPath[1].GetName());
-						req.set_id(ignitionModel.id);
+          req.set_name(vectorPath[1].GetName());
+          req.set_id(ignitionModel.id);
 
-						if (sdfPath.GetName() == "xformOp:translate")
-						{
-							// std::cerr << "Info.second.second.GetTypeName() " << Info.second.second.GetTypeName() << '\n';
-							pxr::GfVec3f translate;
-							if (Info.second.second.GetTypeName() == "GfVec3d")
-							{
-								pxr::GfVec3d translated = Info.second.second.Get<pxr::GfVec3d>();
-								translate[0] = translated[0];
-								translate[1] = translated[1];
-								translate[2] = translated[2];
-							}
-							else if (Info.second.second.GetTypeName() == "GfVec3f")
-							{
-								translate = Info.second.second.Get<pxr::GfVec3f>();
-							}
-							req.mutable_position()->set_x(translate[0]);
-							req.mutable_position()->set_y(translate[1]);
-							req.mutable_position()->set_z(translate[2]);
-						}
-						else
-						{
-							req.mutable_position()->set_x(ignitionModel.pose.Pos().X());
-							req.mutable_position()->set_y(ignitionModel.pose.Pos().Y());
-							req.mutable_position()->set_z(ignitionModel.pose.Pos().Z());
-						}
+          if (sdfPath.GetName() == "xformOp:translate")
+          {
+            // std::cerr << "Info.second.second.GetTypeName() " <<
+            // Info.second.second.GetTypeName() << '\n';
+            pxr::GfVec3f translate;
+            if (Info.second.second.GetTypeName() == "GfVec3d")
+            {
+              pxr::GfVec3d translated = Info.second.second.Get<pxr::GfVec3d>();
+              translate[0] = translated[0];
+              translate[1] = translated[1];
+              translate[2] = translated[2];
+            }
+            else if (Info.second.second.GetTypeName() == "GfVec3f")
+            {
+              translate = Info.second.second.Get<pxr::GfVec3f>();
+            }
+            req.mutable_position()->set_x(translate[0]);
+            req.mutable_position()->set_y(translate[1]);
+            req.mutable_position()->set_z(translate[2]);
+          }
+          else
+          {
+            req.mutable_position()->set_x(ignitionModel.pose.Pos().X());
+            req.mutable_position()->set_y(ignitionModel.pose.Pos().Y());
+            req.mutable_position()->set_z(ignitionModel.pose.Pos().Z());
+          }
 
-						if (sdfPath.GetName() == "xformOp:orientation")
-						{
-						}
-						else
-						{
-							req.mutable_orientation()->set_x(ignitionModel.pose.Rot().X());
-							req.mutable_orientation()->set_y(ignitionModel.pose.Rot().Y());
-							req.mutable_orientation()->set_z(ignitionModel.pose.Rot().Z());
-							req.mutable_orientation()->set_w(ignitionModel.pose.Rot().W());
-						}
+          if (sdfPath.GetName() == "xformOp:orientation")
+          {
+          }
+          else
+          {
+            req.mutable_orientation()->set_x(ignitionModel.pose.Rot().X());
+            req.mutable_orientation()->set_y(ignitionModel.pose.Rot().Y());
+            req.mutable_orientation()->set_z(ignitionModel.pose.Rot().Z());
+            req.mutable_orientation()->set_w(ignitionModel.pose.Rot().W());
+          }
 
-						std::cout << " : " << Info.second.first;
-						std::cout << " -> " << Info.second.second << std::endl;
+          std::cout << " : " << Info.second.first;
+          std::cout << " -> " << Info.second.second << std::endl;
 
-						{
-							// pool.AddWork([&] ()
-				      // {
-								bool result;
-								unsigned int timeout = 5000;
-								bool executed = node.Request(
-									"/world/" + worldName + "/set_pose", req, timeout, rep, result);
-								if (executed)
-								{
-									if (rep.data())
-									{
-										std::cerr << "The position was setted fine" << '\n';
-									}
-									else
-									{
-										std::cerr << "Error! The position was not setted fine" << '\n';
-									}
-								}
-				      // });
-							// bool result;
-							// unsigned int timeout = 500;
-							// bool executed = this->node.Request(
-							// 	"/world/" + worldName + "/set_pose", req, timeout, rep, result);
+          {
+            // pool.AddWork([&] ()
+            // {
+            bool result;
+            unsigned int timeout = 5000;
+            bool executed = node.Request("/world/" + worldName + "/set_pose",
+                                         req, timeout, rep, result);
+            if (executed)
+            {
+              if (rep.data())
+              {
+                std::cerr << "The position was setted fine" << '\n';
+              }
+              else
+              {
+                std::cerr << "Error! The position was not setted fine" << '\n';
+              }
+            }
+            // });
+            // bool result;
+            // unsigned int timeout = 500;
+            // bool executed = this->node.Request(
+            // 	"/world/" + worldName + "/set_pose", req, timeout, rep, result);
 
-							// this->scene->SetModelPose(vectorPath[1].GetName(),
-							// 	ignition::math::Pose3d(
-							// 		ignition::math::Vector3d(
-							// 			req.mutable_position()->x(),
-							// 			req.mutable_position()->y(),
-							// 			req.mutable_position()->z()
-							// 		),
-							// 		ignition::math::Quaterniond(
-							// 			req.mutable_orientation()->w(),
-							// 			req.mutable_orientation()->x(),
-							// 			req.mutable_orientation()->y(),
-							// 			req.mutable_orientation()->z())));
-							// if (executed)
-							// {
-							// 	std::cerr << "rep " << rep.data() << '\n';
-							// }
-						}
-					}
-				}
-			}
-		}
-		Scene::SharedPtr scene;
-		std::string worldName;
-		ignition::transport::Node node;
-		ignition::common::WorkerPool pool;
-	};
-}
-}
+            // this->scene->SetModelPose(vectorPath[1].GetName(),
+            // 	ignition::math::Pose3d(
+            // 		ignition::math::Vector3d(
+            // 			req.mutable_position()->x(),
+            // 			req.mutable_position()->y(),
+            // 			req.mutable_position()->z()
+            // 		),
+            // 		ignition::math::Quaterniond(
+            // 			req.mutable_orientation()->w(),
+            // 			req.mutable_orientation()->x(),
+            // 			req.mutable_orientation()->y(),
+            // 			req.mutable_orientation()->z())));
+            // if (executed)
+            // {
+            // 	std::cerr << "rep " << rep.data() << '\n';
+            // }
+          }
+        }
+      }
+    }
+  }
+  Scene::SharedPtr scene;
+  std::string worldName;
+  ignition::transport::Node node;
+  ignition::common::WorkerPool pool;
+};
+}  // namespace omniverse
+}  // namespace ignition
 
 #endif

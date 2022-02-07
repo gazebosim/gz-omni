@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
-*/
+ */
 #ifndef OMNIVERSE_IGNITION_JOINT_HPP
 #define OMNIVERSE_IGNITION_JOINT_HPP
 
@@ -25,10 +25,10 @@ namespace omniverse
 {
 class IgnitionJoint
 {
-public:
-	ignition::math::Pose3d pose;
-	float position;
+ public:
+  ignition::math::Pose3d pose;
+  float position;
 };
-}
-}
+}  // namespace omniverse
+}  // namespace ignition
 #endif

@@ -13,8 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
-*/
-
+ */
 
 #include "IgnitionGeometry.hpp"
 
@@ -29,10 +28,8 @@ namespace ignition
 namespace omniverse
 {
 IgnitionGeometry::SharedPtr IgnitionGeometry::Make(
-  unsigned int _id,
-  const std::string& _name,
-  Scene::SharedPtr &_scene,
-  const ignition::msgs::Geometry::Type &_type)
+    unsigned int _id, const std::string &_name, Scene::SharedPtr &_scene,
+    const ignition::msgs::Geometry::Type &_type)
 {
   auto sp = std::shared_ptr<IgnitionGeometry>(new IgnitionGeometry());
   sp->id = _id;
@@ -42,9 +39,11 @@ IgnitionGeometry::SharedPtr IgnitionGeometry::Make(
   return sp;
 }
 
-std::string IgnitionGeometry::GeometryTypeToString(const ignition::msgs::Geometry::Type &_type)
+std::string IgnitionGeometry::GeometryTypeToString(
+    const ignition::msgs::Geometry::Type &_type)
 {
-  switch (_type) {
+  switch (_type)
+  {
     case ignition::msgs::Geometry::BOX:
       return "Box";
     case ignition::msgs::Geometry::CONE:
@@ -69,10 +68,9 @@ ignition::msgs::Geometry::Type IgnitionGeometry::Type() const
   return this->type;
 }
 
-bool IgnitionGeometry::AttachToVisual(
-  const ignition::msgs::Geometry &_geom,
-  const std::string &_path,
-  const pxr::UsdShadeMaterial &_material)
+bool IgnitionGeometry::AttachToVisual(const ignition::msgs::Geometry &_geom,
+                                      const std::string &_path,
+                                      const pxr::UsdShadeMaterial &_material)
 {
   // auto path = ovVisual->Xformable().GetPath().AppendPath(
   //     pxr::SdfPath(NameToSdfPath(this->Name())));
@@ -82,7 +80,7 @@ bool IgnitionGeometry::AttachToVisual(
   {
     case ignition::msgs::Geometry::BOX:
     {
-      auto usdCube = this->scene->createCube(sdfGeometryPath);
+      auto usdCube = this->scene->CreateCube(sdfGeometryPath);
       this->gprim = pxr::UsdGeomGprim(usdCube);
       usdCube.CreateSizeAttr().Set(1.0);
       pxr::GfVec3f endPoint(0.5);
@@ -91,18 +89,17 @@ bool IgnitionGeometry::AttachToVisual(
       extentBounds.push_back(endPoint);
       usdCube.CreateExtentAttr().Set(extentBounds);
       pxr::UsdGeomXformCommonAPI cubeXformAPI(usdCube);
-      cubeXformAPI.SetScale(pxr::GfVec3f(
-            _geom.box().size().x(),
-            _geom.box().size().y(),
-            _geom.box().size().z()));
-			pxr::UsdShadeMaterialBindingAPI(usdCube).Bind(_material);
+      cubeXformAPI.SetScale(pxr::GfVec3f(_geom.box().size().x(),
+                                         _geom.box().size().y(),
+                                         _geom.box().size().z()));
+      pxr::UsdShadeMaterialBindingAPI(usdCube).Bind(_material);
       break;
     }
     // TODO: Support cone
     // case ignition::msgs::Geometry::CONE:
     case ignition::msgs::Geometry::CYLINDER:
     {
-      auto usdCylinder = this->scene->createCylinder(sdfGeometryPath);
+      auto usdCylinder = this->scene->CreateCylinder(sdfGeometryPath);
       this->gprim = pxr::UsdGeomGprim(usdCylinder);
       double radius = _geom.cylinder().radius();
       double length = _geom.cylinder().length();
@@ -120,7 +117,7 @@ bool IgnitionGeometry::AttachToVisual(
     }
     case ignition::msgs::Geometry::PLANE:
     {
-      auto usdCube = this->scene->createCube(sdfGeometryPath);
+      auto usdCube = this->scene->CreateCube(sdfGeometryPath);
       this->gprim = pxr::UsdGeomGprim(usdCube);
       usdCube.CreateSizeAttr().Set(1.0);
       pxr::GfVec3f endPoint(0.5);
@@ -130,27 +127,26 @@ bool IgnitionGeometry::AttachToVisual(
       usdCube.CreateExtentAttr().Set(extentBounds);
 
       pxr::UsdGeomXformCommonAPI cubeXformAPI(usdCube);
-      cubeXformAPI.SetScale(pxr::GfVec3f(
-            _geom.plane().size().x(),
-            _geom.plane().size().y(),
-            0.25));
+      cubeXformAPI.SetScale(pxr::GfVec3f(_geom.plane().size().x(),
+                                         _geom.plane().size().y(), 0.25));
       pxr::UsdShadeMaterialBindingAPI(usdCube).Bind(_material);
       break;
     }
     case ignition::msgs::Geometry::ELLIPSOID:
     {
-      auto usdEllipsoid = this->scene->createSphere(sdfGeometryPath);
+      auto usdEllipsoid = this->scene->CreateSphere(sdfGeometryPath);
       this->gprim = pxr::UsdGeomGprim(usdEllipsoid);
-      const auto maxRadii = ignition::math::Vector3d(
-        _geom.ellipsoid().radii().x(),
-        _geom.ellipsoid().radii().y(),
-        _geom.ellipsoid().radii().z()).Max();
+      const auto maxRadii =
+          ignition::math::Vector3d(_geom.ellipsoid().radii().x(),
+                                   _geom.ellipsoid().radii().y(),
+                                   _geom.ellipsoid().radii().z())
+              .Max();
       usdEllipsoid.CreateRadiusAttr().Set(0.5);
       pxr::UsdGeomXformCommonAPI xform(usdEllipsoid);
       xform.SetScale(pxr::GfVec3f{
-        static_cast<float>(_geom.ellipsoid().radii().x() / maxRadii),
-        static_cast<float>(_geom.ellipsoid().radii().y() / maxRadii),
-        static_cast<float>(_geom.ellipsoid().radii().z() / maxRadii),
+          static_cast<float>(_geom.ellipsoid().radii().x() / maxRadii),
+          static_cast<float>(_geom.ellipsoid().radii().y() / maxRadii),
+          static_cast<float>(_geom.ellipsoid().radii().z() / maxRadii),
       });
       // extents is the bounds before any transformation
       pxr::VtArray<pxr::GfVec3f> extentBounds;
@@ -162,7 +158,7 @@ bool IgnitionGeometry::AttachToVisual(
     }
     case ignition::msgs::Geometry::SPHERE:
     {
-      auto usdSphere = this->scene->createSphere(sdfGeometryPath);
+      auto usdSphere = this->scene->CreateSphere(sdfGeometryPath);
       this->gprim = pxr::UsdGeomGprim(usdSphere);
       double radius = _geom.sphere().radius();
       usdSphere.CreateRadiusAttr().Set(radius);
@@ -175,7 +171,7 @@ bool IgnitionGeometry::AttachToVisual(
     }
     case ignition::msgs::Geometry::CAPSULE:
     {
-      auto usdCapsule = this->scene->createCapsule(sdfGeometryPath);
+      auto usdCapsule = this->scene->CreateCapsule(sdfGeometryPath);
       this->gprim = pxr::UsdGeomGprim(usdCapsule);
       double radius = _geom.capsule().radius();
       double length = _geom.capsule().length();
@@ -192,10 +188,11 @@ bool IgnitionGeometry::AttachToVisual(
     }
     default:
       std::cerr << "Failed to attach geometry (unsuported geometry type '"
-                << this->GeometryTypeToString(this->Type()) << "')" << std::endl;
+                << this->GeometryTypeToString(this->Type()) << "')"
+                << std::endl;
       return false;
   }
   return true;
 }
-}
-}
+}  // namespace omniverse
+}  // namespace ignition

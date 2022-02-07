@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
-*/
+ */
 
 #ifndef OMNIVERSE_CONNECT_HPP
 #define OMNIVERSE_CONNECT_HPP
@@ -32,17 +32,20 @@ namespace ignition
 {
 namespace omniverse
 {
-  // Stage URL really only needs to contain the server in the URL.  eg. omniverse://ov-prod
-  void printConnectedUsername(const std::string& stageUrl);
+// Stage URL really only needs to contain the server in the URL.  eg.
+// omniverse://ov-prod
+void PrintConnectedUsername(const std::string& stageUrl);
 
-  // Create a new connection for this model in Omniverse, returns the created stage URL
-  std::string createOmniverseModel(const std::string& destinationPath, pxr::UsdStageRefPtr &_gstage);
+// Create a new connection for this model in Omniverse, returns the created
+// stage URL
+std::string CreateOmniverseModel(const std::string& destinationPath,
+                                 pxr::UsdStageRefPtr& _gstage);
 
-  void checkpointFile(const char* stageUrl, const char* comment);
+void CheckpointFile(const char* stageUrl, const char* comment);
 
-  // Startup Omniverse
-  bool startOmniverse();
-}
-}
+// Startup Omniverse
+bool StartOmniverse();
+}  // namespace omniverse
+}  // namespace ignition
 
 #endif

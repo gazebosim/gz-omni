@@ -46,33 +46,31 @@ namespace omniverse
 class Scene : public std::enable_shared_from_this<Scene>
 {
  public:
+  using SharedPtr = std::shared_ptr<Scene>;
 
-   using SharedPtr = std::shared_ptr<Scene>;
+  virtual std::unordered_map<std::string, IgnitionModel> GetModels() = 0;
+  virtual bool SetModelPose(const std::string &_name,
+                            const ignition::math::Pose3d &_pose) = 0;
 
-   virtual std::unordered_map<std::string, IgnitionModel> GetModels() = 0;
-   virtual bool SetModelPose(
-     const std::string &_name,
-     const ignition::math::Pose3d &_pose) = 0;
+  virtual bool RemoveModel(const std::string &_name) = 0;
 
-   virtual bool RemoveModel(const std::string &_name) = 0;
+  virtual pxr::UsdPrim GetPrimAtPath(const std::string &_path) = 0;
+  virtual void SaveStage() = 0;
 
-   virtual pxr::UsdPrim GetPrimAtPath(const std::string &_path) = 0;
-   virtual void SaveStage() = 0;
+  virtual pxr::UsdGeomCapsule CreateCapsule(const std::string &_name) = 0;
+  virtual pxr::UsdGeomSphere CreateSphere(const std::string &_name) = 0;
+  virtual pxr::UsdGeomCube CreateCube(const std::string &_name) = 0;
+  virtual pxr::UsdGeomSphere CreateEllipsoid(const std::string &_name) = 0;
+  virtual pxr::UsdGeomCylinder CreateCylinder(const std::string &_name) = 0;
+  virtual pxr::UsdGeomXform CreateXform(const std::string &_name) = 0;
+  virtual pxr::UsdShadeMaterial CreateMaterial(const std::string &_name) = 0;
+  virtual pxr::UsdShadeShader CreateShader(const std::string &_name) = 0;
 
-   virtual pxr::UsdGeomCapsule createCapsule(const std::string &_name) = 0;
-   virtual pxr::UsdGeomSphere createSphere(const std::string &_name) = 0;
-   virtual pxr::UsdGeomCube createCube(const std::string &_name) = 0;
-   virtual pxr::UsdGeomSphere createEllipsoid(const std::string &_name) = 0;
-   virtual pxr::UsdGeomCylinder createCylinder(const std::string &_name) = 0;
-   virtual pxr::UsdGeomXform createXform(const std::string &_name) = 0;
-   virtual pxr::UsdShadeMaterial createMaterial(const std::string &_name) = 0;
-   virtual pxr::UsdShadeShader createShader(const std::string &_name) = 0;
-
-   // virtual pxr::UsdStageRefPtr Stage() const = 0;
-protected:
+  // virtual pxr::UsdStageRefPtr Stage() const = 0;
+ protected:
   Scene() = default;
 };
-}
-}
+}  // namespace omniverse
+}  // namespace ignition
 
 #endif

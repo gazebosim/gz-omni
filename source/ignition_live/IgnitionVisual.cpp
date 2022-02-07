@@ -13,8 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
-*/
-
+ */
 
 #include "IgnitionVisual.hpp"
 #include "Material.hpp"
@@ -25,10 +24,9 @@ namespace ignition
 {
 namespace omniverse
 {
-IgnitionVisual::SharedPtr IgnitionVisual::Make(
-    unsigned int _id,
-    const std::string& _name,
-    Scene::SharedPtr &_scene)
+IgnitionVisual::SharedPtr IgnitionVisual::Make(unsigned int _id,
+                                               const std::string &_name,
+                                               Scene::SharedPtr &_scene)
 {
   auto sp = std::shared_ptr<IgnitionVisual>(new IgnitionVisual());
   sp->id = _id;
@@ -42,31 +40,26 @@ std::vector<IgnitionGeometry::SharedPtr> IgnitionVisual::Geometries() const
   return this->geomStore;
 }
 
-bool IgnitionVisual::AttachGeometry(
-  const ignition::msgs::Visual &_visual,
-  const std::string &_path)
+bool IgnitionVisual::AttachGeometry(const ignition::msgs::Visual &_visual,
+                                    const std::string &_path)
 {
   std::string sdfVisualPath = _path + "/" + _visual.name();
-  auto usdVisualXform = this->scene->createXform(sdfVisualPath);
+  auto usdVisualXform = this->scene->CreateXform(sdfVisualPath);
 
   IgnitionGeometry::SharedPtr ignitionGeometry = IgnitionGeometry::Make(
-    _visual.id(),
-    _visual.name(),
-    this->scene,
-    _visual.geometry().type());
+      _visual.id(), _visual.name(), this->scene, _visual.geometry().type());
 
-  auto material = ignition::omniverse::parseMaterial(_visual, this->scene);
+  auto material = ignition::omniverse::ParseMaterial(_visual, this->scene);
 
-  return ignitionGeometry->AttachToVisual(
-    _visual.geometry(), sdfVisualPath, material);
+  return ignitionGeometry->AttachToVisual(_visual.geometry(), sdfVisualPath,
+                                          material);
 }
 
-bool IgnitionVisual::DetachGeometry(
-  const ignition::msgs::Visual &_visual,
-  const std::string &_path)
+bool IgnitionVisual::DetachGeometry(const ignition::msgs::Visual &_visual,
+                                    const std::string &_path)
 {
   // this->scene->Stage()->RemovePrim(pxr::SdfPath(_path));
   return true;
 }
-}
-}
+}  // namespace omniverse
+}  // namespace ignition

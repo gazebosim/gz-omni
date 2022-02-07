@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
-*/
+ */
 #ifndef OMNIVERSE_IGNITION_MATERIAL_HPP
 #define OMNIVERSE_IGNITION_MATERIAL_HPP
 
@@ -29,10 +29,9 @@ namespace ignition
 {
 namespace omniverse
 {
-  pxr::UsdShadeMaterial parseMaterial(
-    const ignition::msgs::Visual &_visualMsg,
-    Scene::SharedPtr &_scene);
+pxr::UsdShadeMaterial ParseMaterial(const ignition::msgs::Visual &_visualMsg,
+                                    Scene::SharedPtr &_scene);
 }
-}
+}  // namespace ignition
 
 #endif

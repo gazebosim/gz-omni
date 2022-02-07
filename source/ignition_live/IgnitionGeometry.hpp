@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
-*/
+ */
 #ifndef OMNIVERSE_IGNITION_GEOMETRY_HPP
 #define OMNIVERSE_IGNITION_GEOMETRY_HPP
 
@@ -36,21 +36,19 @@ namespace omniverse
 {
 class IgnitionGeometry
 {
-public:
- using SharedPtr = std::shared_ptr<IgnitionGeometry>;
+ public:
+  using SharedPtr = std::shared_ptr<IgnitionGeometry>;
 
- static SharedPtr Make(unsigned int _id,
-                       const std::string& _name,
-                       Scene::SharedPtr &_scene,
-                       const ignition::msgs::Geometry::Type &_type);
+  static SharedPtr Make(unsigned int _id, const std::string &_name,
+                        Scene::SharedPtr &_scene,
+                        const ignition::msgs::Geometry::Type &_type);
 
   static std::string GeometryTypeToString(
-    const ignition::msgs::Geometry::Type &_type);
+      const ignition::msgs::Geometry::Type &_type);
 
-  bool AttachToVisual(
-    const ignition::msgs::Geometry &_geom,
-    const std::string &_path,
-    const pxr::UsdShadeMaterial &_material);
+  bool AttachToVisual(const ignition::msgs::Geometry &_geom,
+                      const std::string &_path,
+                      const pxr::UsdShadeMaterial &_material);
 
   ignition::msgs::Geometry::Type Type() const;
 
@@ -60,7 +58,7 @@ public:
   pxr::UsdGeomGprim gprim;
   Scene::SharedPtr scene;
 };
-}
-}
+}  // namespace omniverse
+}  // namespace ignition
 
 #endif

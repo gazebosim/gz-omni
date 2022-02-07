@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
-*/
+ */
 #ifndef OMNIVERSE_IGNITION_VISUAL_HPP
 #define OMNIVERSE_IGNITION_VISUAL_HPP
 
@@ -33,31 +33,27 @@ namespace omniverse
 {
 class IgnitionVisual
 {
-public:
- using SharedPtr = std::shared_ptr<IgnitionVisual>;
+ public:
+  using SharedPtr = std::shared_ptr<IgnitionVisual>;
 
- static SharedPtr Make(
-     unsigned int _id,
-     const std::string& _name,
-     Scene::SharedPtr &_scene);
+  static SharedPtr Make(unsigned int _id, const std::string &_name,
+                        Scene::SharedPtr &_scene);
 
- std::vector<IgnitionGeometry::SharedPtr> Geometries() const;
+  std::vector<IgnitionGeometry::SharedPtr> Geometries() const;
 
- bool AttachGeometry(
-   const ignition::msgs::Visual &_visual,
-   const std::string &_path);
+  bool AttachGeometry(const ignition::msgs::Visual &_visual,
+                      const std::string &_path);
 
- bool DetachGeometry(
-   const ignition::msgs::Visual &_visual,
-   const std::string &_path);
+  bool DetachGeometry(const ignition::msgs::Visual &_visual,
+                      const std::string &_path);
 
-private:
- std::vector<IgnitionGeometry::SharedPtr> geomStore;
- uint id;
- std::string name;
- Scene::SharedPtr scene;
+ private:
+  std::vector<IgnitionGeometry::SharedPtr> geomStore;
+  uint id;
+  std::string name;
+  Scene::SharedPtr scene;
 };
-}
-}
+}  // namespace omniverse
+}  // namespace ignition
 
 #endif
