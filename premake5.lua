@@ -162,7 +162,7 @@ function sample(projectName, sourceFolder)
         links { "ar","arch","gf","js","kind","pcp","plug","sdf","tf","trace","usd","usdGeom", "vt","work","usdShade","usdLux","omniclient","python37","boost_python37-vc141-mt-x64-1_68" }
     filter { "system:linux" }
         links { "ar","arch","gf","js","kind","pcp","plug","sdf","tf","trace","usd","usdGeom", "vt","work","usdShade","usdLux","omniclient","python3.7m","boost_python37", "pthread", "stdc++fs",
-                "ignition-math6", "ignition-utils1", "ignition-common4","ignition-transport11", "ignition-msgs8", "protobuf", "protoc", "tinyxml2" }
+                "ignition-math6", "ignition-utils1", "ignition-common4","ignition-transport11", "ignition-msgs8", "protobuf", "protoc" }
     filter {}
     location (workspaceDir.."/%{prj.name}")
     files { "source/"..sourceFolder.."/**.*" }
