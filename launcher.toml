@@ -1,10 +1,10 @@
 #displayed application name
-name = "Connect Sample"
+name = "Ignition Omni Connector"
 #displayed before application name in launcher
 productArea = "Omniverse"
 
 #unique identifier for component, all lower case, persists between versions
-slug = "connectsample"
+slug = "ignitionomni"
 
 ## install and launch instructions by environment
 # Windows
