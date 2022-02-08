@@ -159,7 +159,7 @@ class FUSDNoticeListener : public pxr::TfWeakBase
   {
     for (const pxr::SdfPath &Path : ObjectsChanged.GetResyncedPaths())
     {
-      std::cout << "Resynced Path: " << Path.GetText() << std::endl;
+      ignmsg << "Resynced Path: " << Path.GetText() << std::endl;
       auto modelUSD = this->scene->GetPrimAtPath(std::string(Path.GetText()));
       // if (modelUSD)
       // {
@@ -220,7 +220,7 @@ class FUSDNoticeListener : public pxr::TfWeakBase
     }
     for (const pxr::SdfPath &Path : ObjectsChanged.GetChangedInfoOnlyPaths())
     {
-      std::cout << "Changed Info Path: " << Path.GetText() << std::endl;
+      ignmsg << "Changed Info Path: " << Path.GetText() << std::endl;
     }
   }
   Scene::SharedPtr scene;

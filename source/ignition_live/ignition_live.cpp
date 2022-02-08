@@ -17,9 +17,10 @@
 
 #include <string>
 
-#include <pxr/usd/usd/stage.h>
 #include <ignition/common/Console.hh>
+#include <ignition/utils/cli.hh>
 
+#include <pxr/usd/usd/stage.h>
 #include <pxr/usd/sdf/path.h>
 #include <pxr/usd/usd/prim.h>
 #include <pxr/usd/usdGeom/xformCommonAPI.h>
@@ -34,29 +35,44 @@
 // The program expects one argument, a path to a USD file
 int main(int argc, char* argv[])
 {
+  CLI::App app("Ignition omniverse connector");
+
+  std::string destinationPath;
+  // clang-format off
+  app.add_option("-p,--path", destinationPath,
+                 "Location of the omniverse stage. e.g. \"omniverse://localhost/Users/ignition/stage.usd\"")
+      ->required();
+  // clang-format on
+
+  CLI11_PARSE(app, argc, argv);
+
   pxr::UsdStageRefPtr gStage;
   ignition::common::Console::SetVerbosity(4);
 
   std::string worldName = "shapes";
 
-  std::string filename = argv[1];
-
-  // TODO(ahcorde): This should be an input argument
-  std::string destinationPath =
-      "omniverse://localhost/Users/ignition/" + filename;
-
   // Connect with omniverse
   if (!ignition::omniverse::StartOmniverse())
   {
-    std::cerr << "Not able to start Omniverse" << '\n';
+    ignerr << "Not able to start Omniverse" << std::endl;
     return -1;
   }
 
   // Open the USD model in Omniverse
   // TODO(ahcorde): For now, we can modify a preload a world in IssacSim but we
   // cannot create the object
-  const std::string stageUrl =
-      ignition::omniverse::CreateOmniverseModel(destinationPath, gStage);
+  const std::string stageUrl = [&]()
+  {
+    auto result = ignition::omniverse::CreateOmniverseModel(destinationPath);
+    if (!result)
+    {
+      ignerr << result.Error() << std::endl;
+      exit(-1);
+    }
+    return result.Value();
+  }();
+  gStage = pxr::UsdStage::Open(stageUrl);
+  ignmsg << "Opened stage [" << stageUrl << "]" << std::endl;
 
   ignition::omniverse::PrintConnectedUsername(stageUrl);
 
@@ -131,13 +147,13 @@ int main(int argc, char* argv[])
           {
             for (auto& joint : model.second.ignitionJoints)
             {
-              std::cerr << "joint.first " << joint.first << '\n';
+              igndbg << "joint.first " << joint.first << '\n';
               auto jointUSD =
                   scene->GetPrimAtPath("/" + worldName + joint.first);
               // auto driveJoint = pxr::UsdPhysicsDriveAPI(jointUSD);
               if (!jointUSD)
               {
-                std::cerr << "no joint" << '\n';
+                igndbg << "no joint" << '\n';
               }
               else
               {
@@ -149,7 +165,7 @@ int main(int argc, char* argv[])
                   attrTargetPos.Get(&pos);
                   attrTargetPos.Set(
                       pxr::VtValue(joint.second->position * 180.0f / 3.1416f));
-                  std::cerr << joint.first << " pos :" << pos << '\n';
+                  igndbg << joint.first << " pos :" << pos << '\n';
                 }
               }
             }
@@ -159,8 +175,8 @@ int main(int argc, char* argv[])
       }
       else
       {
-        std::cerr << "Not able to find path "
-                  << "/" + worldName + "/" + model.first << '\n';
+        ignerr << "Not able to find path "
+               << "/" + worldName + "/" + model.first << '\n';
       }
     }
   }

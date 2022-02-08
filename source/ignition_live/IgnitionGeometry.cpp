@@ -17,6 +17,8 @@
 
 #include "IgnitionGeometry.hpp"
 
+#include <ignition/common/Console.hh>
+
 #include <pxr/usd/usdGeom/sphere.h>
 #include <pxr/usd/usdGeom/capsule.h>
 #include <pxr/usd/usdGeom/cube.h>
@@ -187,9 +189,8 @@ bool IgnitionGeometry::AttachToVisual(const ignition::msgs::Geometry &_geom,
       break;
     }
     default:
-      std::cerr << "Failed to attach geometry (unsuported geometry type '"
-                << this->GeometryTypeToString(this->Type()) << "')"
-                << std::endl;
+      ignerr << "Failed to attach geometry (unsuported geometry type '"
+             << this->GeometryTypeToString(this->Type()) << "')" << std::endl;
       return false;
   }
   return true;

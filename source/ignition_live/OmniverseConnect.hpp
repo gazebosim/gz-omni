@@ -18,34 +18,37 @@
 #ifndef OMNIVERSE_CONNECT_HPP
 #define OMNIVERSE_CONNECT_HPP
 
+#include "Error.h"
+
+#include <pxr/usd/usd/stage.h>
+
+#include <OmniClient.h>
+#include <OmniUsdLive.h>
+
 #include <string>
-
-#include "pxr/usd/usd/stage.h"
-
-#include "OmniClient.h"
-#include "OmniUsdLive.h"
 
 // Global for making the logging reasonable
 static std::mutex gLogMutex;
 
-namespace ignition
+namespace ignition::omniverse
 {
-namespace omniverse
-{
+static std::string normalizedStageUrl;
+
 // Stage URL really only needs to contain the server in the URL.  eg.
 // omniverse://ov-prod
 void PrintConnectedUsername(const std::string& stageUrl);
 
-// Create a new connection for this model in Omniverse, returns the created
-// stage URL
-std::string CreateOmniverseModel(const std::string& destinationPath,
-                                 pxr::UsdStageRefPtr& _gstage);
+/// \brief Creates a new ignition stage in omniverse, deleting any
+/// existing stage in the path.
+/// \details The new stage is authored with ignition metadata.
+/// \return The url of the stage
+MaybeError<std::string> CreateOmniverseModel(
+    const std::string& destinationPath);
 
 void CheckpointFile(const char* stageUrl, const char* comment);
 
 // Startup Omniverse
 bool StartOmniverse();
-}  // namespace omniverse
-}  // namespace ignition
+}  // namespace ignition::omniverse
 
 #endif

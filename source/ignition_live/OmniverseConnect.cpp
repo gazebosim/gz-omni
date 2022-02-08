@@ -19,6 +19,8 @@
 #include <mutex>
 #include <string>
 
+#include <ignition/common/Console.hh>
+
 #include <pxr/base/gf/vec3f.h>
 #include "pxr/usd/usd/notice.h"
 #include "pxr/usd/usd/stage.h"
@@ -33,16 +35,6 @@ namespace ignition
 {
 namespace omniverse
 {
-void failNotify(const char* msg, const char* detail = nullptr, ...)
-{
-  std::unique_lock<std::mutex> lk(gLogMutex);
-
-  fprintf(stderr, "%s\n", msg);
-  if (detail != nullptr)
-  {
-    fprintf(stderr, "%s\n", detail);
-  }
-}
 
 // Stage URL really only needs to contain the server in the URL.  eg.
 // omniverse://ov-prod
@@ -63,7 +55,7 @@ void PrintConnectedUsername(const std::string& stageUrl)
       }));
   {
     std::unique_lock<std::mutex> lk(gLogMutex);
-    std::cout << "Connected username: " << userName << std::endl;
+    ignmsg << "Connected username: " << userName << std::endl;
   }
 }
 
@@ -82,8 +74,7 @@ static void clientStatCallback(void* userData, OmniClientResult result,
 
   if (result != OmniClientResult::eOmniClientResult_Ok)
   {
-    std::cout << "Error: stage not found: " << *context->stageUrlPtr
-              << std::endl;
+    ignerr << "stage not found: " << *context->stageUrlPtr << std::endl;
     exit(1);
   }
 }
@@ -99,32 +90,29 @@ static void clientStatSubscribeCallback(
   {
     case eOmniClientListEvent_Updated:
     {
-      std::cout << "Updated - user: " << entry->modifiedBy
-                << " version: " << entry->version << std::endl;
+      ignmsg << "Updated - user: " << entry->modifiedBy
+             << " version: " << entry->version << std::endl;
 
       // Mark the last updated time
       // *context->lastUpdatedTimePtr = std::time(0);
       break;
     }
     case eOmniClientListEvent_Created:
-      std::cout << "Created: " << entry->createdBy << std::endl;
+      ignmsg << "Created: " << entry->createdBy << std::endl;
       break;
     case eOmniClientListEvent_Deleted:
-      std::cout << "Deleted: " << entry->createdBy << std::endl;
+      ignmsg << "Deleted: " << entry->createdBy << std::endl;
       exit(1);
       break;
     case eOmniClientListEvent_Locked:
-      std::cout << "Locked: " << entry->createdBy << std::endl;
+      ignmsg << "Locked: " << entry->createdBy << std::endl;
       break;
     default:
       break;
   }
 }
 
-// Create a new connection for this model in Omniverse, returns the created
-// stage URL
-std::string CreateOmniverseModel(const std::string& destinationPath,
-                                 pxr::UsdStageRefPtr& _gstage)
+MaybeError<std::string> CreateOmniverseModel(const std::string& destinationPath)
 {
   std::string stageUrl = destinationPath;
 
@@ -139,55 +127,20 @@ std::string CreateOmniverseModel(const std::string& destinationPath,
   normalizedStageUrl += omniClientNormalizeUrl(
       stageUrl.c_str(), normalizedStageUrl.data(), &bufferSize);
 
-  std::cout << "Original Stage URL  : " << stageUrl << std::endl;
-  std::cout << "Normalized Stage URL: " << normalizedStageUrl << std::endl;
-
-  // // Delete the old version of this file on Omniverse and wait for the
-  // operation to complete
-  // {
-  // 	std::unique_lock<std::mutex> lk(gLogMutex);
-  // 	std::cout << "Waiting for " << stageUrl << " to delete... " <<
-  // std::endl;
-  // }
-  // omniClientWait(omniClientDelete(stageUrl.c_str(), nullptr, nullptr));
-  // {
-  // 	std::unique_lock<std::mutex> lk(gLogMutex);
-  // 	std::cout << "finished" << std::endl;
-  // }
-
-  // Create this file in Omniverse cleanly
-  // gStage = pxr::UsdStage::CreateNew(stageUrl);
   omniUsdLiveSetModeForUrl(normalizedStageUrl.c_str(),
                            OmniUsdLiveMode::eOmniUsdLiveModeEnabled);
-  _gstage = pxr::UsdStage::Open(normalizedStageUrl);
-  if (!_gstage)
+  auto stage = pxr::UsdStage::CreateNew(normalizedStageUrl);
+  if (!stage)
   {
-    failNotify("Failure to create model in Omniverse", stageUrl.c_str());
-    exit(-1);
-    return std::string();
+    return Error("Failure to create stage in Omniverse");
   }
-
-  // Initialize "user data" for the stat subscribe callbacks
-  StatSubscribeContext userData;
-  userData.stageUrlPtr = &normalizedStageUrl;
-  userData.stage = _gstage;
-
-  // Subscribe to stat callbacks for the live stage that we're watching
-  // This isn't absolutely necessary since we have the USD Notices, but
-  //  this would work well for texture or material reload
-  OmniClientRequestId statSubscribeRequestId =
-      omniClientStatSubscribe(stageUrl.c_str(), &userData, clientStatCallback,
-                              clientStatSubscribeCallback);
-
-  {
-    std::unique_lock<std::mutex> lk(gLogMutex);
-    std::cout << "New stage created: " << stageUrl << std::endl;
-  }
+  ignmsg << "Created omniverse stage at [" << normalizedStageUrl << "]"
+         << std::endl;
 
   // Always a good idea to declare your up-ness
-  UsdGeomSetStageUpAxis(_gstage, pxr::UsdGeomTokens->z);
+  UsdGeomSetStageUpAxis(stage, pxr::UsdGeomTokens->z);
 
-  return stageUrl;
+  return normalizedStageUrl;
 }
 
 void CheckpointFile(const char* stageUrl, const char* comment)
@@ -225,8 +178,24 @@ bool StartOmniverse()
          OmniClientLogLevel level, char const* message) noexcept
       {
         std::unique_lock<std::mutex> lk(gLogMutex);
-        std::cout << "[" << omniClientGetLogLevelString(level) << "] "
-                  << message << std::endl;
+        switch (level)
+        {
+          case eOmniClientLogLevel_Debug:
+          case eOmniClientLogLevel_Verbose:
+            igndbg << "(" << component << ") " << message << std::endl;
+            break;
+          case eOmniClientLogLevel_Info:
+            ignmsg << "(" << component << ") " << message << std::endl;
+            break;
+          case eOmniClientLogLevel_Warning:
+            ignwarn << "(" << component << ") " << message << std::endl;
+            break;
+          case eOmniClientLogLevel_Error:
+            ignerr << "(" << component << ") " << message << std::endl;
+            break;
+          default:
+            igndbg << "(" << component << ") " << message << std::endl;
+        }
       });
 
   // The default log level is "Info", set it to "Debug" to see all messages
@@ -246,14 +215,14 @@ bool StartOmniverse()
          OmniClientConnectionStatus status) noexcept
       {
         std::unique_lock<std::mutex> lk(gLogMutex);
-        std::cout << "Connection Status: "
-                  << omniClientGetConnectionStatusString(status) << " [" << url
-                  << "]" << std::endl;
+        ignmsg << "Connection Status: "
+               << omniClientGetConnectionStatusString(status) << " [" << url
+               << "]" << std::endl;
         if (status == eOmniClientConnectionStatus_ConnectError)
         {
           // We shouldn't just exit here - we should clean up a bit, but we're
           // going to do it anyway
-          std::cout << "[ERROR] Failed connection, exiting." << std::endl;
+          ignerr << "Failed connection, exiting." << std::endl;
           exit(-1);
         }
       });
