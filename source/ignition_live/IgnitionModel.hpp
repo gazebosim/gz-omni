@@ -18,7 +18,6 @@
 #define OMNIVERSE_IGNITION_MODEL_HPP
 
 #include "IgnitionJoint.hpp"
-// #include "IgnitionVisual.hpp"
 
 #include <string>
 #include <unordered_map>
@@ -37,10 +36,8 @@ class IgnitionModel
   std::string name;
   std::unordered_map<std::string, std::shared_ptr<IgnitionJoint>>
       ignitionJoints;
-  // std::vector<IgnitionVisual::SharedPtr> visuals;
 };
 }  // namespace omniverse
 }  // namespace ignition
-// std::vector<std::shared_ptr<IgnitionVisual>> visuals;
 
 #endif

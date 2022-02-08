@@ -30,9 +30,11 @@
 #include <pxr/usd/usdGeom/capsule.h>
 #include <pxr/usd/usdGeom/cube.h>
 #include <pxr/usd/usdGeom/cylinder.h>
+#include <pxr/usd/usdGeom/mesh.h>
 #include <pxr/usd/usdShade/material.h>
 #include <pxr/usd/usdGeom/xform.h>
 
+#include <ignition/msgs/joint.pb.h>
 #include <ignition/msgs/model.pb.h>
 #include <ignition/msgs/pose.pb.h>
 #include <ignition/msgs/pose_v.pb.h>
@@ -72,6 +74,8 @@ class SceneImpl : public Scene
 
   // pxr::UsdStageRefPtr Stage() const override;
 
+  bool ParseJoint(const ignition::msgs::Joint &_msg);
+
   pxr::UsdPrim GetPrimAtPath(const std::string &_path) override;
   void SaveStage() override;
 
@@ -83,6 +87,9 @@ class SceneImpl : public Scene
   pxr::UsdShadeMaterial CreateMaterial(const std::string &_name) override;
   pxr::UsdShadeShader CreateShader(const std::string &_name) override;
   pxr::UsdGeomXform CreateXform(const std::string &_name) override;
+  pxr::UsdGeomMesh CreateMesh(const std::string &_name);
+  pxr::UsdPrim CreateFixedJoint(const std::string &_name);
+  pxr::UsdPrim CreateRevoluteJoint(const std::string &_name);
 
  private:
   std::unordered_map<std::string, IgnitionModel> models;

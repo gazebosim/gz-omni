@@ -60,6 +60,124 @@ class GetOp
       }
     }
   }
+  //
+  // GetOp(pxr::UsdPrim& _prim)
+  // {
+  //   this->position = pxr::GfVec3d(0);
+  //   this->rotZYX = pxr::GfVec3f(0);
+  //   this->scale = pxr::GfVec3f(1);
+  //
+  //   auto variant_geom = pxr::UsdGeomGprim(_prim);
+  //   auto transforms = variant_geom.GetXformOpOrderAttr();
+  //
+  //   pxr::VtTokenArray xformOpOrder;
+  //   transforms.Get(&xformOpOrder);
+  //   for (auto & op: xformOpOrder)
+  //   {
+  //     // std::string s = op;
+  //     if (op == "xformOp:scale")
+  //     {
+  //       auto attribute = _prim.GetAttribute(pxr::TfToken("xformOp:scale"));
+  //       if (attribute.GetTypeName().GetCPPTypeName() == "GfVec3f")
+  //       {
+  //         attribute.Get(&this->scale);
+  //       }
+  //       else if (attribute.GetTypeName().GetCPPTypeName() == "GfVec3d")
+  //       {
+  //         pxr::GfVec3d scaleTmp(1, 1, 1);
+  //         attribute.Get(&scaleTmp);
+  //         this->scale[0] = scaleTmp[0];
+  //         this->scale[1] = scaleTmp[1];
+  //         this->scale[2] = scaleTmp[2];
+  //       }
+  //     }
+  //     else if (op == "xformOp:rotateZYX")
+  //     {
+  //       pxr::GfVec3f rotationEuler(0, 0, 0);
+  //       auto attribute = _prim.GetAttribute(pxr::TfToken("xformOp:rotateZYX"));
+  //       if (attribute.GetTypeName().GetCPPTypeName() == "GfVec3f")
+  //       {
+  //         attribute.Get(&this->rotZYX);
+  //       }
+  //       else if (attribute.GetTypeName().GetCPPTypeName() == "GfVec3d")
+  //       {
+  //         pxr::GfVec3d rotationEulerTmp(0, 0, 0);
+  //         attribute.Get(&rotationEulerTmp);
+  //         this->rotZYX[0] = rotationEulerTmp[0];
+  //         this->rotZYX[1] = rotationEulerTmp[1];
+  //         this->rotZYX[2] = rotationEulerTmp[2];
+  //       }
+  //     }
+  //     else if (op == "xformOp:translate")
+  //     {
+  //       auto attribute = _prim.GetAttribute(pxr::TfToken("xformOp:translate"));
+  //       if (attribute.GetTypeName().GetCPPTypeName() == "GfVec3f")
+  //       {
+  //         attribute.Get(&this->position);
+  //       }
+  //       else if (attribute.GetTypeName().GetCPPTypeName() == "GfVec3d")
+  //       {
+  //         pxr::GfVec3d translateTmp(0, 0, 0);
+  //         attribute.Get(&translateTmp);
+  //         this->position[0] = translateTmp[0];
+  //         this->position[1] = translateTmp[1];
+  //         this->position[2] = translateTmp[2];
+  //       }
+  //     }
+  //     // else if (op == "xformOp:orient")
+  //     // {
+  //     //   auto attribute = _prim.GetAttribute(pxr::TfToken("xformOp:orient"));
+  //     //   if (attribute.GetTypeName().GetCPPTypeName() == "GfQuatf")
+  //     //   {
+  //     //     attribute.Get(&rotationQuad);
+  //     //   }
+  //     //   else if (attribute.GetTypeName().GetCPPTypeName() == "GfQuatd")
+  //     //   {
+  //     //     pxr::GfQuatd rotationQuadTmp;
+  //     //     attribute.Get(&rotationQuadTmp);
+  //     //     rotationQuad.SetImaginary(
+  //     //       rotationQuadTmp.GetImaginary()[0],
+  //     //       rotationQuadTmp.GetImaginary()[1],
+  //     //       rotationQuadTmp.GetImaginary()[2]);
+  //     //     rotationQuad.SetReal(rotationQuadTmp.GetReal());
+  //     //   }
+  //     //   ignition::math::Quaterniond q(
+  //     //     rotationQuad.GetReal(),
+  //     //     rotationQuad.GetImaginary()[0],
+  //     //     rotationQuad.GetImaginary()[1],
+  //     //     rotationQuad.GetImaginary()[2]);
+  //     //   t.q.push_back(q);
+  //     //   std::cerr << "rotationQuad " << rotationQuad << '\n';
+  //     //   t.isRotation = true;
+  //     // }
+  //     //
+  //     // if (op == "xformOp:transform")
+  //     // {
+  //     //   // FIXME: Shear is lost (does sdformat support it?).
+  //     //
+  //     //   pxr::GfMatrix4d transform;
+  //     //   _prim.GetAttribute(pxr::TfToken("xformOp:transform")).Get(&transform);
+  //     //   const auto rot = transform.RemoveScaleShear();
+  //     //   const auto scaleShear = transform * rot.GetInverse();
+  //     //
+  //     //   t.scale[0] = scaleShear[0][0];
+  //     //   t.scale[1] = scaleShear[1][1];
+  //     //   t.scale[2] = scaleShear[2][2];
+  //     //
+  //     //   const auto rotQuat = rot.ExtractRotationQuat();
+  //     //   t.translate = ignition::math::Vector3d(transform[3][0], transform[3][1], transform[3][2]);
+  //     //   ignition::math::Quaterniond q(
+  //     //     rotQuat.GetReal(),
+  //     //     rotQuat.GetImaginary()[0],
+  //     //     rotQuat.GetImaginary()[1],
+  //     //     rotQuat.GetImaginary()[2]
+  //     //   );
+  //     //   t.q.push_back(q);
+  //     //   t.isTranslate = true;
+  //     //   t.isRotation = true;
+  //     // }
+  //   }
+  // }
 
   // Define storage for the different xform ops that Omniverse Kit likes to use
   pxr::UsdGeomXformOp translateOp;

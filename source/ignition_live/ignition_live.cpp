@@ -19,6 +19,8 @@
 
 #include <pxr/usd/usd/stage.h>
 #include <ignition/common/Console.hh>
+#include <ignition/common/SystemPaths.hh>
+#include <ignition/common/StringUtils.hh>
 
 #include <pxr/usd/sdf/path.h>
 #include <pxr/usd/usd/prim.h>
@@ -34,10 +36,24 @@
 // The program expects one argument, a path to a USD file
 int main(int argc, char* argv[])
 {
+  std::string ignGazeboResourcePath;
+  auto systemPaths = ignition::common::systemPaths();
+  if(!ignition::common::env("IGN_GAZEBO_RESOURCE_PATH", ignGazeboResourcePath))
+  {
+    std::cerr << "IGN_GAZEBO_RESOURCE_PATH is not defined, some models may not load" << '\n';
+  }
+  else
+  {
+    for (const auto& resourcePath : ignition::common::Split(ignGazeboResourcePath, ':'))
+    {
+      systemPaths->AddFilePaths(resourcePath);
+    }
+  }
+
   pxr::UsdStageRefPtr gStage;
   ignition::common::Console::SetVerbosity(4);
 
-  std::string worldName = "shapes";
+  std::string worldName = "empty";
 
   std::string filename = argv[1];
 
@@ -131,13 +147,14 @@ int main(int argc, char* argv[])
           {
             for (auto& joint : model.second.ignitionJoints)
             {
-              std::cerr << "joint.first " << joint.first << '\n';
+              // std::cerr << "joint.first " << joint.first << '\n';
               auto jointUSD =
-                  scene->GetPrimAtPath("/" + worldName + joint.first);
+                  scene->GetPrimAtPath("/" + worldName + "/" + joint.first);
               // auto driveJoint = pxr::UsdPhysicsDriveAPI(jointUSD);
               if (!jointUSD)
               {
-                std::cerr << "no joint" << '\n';
+                std::cerr << "Not able to find " << ("/" + worldName + "/" + joint.first) << '\n';
+                continue;
               }
               else
               {

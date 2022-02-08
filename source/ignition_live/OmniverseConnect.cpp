@@ -184,6 +184,9 @@ std::string CreateOmniverseModel(const std::string& destinationPath,
     std::cout << "New stage created: " << stageUrl << std::endl;
   }
 
+
+  _gstage->SetMetadata(pxr::TfToken("metersPerUnit"), 1.0);
+
   // Always a good idea to declare your up-ness
   UsdGeomSetStageUpAxis(_gstage, pxr::UsdGeomTokens->z);
 
