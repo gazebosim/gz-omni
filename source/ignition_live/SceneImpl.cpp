@@ -15,21 +15,19 @@
  *
  */
 
+#include "IgnitionVisual.hpp"
 #include "SceneImpl.hpp"
 
 #include <ignition/common/Console.hh>
+#include <ignition/math/Pose3.hh>
+
+#include <pxr/usd/usdGeom/xform.h>
 
 #include <algorithm>
 #include <chrono>  // std::chrono::seconds
 #include <string>
 #include <thread>  // std::this_thread::sleep_for
 #include <vector>
-
-#include <ignition/math/Pose3.hh>
-
-#include <pxr/usd/usdGeom/xform.h>
-
-#include "IgnitionVisual.hpp"
 
 using namespace std::chrono_literals;
 

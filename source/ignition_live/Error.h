@@ -15,6 +15,7 @@
  *
  */
 
+#include <string>
 #include <variant>
 
 namespace ignition::omniverse

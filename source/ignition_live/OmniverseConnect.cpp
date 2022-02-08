@@ -15,21 +15,21 @@
  *
  */
 
-#include <iostream>
-#include <mutex>
-#include <string>
+#include "OmniverseConnect.hpp"
 
 #include <ignition/common/Console.hh>
 
 #include <pxr/base/gf/vec3f.h>
-#include "pxr/usd/usd/notice.h"
-#include "pxr/usd/usd/stage.h"
-#include "pxr/usd/usd/primRange.h"
+#include <pxr/usd/usd/notice.h>
+#include <pxr/usd/usd/stage.h>
+#include <pxr/usd/usd/primRange.h>
 #include <pxr/usd/usdGeom/cylinder.h>
-#include "pxr/usd/usdGeom/metrics.h"
+#include <pxr/usd/usdGeom/metrics.h>
 #include <pxr/usd/usdGeom/xform.h>
 
-#include "OmniverseConnect.hpp"
+#include <iostream>
+#include <mutex>
+#include <string>
 
 namespace ignition
 {

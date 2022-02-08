@@ -15,7 +15,12 @@
  *
  */
 
-#include <string>
+#include "FUSDLayerNoticeListener.hpp"
+#include "FUSDNoticeListener.hpp"
+#include "GetOp.hpp"
+#include "OmniverseConnect.hpp"
+#include "SceneImpl.hpp"
+#include "SetOp.hpp"
 
 #include <ignition/common/Console.hh>
 #include <ignition/utils/cli.hh>
@@ -25,12 +30,7 @@
 #include <pxr/usd/usd/prim.h>
 #include <pxr/usd/usdGeom/xformCommonAPI.h>
 
-#include "FUSDLayerNoticeListener.hpp"
-#include "FUSDNoticeListener.hpp"
-#include "GetOp.hpp"
-#include "OmniverseConnect.hpp"
-#include "SceneImpl.hpp"
-#include "SetOp.hpp"
+#include <string>
 
 // The program expects one argument, a path to a USD file
 int main(int argc, char* argv[])

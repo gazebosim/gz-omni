@@ -17,18 +17,17 @@
 #ifndef OMNIVERSE_IGNITION_GEOMETRY_HPP
 #define OMNIVERSE_IGNITION_GEOMETRY_HPP
 
-#include <memory>
-
-#include <ignition/msgs/geometry.pb.h>
-#include <ignition/msgs/visual.pb.h>
+#include "Scene.hpp"
 
 #include <ignition/math/Pose3.hh>
+#include <ignition/msgs/geometry.pb.h>
+#include <ignition/msgs/visual.pb.h>
 
 #include <pxr/usd/usdGeom/gprim.h>
 #include <pxr/usd/usdShade/material.h>
 #include <pxr/usd/usdShade/materialBindingAPI.h>
 
-#include "Scene.hpp"
+#include <memory>
 
 namespace ignition
 {

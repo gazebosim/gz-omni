@@ -20,7 +20,8 @@
 #include "IgnitionModel.hpp"
 #include "Scene.hpp"
 
-#include "ignition/common/WorkerPool.hh"
+#include <ignition/common/Console.hh>
+#include <ignition/common/WorkerPool.hh>
 
 namespace ignition
 {

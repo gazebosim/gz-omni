@@ -17,12 +17,13 @@
 #ifndef OMNIVERSE_FUSDNOTICELISTENER_HPP
 #define OMNIVERSE_FUSDNOTICELISTENER_HPP
 
-#include <pxr/usd/usd/notice.h>
-#include <pxr/usd/sdf/path.h>
+#include <ignition/common/Console.hh>
 
+#include <pxr/usd/sdf/path.h>
+#include <pxr/usd/usd/notice.h>
+#include <pxr/usd/usdGeom/sphere.h>
 #include <pxr/usd/usdGeom/cube.h>
 #include <pxr/usd/usdGeom/cylinder.h>
-#include <pxr/usd/usdGeom/sphere.h>
 
 namespace ignition
 {

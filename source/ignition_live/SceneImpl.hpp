@@ -20,12 +20,13 @@
 #include "IgnitionModel.hpp"
 #include "Scene.hpp"
 
-#include <memory>
-#include <string>
-#include <thread>
-#include <unordered_map>
+#include <ignition/math/Pose3.hh>
+#include <ignition/msgs/model.pb.h>
+#include <ignition/msgs/pose.pb.h>
+#include <ignition/msgs/pose_v.pb.h>
+#include <ignition/transport.hh>
 
-#include "pxr/usd/usd/stage.h"
+#include <pxr/usd/usd/stage.h>
 #include <pxr/usd/usdGeom/sphere.h>
 #include <pxr/usd/usdGeom/capsule.h>
 #include <pxr/usd/usdGeom/cube.h>
@@ -33,12 +34,10 @@
 #include <pxr/usd/usdShade/material.h>
 #include <pxr/usd/usdGeom/xform.h>
 
-#include <ignition/msgs/model.pb.h>
-#include <ignition/msgs/pose.pb.h>
-#include <ignition/msgs/pose_v.pb.h>
-
-#include <ignition/math/Pose3.hh>
-#include <ignition/transport.hh>
+#include <memory>
+#include <string>
+#include <thread>
+#include <unordered_map>
 
 namespace ignition
 {
