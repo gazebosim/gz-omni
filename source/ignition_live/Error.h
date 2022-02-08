@@ -34,20 +34,25 @@ class Error
   }
 };
 
+/// \brief Represents the result of a function which may contain an error.
 template <typename T>
 class MaybeError
 {
  public:
+  // allow implicit conversion
   MaybeError(const T& _val) : data(_val) {}
   MaybeError(const ignition::omniverse::Error& _error) : data(_error) {}
 
+  /// \brief `true` if there is no error
   operator bool() const
   {
     return !std::holds_alternative<ignition::omniverse::Error>(this->data);
   }
 
+  /// \brief Get the value of the result, throws if there is an error.
   const T& Value() const { return std::get<T>(this->data); }
 
+  /// \brief Get the error, throws if there is no error.
   const ignition::omniverse::Error& Error() const
   {
     return std::get<ignition::omniverse::Error>(this->data);
