@@ -39,18 +39,21 @@ int main(int argc, char* argv[])
   CLI::App app("Ignition omniverse connector");
 
   std::string destinationPath;
-  // clang-format off
   app.add_option("-p,--path", destinationPath,
+                 // clang-format off
                  "Location of the omniverse stage. e.g. \"omniverse://localhost/Users/ignition/stage.usd\"")
+      // clang-format on
       ->required();
-  // clang-format on
+  std::string worldName;
+  app.add_option("-w,--world", worldName, "Name of the ignition world")
+      ->required();
+  app.add_flag_callback("-v,--verbose",
+                        []() { ignition::common::Console::SetVerbosity(4); });
 
   CLI11_PARSE(app, argc, argv);
 
   pxr::UsdStageRefPtr gStage;
   ignition::common::Console::SetVerbosity(4);
-
-  std::string worldName = "shapes";
 
   // Connect with omniverse
   if (!StartOmniverse())
