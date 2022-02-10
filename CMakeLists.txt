@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(ignition-omni1 NONE)
+project(ignition-omniverse1 NONE)
 
 # FIXME: This always builds debug mode
 add_custom_target(build ALL

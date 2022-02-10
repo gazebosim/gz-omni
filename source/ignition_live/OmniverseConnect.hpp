@@ -15,8 +15,8 @@
  *
  */
 
-#ifndef OMNIVERSE_CONNECT_HPP
-#define OMNIVERSE_CONNECT_HPP
+#ifndef IGNITION_OMNIVERSE_CONNECT_HPP
+#define IGNITION_OMNIVERSE_CONNECT_HPP
 
 #include "OmniClientpp.hpp"
 

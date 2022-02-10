@@ -15,8 +15,8 @@
  *
  */
 
-#ifndef OMNIVERSE_ERROR_HPP
-#define OMNIVERSE_ERROR_HPP
+#ifndef IGNITION_OMNIVERSE_ERROR_HPP
+#define IGNITION_OMNIVERSE_ERROR_HPP
 
 #include <string>
 #include <variant>

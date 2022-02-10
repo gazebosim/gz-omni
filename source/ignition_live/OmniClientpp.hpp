@@ -19,6 +19,9 @@
  * C++ wrappers for various omniclient apis
  */
 
+#ifndef IGNITION_OMNIVERSE_OMNICLIENTPP_HPP
+#define IGNITION_OMNIVERSE_OMNICLIENTPP_HPP
+
 #include "Error.hpp"
 
 #include <OmniClient.h>
@@ -54,3 +57,4 @@ class OmniverseSync
   static MaybeError<OmniClientListEntry> Stat(const std::string& url) noexcept;
 };
 }  // namespace ignition::omniverse
+#endif

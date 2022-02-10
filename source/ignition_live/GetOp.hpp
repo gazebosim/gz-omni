@@ -15,8 +15,8 @@
  *
  */
 
-#ifndef GET_OP_HPP
-#define GET_OP_HPP
+#ifndef IGNITION_OMNIVERSE_GET_OP_HPP
+#define IGNITION_OMNIVERSE_GET_OP_HPP
 
 #include <pxr/base/gf/vec3f.h>
 #include <pxr/usd/usdGeom/xform.h>

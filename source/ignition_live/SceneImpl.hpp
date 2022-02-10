@@ -14,8 +14,8 @@
  *
  */
 
-#ifndef SCENE_IMPL_HPP
-#define SCENE_IMPL_HPP
+#ifndef IGNITION_OMNIVERSE_SCENEIMPL_HPP
+#define IGNITION_OMNIVERSE_SCENEIMPL_HPP
 
 #include "IgnitionModel.hpp"
 #include "Scene.hpp"

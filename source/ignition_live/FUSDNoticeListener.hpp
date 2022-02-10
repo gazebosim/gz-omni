@@ -14,8 +14,8 @@
  * limitations under the License.
  *
  */
-#ifndef OMNIVERSE_FUSDNOTICELISTENER_HPP
-#define OMNIVERSE_FUSDNOTICELISTENER_HPP
+#ifndef IGNITION_OMNIVERSE_FUSDNOTICELISTENER_HPP
+#define IGNITION_OMNIVERSE_FUSDNOTICELISTENER_HPP
 
 #include <ignition/common/Console.hh>
 

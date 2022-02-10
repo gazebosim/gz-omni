@@ -14,8 +14,8 @@
  * limitations under the License.
  *
  */
-#ifndef OMNIVERSE_IGNITION_VISUAL_HPP
-#define OMNIVERSE_IGNITION_VISUAL_HPP
+#ifndef IGNITION_OMNIVERSE_IGNITION_VISUAL_HPP
+#define IGNITION_OMNIVERSE_IGNITION_VISUAL_HPP
 
 #include "IgnitionGeometry.hpp"
 #include "Scene.hpp"

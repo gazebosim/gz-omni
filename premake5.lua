@@ -173,4 +173,4 @@ end
 
 -- sample("omnicli", "omnicli")
 -- sample("ignition", "ignition")
-sample("ignition-omni1", "ignition_live")
+sample("ignition-omniverse1", "ignition_live")
