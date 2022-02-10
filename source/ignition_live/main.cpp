@@ -52,8 +52,7 @@ int main(int argc, char* argv[])
 
   CLI11_PARSE(app, argc, argv);
 
-  pxr::UsdStageRefPtr gStage;
-  ignition::common::Console::SetVerbosity(4);
+  pxr::UsdStageRefPtr stage;
 
   // Connect with omniverse
   if (!StartOmniverse())
@@ -75,7 +74,7 @@ int main(int argc, char* argv[])
     }
     return result.Value();
   }();
-  gStage = pxr::UsdStage::Open(stageUrl);
+  stage = pxr::UsdStage::Open(stageUrl);
   ignmsg << "Opened stage [" << stageUrl << "]" << std::endl;
 
   omniUsdLiveSetModeForUrl(stageUrl.c_str(),
@@ -83,7 +82,7 @@ int main(int argc, char* argv[])
 
   PrintConnectedUsername(stageUrl);
 
-  SceneImpl::SharedPtr scene = SceneImpl::Make(worldName, gStage);
+  SceneImpl::SharedPtr scene = SceneImpl::Make(worldName, stage);
 
   FUSDLayerNoticeListener USDLayerNoticeListener(scene, worldName);
   auto LayerReloadKey = pxr::TfNotice::Register(
@@ -92,7 +91,7 @@ int main(int argc, char* argv[])
   auto LayerChangeKey = pxr::TfNotice::Register(
       pxr::TfCreateWeakPtr(&USDLayerNoticeListener),
       &FUSDLayerNoticeListener::HandleRootOrSubLayerChange,
-      gStage->GetRootLayer());
+      stage->GetRootLayer());
 
   FUSDNoticeListener USDNoticeListener(scene, worldName);
   auto USDNoticeKey = pxr::TfNotice::Register(
