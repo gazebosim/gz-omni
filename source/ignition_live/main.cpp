@@ -32,7 +32,8 @@
 
 #include <string>
 
-// The program expects one argument, a path to a USD file
+using namespace ignition::omniverse;
+
 int main(int argc, char* argv[])
 {
   CLI::App app("Ignition omniverse connector");
@@ -52,7 +53,7 @@ int main(int argc, char* argv[])
   std::string worldName = "shapes";
 
   // Connect with omniverse
-  if (!ignition::omniverse::StartOmniverse())
+  if (!StartOmniverse())
   {
     ignerr << "Not able to start Omniverse" << std::endl;
     return -1;
@@ -63,7 +64,7 @@ int main(int argc, char* argv[])
   // cannot create the object
   const std::string stageUrl = [&]()
   {
-    auto result = ignition::omniverse::CreateOmniverseModel(destinationPath);
+    auto result = CreateOmniverseModel(destinationPath);
     if (!result)
     {
       ignerr << result.Error() << std::endl;
@@ -77,31 +78,28 @@ int main(int argc, char* argv[])
   omniUsdLiveSetModeForUrl(stageUrl.c_str(),
                            OmniUsdLiveMode::eOmniUsdLiveModeEnabled);
 
-  ignition::omniverse::PrintConnectedUsername(stageUrl);
+  PrintConnectedUsername(stageUrl);
 
-  ignition::omniverse::SceneImpl::SharedPtr scene =
-      ignition::omniverse::SceneImpl::Make(worldName, gStage);
+  SceneImpl::SharedPtr scene = SceneImpl::Make(worldName, gStage);
 
-  ignition::omniverse::FUSDLayerNoticeListener USDLayerNoticeListener(
-      scene, worldName);
+  FUSDLayerNoticeListener USDLayerNoticeListener(scene, worldName);
   auto LayerReloadKey = pxr::TfNotice::Register(
       pxr::TfCreateWeakPtr(&USDLayerNoticeListener),
-      &ignition::omniverse::FUSDLayerNoticeListener::HandleGlobalLayerReload);
+      &FUSDLayerNoticeListener::HandleGlobalLayerReload);
   auto LayerChangeKey = pxr::TfNotice::Register(
       pxr::TfCreateWeakPtr(&USDLayerNoticeListener),
-      &ignition::omniverse::FUSDLayerNoticeListener::HandleRootOrSubLayerChange,
+      &FUSDLayerNoticeListener::HandleRootOrSubLayerChange,
       gStage->GetRootLayer());
 
-  ignition::omniverse::FUSDNoticeListener USDNoticeListener(scene, worldName);
-  auto USDNoticeKey =
-      pxr::TfNotice::Register(pxr::TfCreateWeakPtr(&USDNoticeListener),
-                              &ignition::omniverse::FUSDNoticeListener::Handle);
+  FUSDNoticeListener USDNoticeListener(scene, worldName);
+  auto USDNoticeKey = pxr::TfNotice::Register(
+      pxr::TfCreateWeakPtr(&USDNoticeListener), &FUSDNoticeListener::Handle);
 
   while (true)
   {
     omniUsdLiveWaitForPendingUpdates();
 
-    std::unordered_map<std::string, ignition::omniverse::IgnitionModel> models;
+    std::unordered_map<std::string, IgnitionModel> models;
     models = scene->GetModels();
 
     for (const auto& model : models)
@@ -112,7 +110,7 @@ int main(int argc, char* argv[])
         // Get the xform ops stack
         pxr::UsdGeomXformable xForm = pxr::UsdGeomXformable(modelUSD);
 
-        ignition::omniverse::GetOp getOp(xForm);
+        GetOp getOp(xForm);
 
         {
           pxr::GfVec3d newPosition(model.second.pose.Pos().X(),
@@ -123,13 +121,11 @@ int main(int argc, char* argv[])
                                  model.second.pose.Rot().Pitch() * 180 / 3.1416,
                                  model.second.pose.Rot().Yaw() * 180 / 3.1416);
 
-          ignition::omniverse::SetOp(
-              xForm, getOp.translateOp, pxr::UsdGeomXformOp::TypeTranslate,
-              newPosition, pxr::UsdGeomXformOp::Precision::PrecisionDouble);
-          ignition::omniverse::SetOp(
-              xForm, getOp.rotateOp, pxr::UsdGeomXformOp::TypeRotateXYZ,
-              newRotZYX, pxr::UsdGeomXformOp::Precision::PrecisionFloat);
-          // ignition::omniverse::SetOp(
+          SetOp(xForm, getOp.translateOp, pxr::UsdGeomXformOp::TypeTranslate,
+                newPosition, pxr::UsdGeomXformOp::Precision::PrecisionDouble);
+          SetOp(xForm, getOp.rotateOp, pxr::UsdGeomXformOp::TypeRotateXYZ,
+                newRotZYX, pxr::UsdGeomXformOp::Precision::PrecisionFloat);
+          // SetOp(
           // 	xForm,
           // 	scaleOp,
           // 	pxr::UsdGeomXformOp::TypeScale,
