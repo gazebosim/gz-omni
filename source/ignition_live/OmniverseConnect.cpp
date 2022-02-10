@@ -112,7 +112,8 @@ static void clientStatSubscribeCallback(
   }
 }
 
-MaybeError<std::string> CreateOmniverseModel(const std::string& destinationPath)
+MaybeError<std::string, GenericError> CreateOmniverseModel(
+    const std::string& destinationPath)
 {
   std::string stageUrl = destinationPath;
 
@@ -127,18 +128,26 @@ MaybeError<std::string> CreateOmniverseModel(const std::string& destinationPath)
   normalizedStageUrl += omniClientNormalizeUrl(
       stageUrl.c_str(), normalizedStageUrl.data(), &bufferSize);
 
-  omniUsdLiveSetModeForUrl(normalizedStageUrl.c_str(),
-                           OmniUsdLiveMode::eOmniUsdLiveModeEnabled);
-  auto stage = pxr::UsdStage::CreateNew(normalizedStageUrl);
-  if (!stage)
+  // according to usd docs, `UsdStage::Open` should auto create a new stage
+  // if the path doesn't exist, but this doesn't work in omniverse for
+  // some reason. So we check if the path exist and use `UsdStage::CreateNew`,
+  // if it does not.
+  auto entry = OmniverseSync::Stat(normalizedStageUrl);
+  if (!entry)
   {
-    return Error("Failure to create stage in Omniverse");
+    if (entry.Error() != eOmniClientResult_ErrorNotFound)
+    {
+      return GenericError("Failure to create stage in Omniverse");
+    }
+    else
+    {
+      auto stage = pxr::UsdStage::CreateNew(normalizedStageUrl);
+      // Always a good idea to declare your up-ness
+      UsdGeomSetStageUpAxis(stage, pxr::UsdGeomTokens->z);
+      ignmsg << "Created omniverse stage at [" << normalizedStageUrl << "]"
+             << std::endl;
+    }
   }
-  ignmsg << "Created omniverse stage at [" << normalizedStageUrl << "]"
-         << std::endl;
-
-  // Always a good idea to declare your up-ness
-  UsdGeomSetStageUpAxis(stage, pxr::UsdGeomTokens->z);
 
   return normalizedStageUrl;
 }

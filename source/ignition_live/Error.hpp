@@ -15,19 +15,23 @@
  *
  */
 
+#ifndef OMNIVERSE_ERROR_HPP
+#define OMNIVERSE_ERROR_HPP
+
 #include <string>
 #include <variant>
 
 namespace ignition::omniverse
 {
-class Error
+class GenericError
 {
  public:
-  const std::string message;
+  std::string message;
 
-  explicit Error(const std::string& _message) : message(_message) {}
+  explicit GenericError(const std::string& _message) : message(_message) {}
 
-  friend std::ostream& operator<<(std::ostream& _output, const Error& _error)
+  friend std::ostream& operator<<(std::ostream& _output,
+                                  const GenericError& _error)
   {
     _output << _error.message;
     return _output;
@@ -35,31 +39,29 @@ class Error
 };
 
 /// \brief Represents the result of a function which may contain an error.
-template <typename T>
+template <typename T, typename ErrorT>
 class MaybeError
 {
  public:
   // allow implicit conversion
   MaybeError(const T& _val) : data(_val) {}
-  MaybeError(const ignition::omniverse::Error& _error) : data(_error) {}
+  MaybeError(const ErrorT& _error) : data(_error) {}
 
   /// \brief `true` if there is no error
-  operator bool() const
+  explicit operator bool() const
   {
-    return !std::holds_alternative<ignition::omniverse::Error>(this->data);
+    return !std::holds_alternative<ErrorT>(this->data);
   }
 
   /// \brief Get the value of the result, throws if there is an error.
   const T& Value() const { return std::get<T>(this->data); }
 
   /// \brief Get the error, throws if there is no error.
-  const ignition::omniverse::Error& Error() const
-  {
-    return std::get<ignition::omniverse::Error>(this->data);
-  }
+  const ErrorT& Error() const { return std::get<ErrorT>(this->data); }
 
  private:
-  const std::variant<T, ignition::omniverse::Error> data;
+  std::variant<T, ErrorT> data;
 };
 
 }  // namespace ignition::omniverse
+#endif

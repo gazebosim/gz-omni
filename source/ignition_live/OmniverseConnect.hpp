@@ -18,7 +18,7 @@
 #ifndef OMNIVERSE_CONNECT_HPP
 #define OMNIVERSE_CONNECT_HPP
 
-#include "Error.h"
+#include "OmniClientpp.hpp"
 
 #include <pxr/usd/usd/stage.h>
 
@@ -38,11 +38,11 @@ static std::string normalizedStageUrl;
 // omniverse://ov-prod
 void PrintConnectedUsername(const std::string& stageUrl);
 
-/// \brief Creates a new ignition stage in omniverse, deleting any
-/// existing stage in the path.
+/// \brief Creates a new ignition stage in omniverse, does nothing if the
+/// stage already exists.
 /// \details The new stage is authored with ignition metadata.
 /// \return The url of the stage
-MaybeError<std::string> CreateOmniverseModel(
+MaybeError<std::string, GenericError> CreateOmniverseModel(
     const std::string& destinationPath);
 
 void CheckpointFile(const char* stageUrl, const char* comment);

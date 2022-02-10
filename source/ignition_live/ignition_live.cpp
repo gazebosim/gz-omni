@@ -74,6 +74,9 @@ int main(int argc, char* argv[])
   gStage = pxr::UsdStage::Open(stageUrl);
   ignmsg << "Opened stage [" << stageUrl << "]" << std::endl;
 
+  omniUsdLiveSetModeForUrl(stageUrl.c_str(),
+                           OmniUsdLiveMode::eOmniUsdLiveModeEnabled);
+
   ignition::omniverse::PrintConnectedUsername(stageUrl);
 
   ignition::omniverse::SceneImpl::SharedPtr scene =
@@ -93,9 +96,6 @@ int main(int argc, char* argv[])
   auto USDNoticeKey =
       pxr::TfNotice::Register(pxr::TfCreateWeakPtr(&USDNoticeListener),
                               &ignition::omniverse::FUSDNoticeListener::Handle);
-
-  // Process any updates that may have happened to the stage from another client
-  omniUsdLiveWaitForPendingUpdates();
 
   while (true)
   {
