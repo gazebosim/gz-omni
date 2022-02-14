@@ -14,8 +14,8 @@
  * limitations under the License.
  *
  */
-#ifndef OMNIVERSE_IGNITION_JOINT_HPP
-#define OMNIVERSE_IGNITION_JOINT_HPP
+#ifndef IGNITION_OMNIVERSE_IGNITION_JOINT_HPP
+#define IGNITION_OMNIVERSE_IGNITION_JOINT_HPP
 
 #include <ignition/math/Pose3.hh>
 

@@ -14,15 +14,16 @@
  * limitations under the License.
  *
  */
-#ifndef OMNIVERSE_FUSDNOTICELISTENER_HPP
-#define OMNIVERSE_FUSDNOTICELISTENER_HPP
+#ifndef IGNITION_OMNIVERSE_FUSDNOTICELISTENER_HPP
+#define IGNITION_OMNIVERSE_FUSDNOTICELISTENER_HPP
 
-#include <pxr/usd/usd/notice.h>
+#include <ignition/common/Console.hh>
+
 #include <pxr/usd/sdf/path.h>
-
+#include <pxr/usd/usd/notice.h>
+#include <pxr/usd/usdGeom/sphere.h>
 #include <pxr/usd/usdGeom/cube.h>
 #include <pxr/usd/usdGeom/cylinder.h>
-#include <pxr/usd/usdGeom/sphere.h>
 
 namespace ignition
 {
@@ -159,7 +160,7 @@ class FUSDNoticeListener : public pxr::TfWeakBase
   {
     for (const pxr::SdfPath &Path : ObjectsChanged.GetResyncedPaths())
     {
-      std::cout << "Resynced Path: " << Path.GetText() << std::endl;
+      ignmsg << "Resynced Path: " << Path.GetText() << std::endl;
       auto modelUSD = this->scene->GetPrimAtPath(std::string(Path.GetText()));
       // if (modelUSD)
       // {
@@ -220,7 +221,7 @@ class FUSDNoticeListener : public pxr::TfWeakBase
     }
     for (const pxr::SdfPath &Path : ObjectsChanged.GetChangedInfoOnlyPaths())
     {
-      std::cout << "Changed Info Path: " << Path.GetText() << std::endl;
+      ignmsg << "Changed Info Path: " << Path.GetText() << std::endl;
     }
   }
   Scene::SharedPtr scene;

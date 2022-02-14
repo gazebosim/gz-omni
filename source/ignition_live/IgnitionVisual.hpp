@@ -14,18 +14,17 @@
  * limitations under the License.
  *
  */
-#ifndef OMNIVERSE_IGNITION_VISUAL_HPP
-#define OMNIVERSE_IGNITION_VISUAL_HPP
-
-#include <memory>
-#include <string>
-
-#include <ignition/math/Color.hh>
-
-#include <ignition/msgs/visual.pb.h>
+#ifndef IGNITION_OMNIVERSE_IGNITION_VISUAL_HPP
+#define IGNITION_OMNIVERSE_IGNITION_VISUAL_HPP
 
 #include "IgnitionGeometry.hpp"
 #include "Scene.hpp"
+
+#include <ignition/math/Color.hh>
+#include <ignition/msgs/visual.pb.h>
+
+#include <memory>
+#include <string>
 
 namespace ignition
 {

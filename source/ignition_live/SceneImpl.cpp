@@ -15,19 +15,19 @@
  *
  */
 
+#include "IgnitionVisual.hpp"
 #include "SceneImpl.hpp"
+
+#include <ignition/common/Console.hh>
+#include <ignition/math/Pose3.hh>
+
+#include <pxr/usd/usdGeom/xform.h>
 
 #include <algorithm>
 #include <chrono>  // std::chrono::seconds
 #include <string>
 #include <thread>  // std::this_thread::sleep_for
 #include <vector>
-
-#include <ignition/math/Pose3.hh>
-
-#include <pxr/usd/usdGeom/xform.h>
-
-#include "IgnitionVisual.hpp"
 
 using namespace std::chrono_literals;
 
@@ -141,13 +141,12 @@ bool SceneImpl::Init()
     {
       if (!node.Subscribe(topic, &SceneImpl::CallbackJoint, this))
       {
-        std::cerr << "Error subscribing to topic [" << topic << "]"
-                  << std::endl;
+        ignerr << "Error subscribing to topic [" << topic << "]" << std::endl;
         return false;
       }
       else
       {
-        std::cout << "Subscribed to topic: [" << topic << "]" << std::endl;
+        ignmsg << "Subscribed to topic: [" << topic << "]" << std::endl;
       }
     }
   }
@@ -156,7 +155,7 @@ bool SceneImpl::Init()
   // Subscribe to a topic by registering a callback.
   if (!node.Subscribe(topic, &SceneImpl::CallbackPoses, this))
   {
-    std::cerr << "Error subscribing to topic [" << topic << "]" << std::endl;
+    ignerr << "Error subscribing to topic [" << topic << "]" << std::endl;
     return false;
   }
 
@@ -176,10 +175,9 @@ void SceneImpl::modelWorker()
 {
   auto printvector = [](const auto &v)
   {
-    std::cout << "{ ";
-    for (auto i : v) std::cout << i << ' ';
-    std::cout << "} "
-              << "\n";
+    igndbg << "{ ";
+    for (auto i : v) igndbg << i << ' ';
+    igndbg << "} " << std::endl;
   };
 
   while (true)
@@ -222,13 +220,13 @@ void SceneImpl::modelWorker()
 
       if (added.size() > 0)
       {
-        std::cerr << "added " << '\n';
+        igndbg << "added " << '\n';
         printvector(added);
       }
 
       if (removed.size() > 0 && modelNames.size() > 0)
       {
-        std::cerr << "removed " << '\n';
+        igndbg << "removed " << '\n';
         printvector(removed);
         for (auto &removeModelName : removed)
         {
@@ -241,7 +239,7 @@ void SceneImpl::modelWorker()
                   pxr::SdfPath("/" + worldName + "/" + removeModelName));
             }
             {
-              std::cerr << "removed: " << removeModelName << '\n';
+              igndbg << "removed: " << removeModelName << '\n';
               std::unique_lock<std::mutex> lkPose(poseMutex);
               this->models.erase(removeModelName);
             }
@@ -268,8 +266,8 @@ void SceneImpl::modelWorker()
           auto modelPrim = this->GetPrimAtPath(sdfModelPath);
           if (modelPrim)
           {
-            std::cerr << "Model [" << model.name()
-                      << "] already available in the scene" << '\n';
+            igndbg << "Model [" << model.name()
+                   << "] already available in the scene" << std::endl;
             {
               std::unique_lock<std::mutex> lkPose(poseMutex);
               this->models.insert({model.name(), ignitionModel});

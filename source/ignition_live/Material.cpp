@@ -17,14 +17,16 @@
 
 #include "Material.hpp"
 
-#include <iostream>
-#include <map>
-#include <memory>
-#include <string>
+#include <ignition/common/Console.hh>
 
 #include <pxr/usd/usd/tokens.h>
 #include <pxr/usd/usdGeom/gprim.h>
 #include <pxr/usd/usdShade/material.h>
+
+#include <iostream>
+#include <map>
+#include <memory>
+#include <string>
 
 namespace ignition
 {
@@ -91,7 +93,7 @@ void CreateMaterialInput(
   }
   else
   {
-    std::cerr << "Not able to convert the prim to a UsdShadeShader\n";
+    ignerr << "Not able to convert the prim to a UsdShadeShader" << std::endl;
   }
 }
 
@@ -106,7 +108,7 @@ pxr::UsdShadeMaterial ParseMaterial(const ignition::msgs::Visual &_visualMsg,
   auto shaderPrim = _scene->GetPrimAtPath(mtl_path + "/Shader");
   if (!shaderPrim)
   {
-    std::cerr << "Not able to cast the UsdShadeShader to a Prim" << '\n';
+    ignerr << "Not able to cast the UsdShadeShader to a Prim" << std::endl;
   }
   else
   {

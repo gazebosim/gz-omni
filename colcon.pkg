@@ -1,4 +1,4 @@
-name: ignition-omni1
+name: ignition-omniverse1
 type: cmake
 dependencies:
   - ignition-common4

@@ -130,4 +130,5 @@ function sample(projectName, sourceFolder)
     filter {}
 end
 
-sample("ignition-omni1", "ignition_live")
+
+sample("ignition-omniverse1", "ignition_live")

@@ -14,8 +14,8 @@
  * limitations under the License.
  *
  */
-#ifndef OMNIVERSE_IGNITION_MODEL_HPP
-#define OMNIVERSE_IGNITION_MODEL_HPP
+#ifndef IGNITION_OMNIVERSE_IGNITION_MODEL_HPP
+#define IGNITION_OMNIVERSE_IGNITION_MODEL_HPP
 
 #include "IgnitionJoint.hpp"
 // #include "IgnitionVisual.hpp"
@@ -23,6 +23,7 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+
 namespace ignition
 {
 namespace omniverse

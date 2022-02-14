@@ -14,16 +14,16 @@
  * limitations under the License.
  *
  */
-#ifndef OMNIVERSE_IGNITION_MATERIAL_HPP
-#define OMNIVERSE_IGNITION_MATERIAL_HPP
+#ifndef IGNITION_OMNIVERSE_IGNITION_MATERIAL_HPP
+#define IGNITION_OMNIVERSE_IGNITION_MATERIAL_HPP
 
-#include <memory>
+#include "Scene.hpp"
 
 #include <ignition/msgs/visual.pb.h>
 
 #include <pxr/usd/usdShade/material.h>
 
-#include "Scene.hpp"
+#include <memory>
 
 namespace ignition
 {

@@ -14,13 +14,14 @@
  * limitations under the License.
  *
  */
-#ifndef OMNIVERSE_FUSDLAYERNOTICELISTENER_HPP
-#define OMNIVERSE_FUSDLAYERNOTICELISTENER_HPP
+#ifndef IGNITION_OMNIVERSE_FUSDLAYERNOTICELISTENER_HPP
+#define IGNITION_OMNIVERSE_FUSDLAYERNOTICELISTENER_HPP
 
 #include "IgnitionModel.hpp"
 #include "Scene.hpp"
 
-#include "ignition/common/WorkerPool.hh"
+#include <ignition/common/Console.hh>
+#include <ignition/common/WorkerPool.hh>
 
 namespace ignition
 {
@@ -37,7 +38,7 @@ class FUSDLayerNoticeListener : public pxr::TfWeakBase
 
   void HandleGlobalLayerReload(const pxr::SdfNotice::LayerDidReloadContent& n)
   {
-    std::cout << "HandleGlobalLayerReload called" << std::endl;
+    igndbg << "HandleGlobalLayerReload called" << std::endl;
   }
 
   // Print some interesting info about the LayerNotice
@@ -54,7 +55,7 @@ class FUSDLayerNoticeListener : public pxr::TfWeakBase
 
       // for (auto &v : vectorPath)
       // {
-      // 	std::cerr << "v " << v.GetName() << '\n';
+      // 	igndbg << "v " << v.GetName() << '\n';
       // }
 
       if (ChangeEntry.second.flags.didRemoveNonInertPrim)
@@ -66,8 +67,8 @@ class FUSDLayerNoticeListener : public pxr::TfWeakBase
         auto it = models.find(sdfPath.GetName());
         if (it == models.end())
         {
-          std::cerr << "Not able to remove [" << sdfPath.GetName() << "]"
-                    << '\n';
+          ignwarn << "Not able to remove [" << sdfPath.GetName() << "]"
+                  << std::endl;
         }
 
         req.set_id(it->second.id);
@@ -83,21 +84,21 @@ class FUSDLayerNoticeListener : public pxr::TfWeakBase
         {
           if (rep.data())
           {
-            std::cerr << "model was removed [" << sdfPath.GetName() << "]"
-                      << '\n';
+            igndbg << "model was removed [" << sdfPath.GetName() << "]"
+                   << std::endl;
             this->scene->RemoveModel(sdfPath.GetName());
           }
           else
           {
-            std::cerr << "Error model was not remnoved [" << sdfPath.GetName()
-                      << "]" << '\n';
+            ignerr << "Error model was not removed [" << sdfPath.GetName()
+                   << "]" << std::endl;
           }
         }
-        // std::cout << " deleted " << sdfPath.GetName() << std::endl;
+        // ignmsg << " deleted " << sdfPath.GetName() << std::endl;
       }
       else if (ChangeEntry.second.flags.didAddNonInertPrim)
       {
-        std::cout << " added" << sdfPath.GetName() << std::endl;
+        ignmsg << " added" << sdfPath.GetName() << std::endl;
       }
 
       for (auto Info : ChangeEntry.second.infoChanged)
@@ -105,8 +106,8 @@ class FUSDLayerNoticeListener : public pxr::TfWeakBase
         if (Info.second.second.IsArrayValued() &&
             Info.second.second.GetArraySize() > 4)
         {
-          std::cout << " : " << Info.second.second.GetTypeName() << "["
-                    << Info.second.second.GetArraySize() << "]" << std::endl;
+          ignmsg << " : " << Info.second.second.GetTypeName() << "["
+                 << Info.second.second.GetArraySize() << "]" << std::endl;
         }
         else
         {
@@ -166,8 +167,8 @@ class FUSDLayerNoticeListener : public pxr::TfWeakBase
             req.mutable_orientation()->set_w(ignitionModel.pose.Rot().W());
           }
 
-          std::cout << " : " << Info.second.first;
-          std::cout << " -> " << Info.second.second << std::endl;
+          ignmsg << " : " << Info.second.first << " -> " << Info.second.second
+                 << std::endl;
 
           {
             // pool.AddWork([&] ()
@@ -180,11 +181,11 @@ class FUSDLayerNoticeListener : public pxr::TfWeakBase
             {
               if (rep.data())
               {
-                std::cerr << "The position was setted fine" << '\n';
+                igndbg << "The position was setted fine" << std::endl;
               }
               else
               {
-                std::cerr << "Error! The position was not setted fine" << '\n';
+                ignerr << "The position was not setted fine" << std::endl;
               }
             }
             // });
