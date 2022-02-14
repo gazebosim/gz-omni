@@ -34,6 +34,9 @@
 
 using namespace ignition::omniverse;
 
+constexpr double kTargetFps = 60;
+constexpr std::chrono::duration<double> kUpdateRate(1 / kTargetFps);
+
 int main(int argc, char* argv[])
 {
   CLI::App app("Ignition omniverse connector");
@@ -84,22 +87,32 @@ int main(int argc, char* argv[])
 
   SceneImpl::SharedPtr scene = SceneImpl::Make(worldName, stage);
 
-  FUSDLayerNoticeListener USDLayerNoticeListener(scene, worldName);
-  auto LayerReloadKey = pxr::TfNotice::Register(
-      pxr::TfCreateWeakPtr(&USDLayerNoticeListener),
-      &FUSDLayerNoticeListener::HandleGlobalLayerReload);
-  auto LayerChangeKey = pxr::TfNotice::Register(
-      pxr::TfCreateWeakPtr(&USDLayerNoticeListener),
-      &FUSDLayerNoticeListener::HandleRootOrSubLayerChange,
-      stage->GetRootLayer());
+  // TODO: disabled omniverse -> ignition sync to focus on ignition -> omniverse
+  // FUSDLayerNoticeListener USDLayerNoticeListener(scene, worldName);
+  // auto LayerReloadKey = pxr::TfNotice::Register(
+  //     pxr::TfCreateWeakPtr(&USDLayerNoticeListener),
+  //     &FUSDLayerNoticeListener::HandleGlobalLayerReload);
+  // auto LayerChangeKey = pxr::TfNotice::Register(
+  //     pxr::TfCreateWeakPtr(&USDLayerNoticeListener),
+  //     &FUSDLayerNoticeListener::HandleRootOrSubLayerChange,
+  //     stage->GetRootLayer());
 
   FUSDNoticeListener USDNoticeListener(scene, worldName);
   auto USDNoticeKey = pxr::TfNotice::Register(
       pxr::TfCreateWeakPtr(&USDNoticeListener), &FUSDNoticeListener::Handle);
 
+  auto lastUpdate = std::chrono::steady_clock::now();
+  double curFps = 0;
+
   while (true)
   {
-    omniUsdLiveWaitForPendingUpdates();
+    std::this_thread::sleep_for((lastUpdate + kUpdateRate) -
+                                std::chrono::steady_clock::now());
+    auto now = std::chrono::steady_clock::now();
+    curFps = 1 / std::chrono::duration<double>(now - lastUpdate).count();
+    lastUpdate = now;
+
+    omniUsdLiveProcess();
 
     std::unordered_map<std::string, IgnitionModel> models;
     models = scene->GetModels();

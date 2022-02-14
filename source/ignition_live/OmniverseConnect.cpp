@@ -142,8 +142,12 @@ MaybeError<std::string, GenericError> CreateOmniverseModel(
     else
     {
       auto stage = pxr::UsdStage::CreateNew(normalizedStageUrl);
-      // Always a good idea to declare your up-ness
-      UsdGeomSetStageUpAxis(stage, pxr::UsdGeomTokens->z);
+      // Specify ignition up-ness and units.
+      pxr::UsdGeomSetStageUpAxis(stage, pxr::UsdGeomTokens->z);
+      pxr::UsdGeomSetStageMetersPerUnit(stage, 1);
+      stage->SetMetadata(pxr::SdfFieldKeys->Comment,
+                         "Created by ignition-omniverse");
+      stage->Save();
       ignmsg << "Created omniverse stage at [" << normalizedStageUrl << "]"
              << std::endl;
     }
