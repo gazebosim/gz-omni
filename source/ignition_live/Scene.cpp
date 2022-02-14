@@ -16,7 +16,7 @@
  */
 
 #include "IgnitionVisual.hpp"
-#include "SceneImpl.hpp"
+#include "Scene.hpp"
 
 #include <ignition/common/Console.hh>
 #include <ignition/math/Pose3.hh>
@@ -36,29 +36,29 @@ namespace ignition
 namespace omniverse
 {
 //////////////////////////////////////////////////
-SceneImpl::SceneImpl(const std::string &_worldName, pxr::UsdStageRefPtr _stage)
+Scene::Scene(const std::string &_worldName, pxr::UsdStageRefPtr _stage)
 {
   this->worldName = _worldName;
   this->stage = _stage;
 }
 
 //////////////////////////////////////////////////
-SceneImpl::SharedPtr SceneImpl::Make(const std::string &_worldName,
+Scene::SharedPtr Scene::Make(const std::string &_worldName,
                                      pxr::UsdStageRefPtr _stage)
 {
-  auto sp = std::make_shared<SceneImpl>(_worldName, _stage);
+  auto sp = std::make_shared<Scene>(_worldName, _stage);
   sp->Init();
   return sp;
 }
 
 // //////////////////////////////////////////////////
-// pxr::UsdStageRefPtr SceneImpl::Stage() const
+// pxr::UsdStageRefPtr Scene::Stage() const
 // {
 //   return this->stage;
 // }
 
 //////////////////////////////////////////////////
-pxr::UsdPrim SceneImpl::GetPrimAtPath(const std::string &_path)
+pxr::UsdPrim Scene::GetPrimAtPath(const std::string &_path)
 {
   std::unique_lock<std::mutex> lkStage(mutexStage);
   auto prim = this->stage->GetPrimAtPath(pxr::SdfPath(_path));
@@ -66,71 +66,71 @@ pxr::UsdPrim SceneImpl::GetPrimAtPath(const std::string &_path)
 }
 
 //////////////////////////////////////////////////
-void SceneImpl::SaveStage()
+void Scene::SaveStage()
 {
   std::unique_lock<std::mutex> lkStage(mutexStage);
   this->stage->Save();
 }
 
 //////////////////////////////////////////////////
-pxr::UsdGeomCapsule SceneImpl::CreateCapsule(const std::string &_name)
+pxr::UsdGeomCapsule Scene::CreateCapsule(const std::string &_name)
 {
   std::unique_lock<std::mutex> lkStage(mutexStage);
   return pxr::UsdGeomCapsule::Define(this->stage, pxr::SdfPath(_name));
 }
 
 //////////////////////////////////////////////////
-pxr::UsdGeomSphere SceneImpl::CreateSphere(const std::string &_name)
+pxr::UsdGeomSphere Scene::CreateSphere(const std::string &_name)
 {
   std::unique_lock<std::mutex> lkStage(mutexStage);
   return pxr::UsdGeomSphere::Define(this->stage, pxr::SdfPath(_name));
 }
 
 //////////////////////////////////////////////////
-pxr::UsdGeomCube SceneImpl::CreateCube(const std::string &_name)
+pxr::UsdGeomCube Scene::CreateCube(const std::string &_name)
 {
   std::unique_lock<std::mutex> lkStage(mutexStage);
   return pxr::UsdGeomCube::Define(this->stage, pxr::SdfPath(_name));
 }
 
 //////////////////////////////////////////////////
-pxr::UsdGeomSphere SceneImpl::CreateEllipsoid(const std::string &_name)
+pxr::UsdGeomSphere Scene::CreateEllipsoid(const std::string &_name)
 {
   std::unique_lock<std::mutex> lkStage(mutexStage);
   return pxr::UsdGeomSphere::Define(this->stage, pxr::SdfPath(_name));
 }
 
 //////////////////////////////////////////////////
-pxr::UsdGeomCylinder SceneImpl::CreateCylinder(const std::string &_name)
+pxr::UsdGeomCylinder Scene::CreateCylinder(const std::string &_name)
 {
   std::unique_lock<std::mutex> lkStage(mutexStage);
   return pxr::UsdGeomCylinder::Define(this->stage, pxr::SdfPath(_name));
 }
 
 //////////////////////////////////////////////////
-pxr::UsdShadeMaterial SceneImpl::CreateMaterial(const std::string &_name)
+pxr::UsdShadeMaterial Scene::CreateMaterial(const std::string &_name)
 {
   std::unique_lock<std::mutex> lkStage(mutexStage);
   return pxr::UsdShadeMaterial::Define(this->stage, pxr::SdfPath(_name));
 }
 
 //////////////////////////////////////////////////
-pxr::UsdShadeShader SceneImpl::CreateShader(const std::string &_name)
+pxr::UsdShadeShader Scene::CreateShader(const std::string &_name)
 {
   std::unique_lock<std::mutex> lkStage(mutexStage);
   return pxr::UsdShadeShader::Define(this->stage, pxr::SdfPath(_name));
 }
 
-pxr::UsdGeomXform SceneImpl::CreateXform(const std::string &_name)
+pxr::UsdGeomXform Scene::CreateXform(const std::string &_name)
 {
   std::unique_lock<std::mutex> lkStage(mutexStage);
   return pxr::UsdGeomXform::Define(this->stage, pxr::SdfPath(_name));
 }
 
 //////////////////////////////////////////////////
-bool SceneImpl::Init()
+bool Scene::Init()
 {
-  modelThread = std::make_shared<std::thread>(&SceneImpl::modelWorker, this);
+  modelThread = std::make_shared<std::thread>(&Scene::modelWorker, this);
 
   std::vector<std::string> topics;
   node.TopicList(topics);
@@ -139,7 +139,7 @@ bool SceneImpl::Init()
   {
     if (topic.find("/joint_state") != std::string::npos)
     {
-      if (!node.Subscribe(topic, &SceneImpl::CallbackJoint, this))
+      if (!node.Subscribe(topic, &Scene::CallbackJoint, this))
       {
         ignerr << "Error subscribing to topic [" << topic << "]" << std::endl;
         return false;
@@ -153,7 +153,7 @@ bool SceneImpl::Init()
 
   std::string topic = "/world/" + worldName + "/pose/info";
   // Subscribe to a topic by registering a callback.
-  if (!node.Subscribe(topic, &SceneImpl::CallbackPoses, this))
+  if (!node.Subscribe(topic, &Scene::CallbackPoses, this))
   {
     ignerr << "Error subscribing to topic [" << topic << "]" << std::endl;
     return false;
@@ -163,7 +163,7 @@ bool SceneImpl::Init()
 }
 
 //////////////////////////////////////////////////
-std::unordered_map<std::string, IgnitionModel> SceneImpl::GetModels()
+std::unordered_map<std::string, IgnitionModel> Scene::GetModels()
 {
   std::unordered_map<std::string, IgnitionModel> result;
   std::unique_lock<std::mutex> lkPose(poseMutex);
@@ -171,7 +171,7 @@ std::unordered_map<std::string, IgnitionModel> SceneImpl::GetModels()
   return result;
 }
 
-void SceneImpl::modelWorker()
+void Scene::modelWorker()
 {
   auto printvector = [](const auto &v)
   {
@@ -304,7 +304,7 @@ void SceneImpl::modelWorker()
 }
 
 //////////////////////////////////////////////////
-bool SceneImpl::SetModelPose(const std::string &_name,
+bool Scene::SetModelPose(const std::string &_name,
                              const ignition::math::Pose3d &_pose)
 {
   std::unique_lock<std::mutex> lkPose(poseMutex);
@@ -318,14 +318,14 @@ bool SceneImpl::SetModelPose(const std::string &_name,
   return false;
 }
 
-bool SceneImpl::RemoveModel(const std::string &_name)
+bool Scene::RemoveModel(const std::string &_name)
 {
   return static_cast<bool>(this->models.erase(_name));
 }
 
 //////////////////////////////////////////////////
 /// \brief Function called each time a topic update is received.
-void SceneImpl::CallbackPoses(const ignition::msgs::Pose_V &_msg)
+void Scene::CallbackPoses(const ignition::msgs::Pose_V &_msg)
 {
   std::unique_lock<std::mutex> lkPose(poseMutex);
 
@@ -348,7 +348,7 @@ void SceneImpl::CallbackPoses(const ignition::msgs::Pose_V &_msg)
 
 //////////////////////////////////////////////////
 /// \brief Function called each time a topic update is received.
-void SceneImpl::CallbackJoint(const ignition::msgs::Model &_msg)
+void Scene::CallbackJoint(const ignition::msgs::Model &_msg)
 {
   std::unique_lock<std::mutex> lkPose(poseMutex);
 

@@ -19,7 +19,7 @@
 #include "FUSDNoticeListener.hpp"
 #include "GetOp.hpp"
 #include "OmniverseConnect.hpp"
-#include "SceneImpl.hpp"
+#include "Scene.hpp"
 #include "SetOp.hpp"
 
 #include <ignition/common/Console.hh>
@@ -85,7 +85,7 @@ int main(int argc, char* argv[])
 
   PrintConnectedUsername(stageUrl);
 
-  SceneImpl::SharedPtr scene = SceneImpl::Make(worldName, stage);
+  Scene::SharedPtr scene = Scene::Make(worldName, stage);
 
   // TODO: disabled omniverse -> ignition sync to focus on ignition -> omniverse
   // FUSDLayerNoticeListener USDLayerNoticeListener(scene, worldName);
