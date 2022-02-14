@@ -1,15 +1,6 @@
-Package : connect-samples-launcher
-Version : 222-linux-x86_64
+Package : ignition-conection
+Version : 000-linux-x86_64
 Maintainers : N/A
 Description : N/A
-Repository : ssh://git@gitlab-master.nvidia.com:12051/omniverse/connect-sample-launcher-package.git
+Repository : https://github.com/ignitionrobotics/ign-omni
 Branch : main
-Commit : d29ad16cfa7840828a573d42d41e68780fa9d95a
-Time : Wed Nov 10 17:11:04 2021
-Builder Name : ip-10-14-65-93
-Packman Version : 6.38.1
-Packagemaker Version : 5.2.9
-Platform : linux-x86_64
-CI Build Number : 222
-CI System : Teamcity
-CI Version : 2021.2 (build 99542)
