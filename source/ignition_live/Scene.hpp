@@ -51,17 +51,20 @@ namespace omniverse
 class Scene
 {
  public:
-  Scene(const std::string &_worldName, ThreadSafe<pxr::UsdStageRefPtr> &_stage);
+  Scene(const std::string &_worldName, const std::string &_stageUrl);
 
   /// \brief Initialize the scene and subscribes for updates. This blocks until
   /// the scene is initialized.
   /// \return true if success
   bool Init();
 
+  /// \brief Equivalent to `scene.Stage().Lock()->Save()`.
+  void Save();
+
   ThreadSafe<pxr::UsdStageRefPtr> &Stage();
 
  private:
-  ThreadSafe<pxr::UsdStageRefPtr> &stage;
+  ThreadSafe<pxr::UsdStageRefPtr> stage;
   std::string worldName;
   ignition::transport::Node node;
   std::unordered_map<uint32_t, pxr::UsdGeomXformCommonAPI> poses;

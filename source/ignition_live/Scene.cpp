@@ -36,10 +36,10 @@ namespace ignition
 namespace omniverse
 {
 //////////////////////////////////////////////////
-Scene::Scene(const std::string &_worldName,
-             ThreadSafe<pxr::UsdStageRefPtr> &_stage)
-    : worldName(_worldName), stage(_stage)
+Scene::Scene(const std::string &_worldName, const std::string &_stageUrl)
+    : worldName(_worldName), stage(pxr::UsdStage::Open(_stageUrl))
 {
+  ignmsg << "Opened stage [" << _stageUrl << "]" << std::endl;
 }
 
 // //////////////////////////////////////////////////
@@ -330,6 +330,16 @@ bool Scene::InitScene()
     igndbg << "added model [" << model.name() << "]" << std::endl;
   }
 
+  for (const auto &light : ignScene.light())
+  {
+    // TODO: This is just a stub remove warnings when updating poses
+    auto stage = this->stage.Lock();
+    auto xform = pxr::UsdGeomXform::Define(
+        *stage, pxr::SdfPath("/" + worldName + "/" + light.name()));
+    pxr::UsdGeomXformCommonAPI xformApi(xform);
+    this->poses[light.id()] = xformApi;
+  }
+
   return true;
 }
 
@@ -366,6 +376,9 @@ bool Scene::Init()
 
   return true;
 }
+
+//////////////////////////////////////////////////
+void Scene::Save() { this->Stage().Lock()->Save(); }
 
 //////////////////////////////////////////////////
 /// \brief Function called each time a topic update is received.
