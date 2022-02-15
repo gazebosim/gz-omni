@@ -15,11 +15,11 @@
  *
  */
 
-#include "IgnitionVisual.hpp"
+#include "Material.hpp"
 #include "Scene.hpp"
 
 #include <ignition/common/Console.hh>
-#include <ignition/math/Pose3.hh>
+#include <ignition/math/Quaternion.hh>
 
 #include <pxr/usd/usdGeom/xform.h>
 
@@ -36,120 +36,321 @@ namespace ignition
 namespace omniverse
 {
 //////////////////////////////////////////////////
-Scene::Scene(const std::string &_worldName, pxr::UsdStageRefPtr _stage)
+Scene::Scene(const std::string &_worldName,
+             ThreadSafe<pxr::UsdStageRefPtr> &_stage)
+    : worldName(_worldName), stage(_stage)
 {
-  this->worldName = _worldName;
-  this->stage = _stage;
-}
-
-//////////////////////////////////////////////////
-Scene::SharedPtr Scene::Make(const std::string &_worldName,
-                                     pxr::UsdStageRefPtr _stage)
-{
-  auto sp = std::make_shared<Scene>(_worldName, _stage);
-  sp->Init();
-  return sp;
 }
 
 // //////////////////////////////////////////////////
-// pxr::UsdStageRefPtr Scene::Stage() const
-// {
-//   return this->stage;
-// }
+ThreadSafe<pxr::UsdStageRefPtr> &Scene::Stage() { return this->stage; }
 
 //////////////////////////////////////////////////
-pxr::UsdPrim Scene::GetPrimAtPath(const std::string &_path)
+void Scene::ResetPose(const pxr::UsdGeomXformCommonAPI &_prim)
 {
-  std::unique_lock<std::mutex> lkStage(mutexStage);
-  auto prim = this->stage->GetPrimAtPath(pxr::SdfPath(_path));
-  return prim;
+  pxr::UsdGeomXformCommonAPI xformApi(_prim);
+  xformApi.SetTranslate(pxr::GfVec3d(0));
+  xformApi.SetRotate(pxr::GfVec3f(0));
 }
 
 //////////////////////////////////////////////////
-void Scene::SaveStage()
+void Scene::SetPose(const pxr::UsdGeomXformCommonAPI &_prim,
+                    const ignition::msgs::Pose &_pose)
 {
-  std::unique_lock<std::mutex> lkStage(mutexStage);
-  this->stage->Save();
+  pxr::UsdGeomXformCommonAPI xformApi(_prim);
+  const auto &pos = _pose.position();
+  const auto &orient = _pose.orientation();
+  ignition::math::Quaterniond quat(orient.w(), orient.x(), orient.y(),
+                                   orient.z());
+  xformApi.SetTranslate(pxr::GfVec3d(pos.x(), pos.y(), pos.z()));
+  xformApi.SetRotate(pxr::GfVec3f(ignition::math::Angle(quat.Roll()).Degree(),
+                                  ignition::math::Angle(quat.Pitch()).Degree(),
+                                  ignition::math::Angle(quat.Yaw()).Degree()),
+                     pxr::UsdGeomXformCommonAPI::RotationOrderXYZ);
 }
 
 //////////////////////////////////////////////////
-pxr::UsdGeomCapsule Scene::CreateCapsule(const std::string &_name)
+void Scene::ResetScale(const pxr::UsdGeomXformCommonAPI &_prim)
 {
-  std::unique_lock<std::mutex> lkStage(mutexStage);
-  return pxr::UsdGeomCapsule::Define(this->stage, pxr::SdfPath(_name));
+  pxr::UsdGeomXformCommonAPI xformApi(_prim);
+  xformApi.SetScale(pxr::GfVec3f(1));
 }
 
 //////////////////////////////////////////////////
-pxr::UsdGeomSphere Scene::CreateSphere(const std::string &_name)
+void Scene::SetScale(const pxr::UsdGeomXformCommonAPI &_prim,
+                     const ignition::msgs::Vector3d &_scale)
 {
-  std::unique_lock<std::mutex> lkStage(mutexStage);
-  return pxr::UsdGeomSphere::Define(this->stage, pxr::SdfPath(_name));
+  pxr::UsdGeomXformCommonAPI xformApi(_prim);
+  xformApi.SetScale(pxr::GfVec3f(_scale.x(), _scale.y(), _scale.z()));
 }
 
 //////////////////////////////////////////////////
-pxr::UsdGeomCube Scene::CreateCube(const std::string &_name)
+bool Scene::UpdateVisual(const ignition::msgs::Visual &_visual,
+                         const std::string &_usdLinkPath)
 {
-  std::unique_lock<std::mutex> lkStage(mutexStage);
-  return pxr::UsdGeomCube::Define(this->stage, pxr::SdfPath(_name));
+  auto stage = this->stage.Lock();
+
+  std::string usdVisualPath = _usdLinkPath + "/" + _visual.name();
+  auto usdVisualXform =
+      pxr::UsdGeomXform::Define(*stage, pxr::SdfPath(usdVisualPath));
+  pxr::UsdGeomXformCommonAPI xformApi(usdVisualXform);
+  if (_visual.has_scale())
+  {
+    this->SetScale(xformApi, _visual.scale());
+  }
+  else
+  {
+    this->ResetScale(xformApi);
+  }
+  if (_visual.has_pose())
+  {
+    this->SetPose(xformApi, _visual.pose());
+  }
+  else
+  {
+    this->ResetPose(xformApi);
+  }
+  this->poses[_visual.id()] = xformApi;
+
+  pxr::SdfPath usdGeomPath(usdVisualPath + "/geometry");
+  const auto &geom = _visual.geometry();
+
+  switch (geom.type())
+  {
+    case ignition::msgs::Geometry::BOX:
+    {
+      auto usdCube =
+          pxr::UsdGeomCube::Define(*stage, pxr::SdfPath(usdGeomPath));
+      usdCube.CreateSizeAttr().Set(1.0);
+      pxr::GfVec3f endPoint(0.5);
+      pxr::VtArray<pxr::GfVec3f> extentBounds;
+      extentBounds.push_back(-1.0 * endPoint);
+      extentBounds.push_back(endPoint);
+      usdCube.CreateExtentAttr().Set(extentBounds);
+      pxr::UsdGeomXformCommonAPI cubeXformAPI(usdCube);
+      cubeXformAPI.SetScale(pxr::GfVec3f(
+          geom.box().size().x(), geom.box().size().y(), geom.box().size().z()));
+      SetMaterial(usdCube, _visual, *stage);
+      break;
+    }
+    // TODO: Support cone
+    // case ignition::msgs::Geometry::CONE:
+    case ignition::msgs::Geometry::CYLINDER:
+    {
+      auto usdCylinder =
+          pxr::UsdGeomCylinder::Define(*stage, pxr::SdfPath(usdGeomPath));
+      double radius = geom.cylinder().radius();
+      double length = geom.cylinder().length();
+
+      usdCylinder.CreateRadiusAttr().Set(radius);
+      usdCylinder.CreateHeightAttr().Set(length);
+      pxr::GfVec3f endPoint(radius);
+      endPoint[2] = length * 0.5;
+      pxr::VtArray<pxr::GfVec3f> extentBounds;
+      extentBounds.push_back(-1.0 * endPoint);
+      extentBounds.push_back(endPoint);
+      usdCylinder.CreateExtentAttr().Set(extentBounds);
+      SetMaterial(usdCylinder, _visual, *stage);
+      break;
+    }
+    case ignition::msgs::Geometry::PLANE:
+    {
+      auto usdCube =
+          pxr::UsdGeomCube::Define(*stage, pxr::SdfPath(usdGeomPath));
+      usdCube.CreateSizeAttr().Set(1.0);
+      pxr::GfVec3f endPoint(0.5);
+      pxr::VtArray<pxr::GfVec3f> extentBounds;
+      extentBounds.push_back(-1.0 * endPoint);
+      extentBounds.push_back(endPoint);
+      usdCube.CreateExtentAttr().Set(extentBounds);
+
+      pxr::UsdGeomXformCommonAPI cubeXformAPI(usdCube);
+      cubeXformAPI.SetScale(
+          pxr::GfVec3f(geom.plane().size().x(), geom.plane().size().y(), 0.25));
+      SetMaterial(usdCube, _visual, *stage);
+      break;
+    }
+    case ignition::msgs::Geometry::ELLIPSOID:
+    {
+      auto usdEllipsoid =
+          pxr::UsdGeomSphere::Define(*stage, pxr::SdfPath(usdGeomPath));
+      const auto maxRadii =
+          ignition::math::Vector3d(geom.ellipsoid().radii().x(),
+                                   geom.ellipsoid().radii().y(),
+                                   geom.ellipsoid().radii().z())
+              .Max();
+      usdEllipsoid.CreateRadiusAttr().Set(0.5);
+      pxr::UsdGeomXformCommonAPI xform(usdEllipsoid);
+      xform.SetScale(pxr::GfVec3f{
+          static_cast<float>(geom.ellipsoid().radii().x() / maxRadii),
+          static_cast<float>(geom.ellipsoid().radii().y() / maxRadii),
+          static_cast<float>(geom.ellipsoid().radii().z() / maxRadii),
+      });
+      // extents is the bounds before any transformation
+      pxr::VtArray<pxr::GfVec3f> extentBounds;
+      extentBounds.push_back(pxr::GfVec3f{static_cast<float>(-maxRadii)});
+      extentBounds.push_back(pxr::GfVec3f{static_cast<float>(maxRadii)});
+      usdEllipsoid.CreateExtentAttr().Set(extentBounds);
+      SetMaterial(usdEllipsoid, _visual, *stage);
+      break;
+    }
+    case ignition::msgs::Geometry::SPHERE:
+    {
+      auto usdSphere =
+          pxr::UsdGeomSphere::Define(*stage, pxr::SdfPath(usdGeomPath));
+      double radius = geom.sphere().radius();
+      usdSphere.CreateRadiusAttr().Set(radius);
+      pxr::VtArray<pxr::GfVec3f> extentBounds;
+      extentBounds.push_back(pxr::GfVec3f(-1.0 * radius));
+      extentBounds.push_back(pxr::GfVec3f(radius));
+      usdSphere.CreateExtentAttr().Set(extentBounds);
+      SetMaterial(usdSphere, _visual, *stage);
+      break;
+    }
+    case ignition::msgs::Geometry::CAPSULE:
+    {
+      auto usdCapsule =
+          pxr::UsdGeomCapsule::Define(*stage, pxr::SdfPath(usdGeomPath));
+      double radius = geom.capsule().radius();
+      double length = geom.capsule().length();
+      usdCapsule.CreateRadiusAttr().Set(radius);
+      usdCapsule.CreateHeightAttr().Set(length);
+      pxr::GfVec3f endPoint(radius);
+      endPoint[2] += 0.5 * length;
+      pxr::VtArray<pxr::GfVec3f> extentBounds;
+      extentBounds.push_back(-1.0 * endPoint);
+      extentBounds.push_back(endPoint);
+      usdCapsule.CreateExtentAttr().Set(extentBounds);
+      SetMaterial(usdCapsule, _visual, *stage);
+      break;
+    }
+    default:
+      ignerr << "Failed to update geometry (unsuported geometry type '"
+             << _visual.type() << "')" << std::endl;
+      return false;
+  }
+
+  return true;
 }
 
 //////////////////////////////////////////////////
-pxr::UsdGeomSphere Scene::CreateEllipsoid(const std::string &_name)
+bool Scene::UpdateLink(const ignition::msgs::Link &_link,
+                       const std::string &_usdModelPath)
 {
-  std::unique_lock<std::mutex> lkStage(mutexStage);
-  return pxr::UsdGeomSphere::Define(this->stage, pxr::SdfPath(_name));
+  auto stage = this->stage.Lock();
+  std::string usdLinkPath = _usdModelPath + "/" + _link.name();
+  auto xform = pxr::UsdGeomXform::Define(*stage, pxr::SdfPath(usdLinkPath));
+  pxr::UsdGeomXformCommonAPI xformApi(xform);
+
+  if (_link.has_pose())
+  {
+    this->SetPose(xformApi, _link.pose());
+  }
+  else
+  {
+    this->ResetPose(xformApi);
+  }
+  this->poses[_link.id()] = xformApi;
+
+  for (const auto &visual : _link.visual())
+  {
+    if (!this->UpdateVisual(visual, usdLinkPath))
+    {
+      ignerr << "Failed to update link [" << _link.name() << "]" << std::endl;
+      return false;
+    }
+  }
+  return true;
 }
 
 //////////////////////////////////////////////////
-pxr::UsdGeomCylinder Scene::CreateCylinder(const std::string &_name)
+bool Scene::UpdateModel(const ignition::msgs::Model &_model)
 {
-  std::unique_lock<std::mutex> lkStage(mutexStage);
-  return pxr::UsdGeomCylinder::Define(this->stage, pxr::SdfPath(_name));
+  auto stage = this->stage.Lock();
+
+  std::string usdModelPath = "/" + worldName + "/" + _model.name();
+  auto xform = pxr::UsdGeomXform::Define(*stage, pxr::SdfPath(usdModelPath));
+  pxr::UsdGeomXformCommonAPI xformApi(xform);
+  if (_model.has_scale())
+  {
+    this->SetScale(xformApi, _model.scale());
+  }
+  else
+  {
+    this->ResetScale(xformApi);
+  }
+  if (_model.has_pose())
+  {
+    this->SetPose(xformApi, _model.pose());
+  }
+  else
+  {
+    this->ResetPose(xformApi);
+  }
+  this->poses[_model.id()] = xformApi;
+
+  for (const auto &link : _model.link())
+  {
+    if (!this->UpdateLink(link, usdModelPath))
+    {
+      ignerr << "Failed to update model [" << _model.name() << "]" << std::endl;
+      return false;
+    }
+  }
+  return true;
 }
 
 //////////////////////////////////////////////////
-pxr::UsdShadeMaterial Scene::CreateMaterial(const std::string &_name)
+bool Scene::InitScene()
 {
-  std::unique_lock<std::mutex> lkStage(mutexStage);
-  return pxr::UsdShadeMaterial::Define(this->stage, pxr::SdfPath(_name));
-}
+  bool result;
+  ignition::msgs::Empty req;
+  ignition::msgs::Scene ignScene;
+  if (!node.Request("/world/" + worldName + "/scene/info", req, 5000, ignScene,
+                    result))
+  {
+    ignwarn << "Error requesting scene info, make sure the world [" << worldName
+            << "] is available, ignition-omniverse will keep trying..."
+            << std::endl;
+    if (!node.Request("/world/" + worldName + "/scene/info", req, -1, ignScene,
+                      result))
+    {
+      ignerr << "Error request scene info" << std::endl;
+      return false;
+    }
+  }
 
-//////////////////////////////////////////////////
-pxr::UsdShadeShader Scene::CreateShader(const std::string &_name)
-{
-  std::unique_lock<std::mutex> lkStage(mutexStage);
-  return pxr::UsdShadeShader::Define(this->stage, pxr::SdfPath(_name));
-}
+  for (const auto &model : ignScene.model())
+  {
+    if (!this->UpdateModel(model))
+    {
+      ignerr << "Failed to add model [" << model.name() << "]" << std::endl;
+      return false;
+    }
+    igndbg << "added model [" << model.name() << "]" << std::endl;
+  }
 
-pxr::UsdGeomXform Scene::CreateXform(const std::string &_name)
-{
-  std::unique_lock<std::mutex> lkStage(mutexStage);
-  return pxr::UsdGeomXform::Define(this->stage, pxr::SdfPath(_name));
+  return true;
 }
 
 //////////////////////////////////////////////////
 bool Scene::Init()
 {
-  modelThread = std::make_shared<std::thread>(&Scene::modelWorker, this);
-
-  std::vector<std::string> topics;
-  node.TopicList(topics);
-
-  for (auto const &topic : topics)
+  if (!this->InitScene())
   {
-    if (topic.find("/joint_state") != std::string::npos)
-    {
-      if (!node.Subscribe(topic, &Scene::CallbackJoint, this))
-      {
-        ignerr << "Error subscribing to topic [" << topic << "]" << std::endl;
-        return false;
-      }
-      else
-      {
-        ignmsg << "Subscribed to topic: [" << topic << "]" << std::endl;
-      }
-    }
+    return false;
   }
+
+  // modelThread = std::make_shared<std::thread>(&Scene::modelWorker, this);
+  // if (!node.Subscribe("/joint_state", &Scene::CallbackJoint, this))
+  // {
+  //   ignerr << "Error subscribing to topic [joint_state]" << std::endl;
+  //   return false;
+  // }
+  // else
+  // {
+  //   ignmsg << "Subscribed to topic: [joint_state]" << std::endl;
+  // }
 
   std::string topic = "/world/" + worldName + "/pose/info";
   // Subscribe to a topic by registering a callback.
@@ -158,190 +359,29 @@ bool Scene::Init()
     ignerr << "Error subscribing to topic [" << topic << "]" << std::endl;
     return false;
   }
+  else
+  {
+    ignmsg << "Subscribed to topic: [" << topic << "]" << std::endl;
+  }
 
   return true;
-}
-
-//////////////////////////////////////////////////
-std::unordered_map<std::string, IgnitionModel> Scene::GetModels()
-{
-  std::unordered_map<std::string, IgnitionModel> result;
-  std::unique_lock<std::mutex> lkPose(poseMutex);
-  result = this->models;
-  return result;
-}
-
-void Scene::modelWorker()
-{
-  auto printvector = [](const auto &v)
-  {
-    igndbg << "{ ";
-    for (auto i : v) igndbg << i << ' ';
-    igndbg << "} " << std::endl;
-  };
-
-  while (true)
-  {
-    std::set<std::string> modelNames;
-
-    auto modelsTmp = GetModels();
-
-    for (auto &model : modelsTmp)
-    {
-      modelNames.insert(model.first);
-    }
-
-    // Prepare the input parameters.
-    ignition::msgs::Empty req;
-    ignition::msgs::Scene rep;
-    bool result;
-    unsigned int timeout = 5000;
-    bool executed = node.Request("/world/" + worldName + "/scene/info", req,
-                                 timeout, rep, result);
-    if (executed)
-    {
-      std::set<std::string> modelNamesReceived;
-
-      for (auto &model : rep.model())
-      {
-        modelNamesReceived.insert(model.name());
-      }
-
-      std::vector<std::string> removed;
-      std::vector<std::string> added;
-
-      std::set_difference(modelNamesReceived.begin(), modelNamesReceived.end(),
-                          modelNames.begin(), modelNames.end(),
-                          std::inserter(added, added.begin()));
-
-      std::set_difference(modelNames.begin(), modelNames.end(),
-                          modelNamesReceived.begin(), modelNamesReceived.end(),
-                          std::inserter(removed, removed.begin()));
-
-      if (added.size() > 0)
-      {
-        igndbg << "added " << '\n';
-        printvector(added);
-      }
-
-      if (removed.size() > 0 && modelNames.size() > 0)
-      {
-        igndbg << "removed " << '\n';
-        printvector(removed);
-        for (auto &removeModelName : removed)
-        {
-          auto it = modelsTmp.find(removeModelName);
-          if (it != modelsTmp.end())
-          {
-            {
-              std::unique_lock<std::mutex> lkStage(mutexStage);
-              this->stage->RemovePrim(
-                  pxr::SdfPath("/" + worldName + "/" + removeModelName));
-            }
-            {
-              igndbg << "removed: " << removeModelName << '\n';
-              std::unique_lock<std::mutex> lkPose(poseMutex);
-              this->models.erase(removeModelName);
-            }
-          }
-        }
-      }
-
-      for (auto &model : rep.model())
-      {
-        auto it = modelsTmp.find(model.name());
-        if (it == modelsTmp.end())
-        {
-          IgnitionModel ignitionModel;
-          // ignitionModel.visuals.emplace_back(ignitionVisual);
-          ignitionModel.pose = ignition::math::Pose3d(
-              model.pose().position().x(), model.pose().position().y(),
-              model.pose().position().z(), model.pose().orientation().w(),
-              model.pose().orientation().x(), model.pose().orientation().y(),
-              model.pose().orientation().z());
-          ignitionModel.id = model.id();
-          std::string sdfModelPath =
-              std::string("/") + worldName + "/" + model.name();
-
-          auto modelPrim = this->GetPrimAtPath(sdfModelPath);
-          if (modelPrim)
-          {
-            igndbg << "Model [" << model.name()
-                   << "] already available in the scene" << std::endl;
-            {
-              std::unique_lock<std::mutex> lkPose(poseMutex);
-              this->models.insert({model.name(), ignitionModel});
-            }
-            continue;
-          }
-
-          auto usdModelXform = pxr::UsdGeomXform::Define(
-              this->stage, pxr::SdfPath(sdfModelPath));
-          for (auto &link : model.link())
-          {
-            std::string sdfLinkPath = sdfModelPath + "/" + link.name();
-
-            auto usdLinkXform = pxr::UsdGeomXform::Define(
-                this->stage, pxr::SdfPath(sdfLinkPath));
-            for (auto &visual : link.visual())
-            {
-              auto scene = this->SharedFromThis();
-              auto ignitionVisual =
-                  IgnitionVisual::Make(visual.id(), visual.name(), scene);
-              ignitionVisual->AttachGeometry(visual, sdfLinkPath);
-
-              {
-                std::unique_lock<std::mutex> lkPose(poseMutex);
-                this->models.insert({model.name(), ignitionModel});
-              }
-            }
-          }
-        }
-      }
-    }
-    std::this_thread::sleep_for(20ms);
-  }
-}
-
-//////////////////////////////////////////////////
-bool Scene::SetModelPose(const std::string &_name,
-                             const ignition::math::Pose3d &_pose)
-{
-  std::unique_lock<std::mutex> lkPose(poseMutex);
-  auto it = models.find(_name);
-  if (it != models.end())
-  {
-    it->second.pose = _pose;
-    it->second.pose.Correct();
-    return true;
-  }
-  return false;
-}
-
-bool Scene::RemoveModel(const std::string &_name)
-{
-  return static_cast<bool>(this->models.erase(_name));
 }
 
 //////////////////////////////////////////////////
 /// \brief Function called each time a topic update is received.
 void Scene::CallbackPoses(const ignition::msgs::Pose_V &_msg)
 {
-  std::unique_lock<std::mutex> lkPose(poseMutex);
-
-  for (int i = 0; i < _msg.pose().size(); ++i)
+  for (const auto &poseMsg : _msg.pose())
   {
-    const auto &poseMsg = _msg.pose(i);
-    auto it = models.find(poseMsg.name());
-    if (it != models.end())
+    try
     {
-      it->second.pose = ignition::math::Pose3d(
-          poseMsg.position().x(), poseMsg.position().y(),
-          poseMsg.position().z(), poseMsg.orientation().w(),
-          poseMsg.orientation().x(), poseMsg.orientation().y(),
-          poseMsg.orientation().z());
-      it->second.id = poseMsg.id();
-      it->second.pose.Correct();
+      const auto &xformApi = this->poses.at(poseMsg.id());
+      this->SetPose(xformApi, poseMsg);
+    }
+    catch (const std::out_of_range &)
+    {
+      ignwarn << "Error updating pose, cannot find [" << poseMsg.name() << "]"
+              << std::endl;
     }
   }
 }
@@ -350,36 +390,34 @@ void Scene::CallbackPoses(const ignition::msgs::Pose_V &_msg)
 /// \brief Function called each time a topic update is received.
 void Scene::CallbackJoint(const ignition::msgs::Model &_msg)
 {
-  std::unique_lock<std::mutex> lkPose(poseMutex);
+  // auto it = this->models.find(_msg.name());
+  // if (it != this->models.end())
+  // {
+  //   auto &joints = it->second.ignitionJoints;
+  //   for (auto &joint : _msg.joint())
+  //   {
+  //     ignition::math::Pose3d poseJoint(
+  //         joint.pose().position().x(), joint.pose().position().y(),
+  //         joint.pose().position().z(), joint.pose().orientation().w(),
+  //         joint.pose().orientation().x(), joint.pose().orientation().y(),
+  //         joint.pose().orientation().z());
 
-  auto it = this->models.find(_msg.name());
-  if (it != this->models.end())
-  {
-    auto &joints = it->second.ignitionJoints;
-    for (auto &joint : _msg.joint())
-    {
-      ignition::math::Pose3d poseJoint(
-          joint.pose().position().x(), joint.pose().position().y(),
-          joint.pose().position().z(), joint.pose().orientation().w(),
-          joint.pose().orientation().x(), joint.pose().orientation().y(),
-          joint.pose().orientation().z());
-
-      auto itJoint = joints.find(joint.name());
-      if (itJoint != joints.end())
-      {
-        itJoint->second->pose = poseJoint;
-        itJoint->second->position = joint.axis1().position();
-      }
-      else
-      {
-        std::shared_ptr<IgnitionJoint> ignitionJoint =
-            std::make_shared<IgnitionJoint>();
-        ignitionJoint->pose = poseJoint;
-        ignitionJoint->position = joint.axis1().position();
-        joints.insert({joint.name(), ignitionJoint});
-      }
-    }
-  }
+  //     auto itJoint = joints.find(joint.name());
+  //     if (itJoint != joints.end())
+  //     {
+  //       itJoint->second->pose = poseJoint;
+  //       itJoint->second->position = joint.axis1().position();
+  //     }
+  //     else
+  //     {
+  //       std::shared_ptr<IgnitionJoint> ignitionJoint =
+  //           std::make_shared<IgnitionJoint>();
+  //       ignitionJoint->pose = poseJoint;
+  //       ignitionJoint->position = joint.axis1().position();
+  //       joints.insert({joint.name(), ignitionJoint});
+  //     }
+  //   }
+  // }
 }
 }  // namespace omniverse
 }  // namespace ignition

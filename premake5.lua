@@ -51,7 +51,7 @@ local targetDepsDir = "_build/target-deps"
 local currentAbsPath = get_abs_path(".");
 
 -- premake5.lua
-workspace "ignition-omni1"
+workspace "ignition-omniverse1"
 
     configurations { "debug", "release" }
     platforms { "x86_64" }

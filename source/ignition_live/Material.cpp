@@ -18,10 +18,12 @@
 #include "Material.hpp"
 
 #include <ignition/common/Console.hh>
+#include <ignition/math/Color.hh>
 
 #include <pxr/usd/usd/tokens.h>
 #include <pxr/usd/usdGeom/gprim.h>
 #include <pxr/usd/usdShade/material.h>
+#include <pxr/usd/usdShade/materialBindingAPI.h>
 
 #include <iostream>
 #include <map>
@@ -97,85 +99,78 @@ void CreateMaterialInput(
   }
 }
 
-pxr::UsdShadeMaterial ParseMaterial(const ignition::msgs::Visual &_visualMsg,
-                                    Scene::SharedPtr &_scene)
+pxr::UsdShadeMaterial SetMaterial(const pxr::UsdGeomGprim &_gprim,
+                                  const ignition::msgs::Visual &_visualMsg,
+                                  const pxr::UsdStageRefPtr &_stage)
 {
-  const std::string mtl_path = "/Looks/Material_" + _visualMsg.name();
-  pxr::UsdShadeMaterial material;
-  material = _scene->CreateMaterial(mtl_path);
-  auto usdShader = _scene->CreateShader(mtl_path + "/Shader");
+  const std::string mtlPath = "/Looks/Material_" + _visualMsg.name();
+  pxr::UsdShadeMaterial material =
+      pxr::UsdShadeMaterial::Define(_stage, pxr::SdfPath(mtlPath));
+  auto usdShader =
+      pxr::UsdShadeShader::Define(_stage, pxr::SdfPath(mtlPath + "/Shader"));
+  auto shaderPrim = usdShader.GetPrim();
 
-  auto shaderPrim = _scene->GetPrimAtPath(mtl_path + "/Shader");
-  if (!shaderPrim)
-  {
-    ignerr << "Not able to cast the UsdShadeShader to a Prim" << std::endl;
-  }
-  else
-  {
-    auto shader_out =
-        pxr::UsdShadeConnectableAPI(shaderPrim)
-            .CreateOutput(pxr::TfToken("out"), pxr::SdfValueTypeNames->Token);
-    material.CreateSurfaceOutput(pxr::TfToken("mdl"))
-        .ConnectToSource(shader_out);
-    material.CreateVolumeOutput(pxr::TfToken("mdl"))
-        .ConnectToSource(shader_out);
-    material.CreateDisplacementOutput(pxr::TfToken("mdl"))
-        .ConnectToSource(shader_out);
-    usdShader.GetImplementationSourceAttr().Set(
-        pxr::UsdShadeTokens->sourceAsset);
-    usdShader.SetSourceAsset(pxr::SdfAssetPath("OmniPBR.mdl"),
-                             pxr::TfToken("mdl"));
-    usdShader.SetSourceAssetSubIdentifier(pxr::TfToken("OmniPBR"),
-                                          pxr::TfToken("mdl"));
+  auto shaderOut =
+      pxr::UsdShadeConnectableAPI(shaderPrim)
+          .CreateOutput(pxr::TfToken("out"), pxr::SdfValueTypeNames->Token);
+  material.CreateSurfaceOutput(pxr::TfToken("mdl")).ConnectToSource(shaderOut);
+  material.CreateVolumeOutput(pxr::TfToken("mdl")).ConnectToSource(shaderOut);
+  material.CreateDisplacementOutput(pxr::TfToken("mdl"))
+      .ConnectToSource(shaderOut);
+  usdShader.GetImplementationSourceAttr().Set(pxr::UsdShadeTokens->sourceAsset);
+  usdShader.SetSourceAsset(pxr::SdfAssetPath("OmniPBR.mdl"),
+                           pxr::TfToken("mdl"));
+  usdShader.SetSourceAssetSubIdentifier(pxr::TfToken("OmniPBR"),
+                                        pxr::TfToken("mdl"));
 
-    std::map<pxr::TfToken, pxr::VtValue> customDataDiffuse = {
-        {pxr::TfToken("default"), pxr::VtValue(pxr::GfVec3f(0.2, 0.2, 0.2))},
-        {pxr::TfToken("range:max"),
-         pxr::VtValue(pxr::GfVec3f(100000, 100000, 100000))},
-        {pxr::TfToken("range:min"), pxr::VtValue(pxr::GfVec3f(0, 0, 0))}};
-    ignition::math::Color diffuse(_visualMsg.material().diffuse().r(),
-                                  _visualMsg.material().diffuse().g(),
-                                  _visualMsg.material().diffuse().b(),
-                                  _visualMsg.material().diffuse().a());
-    CreateMaterialInput<pxr::GfVec3f>(
-        shaderPrim, "diffuse_color_constant", pxr::SdfValueTypeNames->Color3f,
-        pxr::GfVec3f(diffuse.R(), diffuse.G(), diffuse.B()), customDataDiffuse,
-        pxr::TfToken("Base Color"), pxr::TfToken("Albedo"),
-        "This is the base color");
+  std::map<pxr::TfToken, pxr::VtValue> customDataDiffuse = {
+      {pxr::TfToken("default"), pxr::VtValue(pxr::GfVec3f(0.2, 0.2, 0.2))},
+      {pxr::TfToken("range:max"),
+       pxr::VtValue(pxr::GfVec3f(100000, 100000, 100000))},
+      {pxr::TfToken("range:min"), pxr::VtValue(pxr::GfVec3f(0, 0, 0))}};
+  ignition::math::Color diffuse(
+      _visualMsg.material().diffuse().r(), _visualMsg.material().diffuse().g(),
+      _visualMsg.material().diffuse().b(), _visualMsg.material().diffuse().a());
+  CreateMaterialInput<pxr::GfVec3f>(
+      shaderPrim, "diffuse_color_constant", pxr::SdfValueTypeNames->Color3f,
+      pxr::GfVec3f(diffuse.R(), diffuse.G(), diffuse.B()), customDataDiffuse,
+      pxr::TfToken("Base Color"), pxr::TfToken("Albedo"),
+      "This is the base color");
 
-    std::map<pxr::TfToken, pxr::VtValue> customDataEmissive = {
-        {pxr::TfToken("default"), pxr::VtValue(pxr::GfVec3f(1, 0.1, 0.1))},
-        {pxr::TfToken("range:max"),
-         pxr::VtValue(pxr::GfVec3f(100000, 100000, 100000))},
-        {pxr::TfToken("range:min"), pxr::VtValue(pxr::GfVec3f(0, 0, 0))}};
-    ignition::math::Color emissive(_visualMsg.material().emissive().r(),
-                                   _visualMsg.material().emissive().g(),
-                                   _visualMsg.material().emissive().b(),
-                                   _visualMsg.material().emissive().a());
-    CreateMaterialInput<pxr::GfVec3f>(
-        shaderPrim, "emissive_color", pxr::SdfValueTypeNames->Color3f,
-        pxr::GfVec3f(emissive.R(), emissive.G(), emissive.B()),
-        customDataEmissive, pxr::TfToken("Emissive Color"),
-        pxr::TfToken("Emissive"), "The emission color");
+  std::map<pxr::TfToken, pxr::VtValue> customDataEmissive = {
+      {pxr::TfToken("default"), pxr::VtValue(pxr::GfVec3f(1, 0.1, 0.1))},
+      {pxr::TfToken("range:max"),
+       pxr::VtValue(pxr::GfVec3f(100000, 100000, 100000))},
+      {pxr::TfToken("range:min"), pxr::VtValue(pxr::GfVec3f(0, 0, 0))}};
+  ignition::math::Color emissive(_visualMsg.material().emissive().r(),
+                                 _visualMsg.material().emissive().g(),
+                                 _visualMsg.material().emissive().b(),
+                                 _visualMsg.material().emissive().a());
+  CreateMaterialInput<pxr::GfVec3f>(
+      shaderPrim, "emissive_color", pxr::SdfValueTypeNames->Color3f,
+      pxr::GfVec3f(emissive.R(), emissive.G(), emissive.B()),
+      customDataEmissive, pxr::TfToken("Emissive Color"),
+      pxr::TfToken("Emissive"), "The emission color");
 
-    std::map<pxr::TfToken, pxr::VtValue> customDataEnableEmission = {
-        {pxr::TfToken("default"), pxr::VtValue(0)}};
+  std::map<pxr::TfToken, pxr::VtValue> customDataEnableEmission = {
+      {pxr::TfToken("default"), pxr::VtValue(0)}};
 
-    CreateMaterialInput<bool>(
-        shaderPrim, "enable_emission", pxr::SdfValueTypeNames->Bool,
-        emissive.A() > 0, customDataEnableEmission,
-        pxr::TfToken("Enable Emissive"), pxr::TfToken("Emissive"),
-        "Enables the emission of light from the material");
+  CreateMaterialInput<bool>(
+      shaderPrim, "enable_emission", pxr::SdfValueTypeNames->Bool,
+      emissive.A() > 0, customDataEnableEmission,
+      pxr::TfToken("Enable Emissive"), pxr::TfToken("Emissive"),
+      "Enables the emission of light from the material");
 
-    std::map<pxr::TfToken, pxr::VtValue> customDataIntensity = {
-        {pxr::TfToken("default"), pxr::VtValue(40)},
-        {pxr::TfToken("range:max"), pxr::VtValue(100000)},
-        {pxr::TfToken("range:min"), pxr::VtValue(0)}};
-    CreateMaterialInput<float>(
-        shaderPrim, "emissive_intensity", pxr::SdfValueTypeNames->Float,
-        emissive.A(), customDataIntensity, pxr::TfToken("Emissive Intensity"),
-        pxr::TfToken("Emissive"), "Intensity of the emission");
-  }
+  std::map<pxr::TfToken, pxr::VtValue> customDataIntensity = {
+      {pxr::TfToken("default"), pxr::VtValue(40)},
+      {pxr::TfToken("range:max"), pxr::VtValue(100000)},
+      {pxr::TfToken("range:min"), pxr::VtValue(0)}};
+  CreateMaterialInput<float>(
+      shaderPrim, "emissive_intensity", pxr::SdfValueTypeNames->Float,
+      emissive.A(), customDataIntensity, pxr::TfToken("Emissive Intensity"),
+      pxr::TfToken("Emissive"), "Intensity of the emission");
+
+  pxr::UsdShadeMaterialBindingAPI(_gprim).Bind(material);
   return material;
 }
 }  // namespace omniverse

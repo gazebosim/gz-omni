@@ -17,12 +17,17 @@
 #ifndef IGNITION_OMNIVERSE_SCENEIMPL_HPP
 #define IGNITION_OMNIVERSE_SCENEIMPL_HPP
 
-#include "IgnitionModel.hpp"
+#include "Error.hpp"
+#include "ThreadSafe.hpp"
 
 #include <ignition/math/Pose3.hh>
+#include <ignition/msgs/link.pb.h>
 #include <ignition/msgs/model.pb.h>
 #include <ignition/msgs/pose.pb.h>
 #include <ignition/msgs/pose_v.pb.h>
+#include <ignition/msgs/scene.pb.h>
+#include <ignition/msgs/vector3d.pb.h>
+#include <ignition/msgs/visual.pb.h>
 #include <ignition/transport.hh>
 
 #include <pxr/usd/usd/stage.h>
@@ -31,8 +36,9 @@
 #include <pxr/usd/usdGeom/cube.h>
 #include <pxr/usd/usdGeom/cylinder.h>
 #include <pxr/usd/usdShade/material.h>
-#include <pxr/usd/usdGeom/xform.h>
+#include <pxr/usd/usdGeom/xformCommonAPI.h>
 
+#include <cstdint>
 #include <memory>
 #include <string>
 #include <thread>
@@ -42,56 +48,38 @@ namespace ignition
 {
 namespace omniverse
 {
-class Scene : public std::enable_shared_from_this<Scene>
+class Scene
 {
  public:
-  Scene(const std::string &_worldName, pxr::UsdStageRefPtr _stage);
+  Scene(const std::string &_worldName, ThreadSafe<pxr::UsdStageRefPtr> &_stage);
 
-  using SharedPtr = std::shared_ptr<Scene>;
-
-  static SharedPtr Make(const std::string &_worldName,
-                        pxr::UsdStageRefPtr _stage);
-
-  SharedPtr SharedFromThis()
-  {
-    return std::static_pointer_cast<Scene>(this->shared_from_this());
-  }
-
-  /// \brief Starts subscribing for updates from ignition
+  /// \brief Initialize the scene and subscribes for updates. This blocks until
+  /// the scene is initialized.
+  /// \return true if success
   bool Init();
 
-  void CallbackJoint(const ignition::msgs::Model &_msg);
-  void CallbackPoses(const ignition::msgs::Pose_V &_msg);
-  void modelWorker();
-
-  std::unordered_map<std::string, IgnitionModel> GetModels();
-  bool SetModelPose(const std::string &_name,
-                    const ignition::math::Pose3d &_pose);
-
-  bool RemoveModel(const std::string &_name);
-
-  // pxr::UsdStageRefPtr Stage() const;
-
-  pxr::UsdPrim GetPrimAtPath(const std::string &_path);
-  void SaveStage();
-
-  pxr::UsdGeomCapsule CreateCapsule(const std::string &_name);
-  pxr::UsdGeomSphere CreateSphere(const std::string &_name);
-  pxr::UsdGeomCube CreateCube(const std::string &_name);
-  pxr::UsdGeomSphere CreateEllipsoid(const std::string &_name);
-  pxr::UsdGeomCylinder CreateCylinder(const std::string &_name);
-  pxr::UsdShadeMaterial CreateMaterial(const std::string &_name);
-  pxr::UsdShadeShader CreateShader(const std::string &_name);
-  pxr::UsdGeomXform CreateXform(const std::string &_name);
+  ThreadSafe<pxr::UsdStageRefPtr> &Stage();
 
  private:
-  std::unordered_map<std::string, IgnitionModel> models;
-  std::mutex mutexStage;
-  pxr::UsdStageRefPtr stage;
-  std::mutex poseMutex;
+  ThreadSafe<pxr::UsdStageRefPtr> &stage;
   std::string worldName;
-  std::shared_ptr<std::thread> modelThread;
   ignition::transport::Node node;
+  std::unordered_map<uint32_t, pxr::UsdGeomXformCommonAPI> poses;
+
+  bool InitScene();
+  bool UpdateVisual(const ignition::msgs::Visual &_visual,
+                    const std::string &_usdPath);
+  bool UpdateModel(const ignition::msgs::Model &_model);
+  bool UpdateLink(const ignition::msgs::Link &_link,
+                  const std::string &_usdModelPath);
+  void CallbackJoint(const ignition::msgs::Model &_msg);
+  void CallbackPoses(const ignition::msgs::Pose_V &_msg);
+  void SetScale(const pxr::UsdGeomXformCommonAPI &_xform,
+                const ignition::msgs::Vector3d &_scale);
+  void ResetScale(const pxr::UsdGeomXformCommonAPI &_prim);
+  void SetPose(const pxr::UsdGeomXformCommonAPI &_prim,
+               const ignition::msgs::Pose &_pose);
+  void ResetPose(const pxr::UsdGeomXformCommonAPI &_prim);
 };
 }  // namespace omniverse
 }  // namespace ignition

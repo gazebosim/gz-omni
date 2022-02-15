@@ -17,20 +17,19 @@
 #ifndef IGNITION_OMNIVERSE_IGNITION_MATERIAL_HPP
 #define IGNITION_OMNIVERSE_IGNITION_MATERIAL_HPP
 
-#include "Scene.hpp"
-
 #include <ignition/msgs/visual.pb.h>
 
+#include <pxr/usd/usd/stage.h>
+#include <pxr/usd/usdGeom/gprim.h>
 #include <pxr/usd/usdShade/material.h>
-
-#include <memory>
 
 namespace ignition
 {
 namespace omniverse
 {
-pxr::UsdShadeMaterial ParseMaterial(const ignition::msgs::Visual &_visualMsg,
-                                    Scene::SharedPtr &_scene);
+pxr::UsdShadeMaterial SetMaterial(const pxr::UsdGeomGprim& _gprim,
+                                  const ignition::msgs::Visual& _visualMsg,
+                                  const pxr::UsdStageRefPtr& _stage);
 }
 }  // namespace ignition
 
