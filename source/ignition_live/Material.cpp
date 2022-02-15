@@ -28,10 +28,88 @@
 #include <memory>
 #include <string>
 
+#include <OmniClient.h>
+
 namespace ignition
 {
 namespace omniverse
 {
+
+/// Return the full path of an URL
+/// If the resource is a URI we try to find to file in the filesystem
+/// \brief _fullPath URI of the resource
+std::string checkURI(const std::string _fullPath)
+{
+  ignition::common::URI uri(_fullPath);
+  std::string fullPath = _fullPath;
+  std::string home;
+  if (!ignition::common::env("HOME", home, false))
+  {
+    std::cerr << "The HOME environment variable was not defined, "
+              << "so the resource [" << fullPath << "] could not be found\n";
+    return "";
+  }
+  if (uri.Scheme() == "http" || uri.Scheme() == "https")
+  {
+    auto systemPaths = ignition::common::systemPaths();
+
+    std::vector<std::string> tokens = ignition::common::split(uri.Path().Str(), "/");
+    std::string server = tokens[0];
+    std::string versionServer = tokens[1];
+    std::string owner = ignition::common::lowercase(tokens[2]);
+    std::string type = ignition::common::lowercase(tokens[3]);
+    std::string modelName = ignition::common::lowercase(tokens[4]);
+    std::string modelVersion = ignition::common::lowercase(tokens[5]);
+
+    fullPath = ignition::common::joinPaths(
+      home, ".ignition", "fuel", server, owner, type, modelName, modelVersion);
+    systemPaths->AddFilePaths(fullPath);
+
+    for (int i = 7; i < tokens.size(); i++)
+    {
+      fullPath = ignition::common::joinPaths(
+        fullPath, ignition::common::lowercase(tokens[i]));
+      systemPaths->AddFilePaths(fullPath);
+    }
+  }
+  return fullPath;
+}
+
+/// \brief Copy a file in a directory
+/// \param[in] _path path where the copy will be located
+/// \param[in] _fullPath name of the file to copy
+bool copyMaterial(const std::string &_path, const std::string &_fullPath)
+{
+  if (!_path.empty() && !_fullPath.empty())
+  {
+    ///
+    auto fileName = ignition::common::basename(_path);
+    auto filePathIndex = _path.rfind(fileName);
+    auto filePath = _path.substr(0, filePathIndex);
+    std::cerr << "_path.c_str() " << _path.c_str() << '\n';
+    std::cerr << "_fullPath.c_str() " << _fullPath.c_str() << '\n';
+    omniClientWait(omniClientCopy(
+      _fullPath.c_str(),
+      std::string("omniverse://localhost/Users/ignition/" + _path).c_str(),
+      nullptr,
+      nullptr));
+  }
+  return false;
+}
+
+/// \brief Create the path to copy the material
+/// \param[in] _uri full path of the file to copy
+/// \return A relative path to save the material, the path looks like:
+/// materials/textures/<filename with extension>
+std::string getMaterialCopyPath(const std::string &_uri)
+{
+return ignition::common::joinPaths(
+  ".",
+  "materials",
+  "textures",
+  ignition::common::basename(_uri));
+}
+
 /// \brief Fill Material shader attributes and properties
 /// \param[in] _prim USD primitive
 /// \param[in] _name Name of the field attribute or property
@@ -100,7 +178,11 @@ void CreateMaterialInput(
 pxr::UsdShadeMaterial ParseMaterial(const ignition::msgs::Visual &_visualMsg,
                                     Scene::SharedPtr &_scene)
 {
-  const std::string mtl_path = "/Looks/Material_" + _visualMsg.name();
+  // This variable will increase with every new material to avoid collision
+  // with the names of the materials
+  static int i = 0;
+  i++;
+  const std::string mtl_path = "/Looks/Material_" + std::to_string(i) + "_" + _visualMsg.name();
   pxr::UsdShadeMaterial material;
   material = _scene->CreateMaterial(mtl_path);
   auto usdShader = _scene->CreateShader(mtl_path + "/Shader");
@@ -175,6 +257,186 @@ pxr::UsdShadeMaterial ParseMaterial(const ignition::msgs::Visual &_visualMsg,
         shaderPrim, "emissive_intensity", pxr::SdfValueTypeNames->Float,
         emissive.A(), customDataIntensity, pxr::TfToken("Emissive Intensity"),
         pxr::TfToken("Emissive"), "Intensity of the emission");
+
+    if (_visualMsg.material().has_pbr())
+    {
+      auto pbr = _visualMsg.material().pbr();
+      std::map<pxr::TfToken, pxr::VtValue> customDataMetallicConstant =
+      {
+        {pxr::TfToken("default"), pxr::VtValue(0.5)},
+        {pxr::TfToken("range:max"), pxr::VtValue(1)},
+        {pxr::TfToken("range:min"), pxr::VtValue(0)}
+      };
+      CreateMaterialInput<float>(
+        shaderPrim,
+        "metallic_constant",
+        pxr::SdfValueTypeNames->Float,
+        pbr.metalness(),
+        customDataMetallicConstant,
+        pxr::TfToken("Metallic Amount"),
+        pxr::TfToken("Reflectivity"),
+        "Metallic Material");
+      std::map<pxr::TfToken, pxr::VtValue> customDataRoughnessConstant =
+      {
+        {pxr::TfToken("default"), pxr::VtValue(0.5)},
+        {pxr::TfToken("range:max"), pxr::VtValue(1)},
+        {pxr::TfToken("range:min"), pxr::VtValue(0)}
+      };
+      CreateMaterialInput<float>(
+        shaderPrim,
+        "reflection_roughness_constant",
+        pxr::SdfValueTypeNames->Float,
+        pbr.roughness(),
+        customDataRoughnessConstant,
+        pxr::TfToken("Roughness Amount"),
+        pxr::TfToken("Reflectivity"),
+        "Higher roughness values lead to more blurry reflections");
+      if (!pbr.albedo_map().empty())
+      {
+        std::map<pxr::TfToken, pxr::VtValue> customDataDiffuseTexture =
+        {
+          {pxr::TfToken("default"), pxr::VtValue(pxr::SdfAssetPath())},
+        };
+
+        std::string copyPath = getMaterialCopyPath(pbr.albedo_map());
+
+        std::string albedoMapURI = checkURI(pbr.albedo_map());
+
+        std::string fullnameAlbedoMap =
+          ignition::common::findFile(
+            ignition::common::basename(albedoMapURI));
+
+        if (fullnameAlbedoMap.empty())
+        {
+          fullnameAlbedoMap = pbr.albedo_map();
+        }
+
+        copyMaterial(copyPath, fullnameAlbedoMap);
+
+        CreateMaterialInput<pxr::SdfAssetPath>(
+          shaderPrim,
+          "diffuse_texture",
+          pxr::SdfValueTypeNames->Asset,
+          pxr::SdfAssetPath(copyPath),
+          customDataDiffuseTexture,
+          pxr::TfToken("Base Map"),
+          pxr::TfToken("Albedo"),
+          "",
+          pxr::TfToken("auto"));
+      }
+      if (!pbr.metalness_map().empty())
+      {
+        std::map<pxr::TfToken, pxr::VtValue> customDataMetallnessTexture =
+        {
+          {pxr::TfToken("default"), pxr::VtValue(pxr::SdfAssetPath())},
+        };
+
+        std::string copyPath = getMaterialCopyPath(pbr.metalness_map());
+
+        std::string fullnameMetallnessMap =
+          ignition::common::findFile(
+            ignition::common::basename(pbr.metalness_map()));
+
+        if (fullnameMetallnessMap.empty())
+        {
+          fullnameMetallnessMap = pbr.metalness_map();
+        }
+
+        copyMaterial(copyPath, fullnameMetallnessMap);
+
+        CreateMaterialInput<pxr::SdfAssetPath>(
+          shaderPrim,
+          "metallic_texture",
+          pxr::SdfValueTypeNames->Asset,
+          pxr::SdfAssetPath(copyPath),
+          customDataMetallnessTexture,
+          pxr::TfToken("Metallic Map"),
+          pxr::TfToken("Reflectivity"),
+          "",
+          pxr::TfToken("raw"));
+      }
+      if (!pbr.normal_map().empty())
+      {
+        std::map<pxr::TfToken, pxr::VtValue> customDataNormalTexture =
+        {
+          {pxr::TfToken("default"), pxr::VtValue(pxr::SdfAssetPath())},
+        };
+
+        std::string copyPath = getMaterialCopyPath(pbr.normal_map());
+
+        std::string fullnameNormalMap =
+          ignition::common::findFile(
+            ignition::common::basename(pbr.normal_map()));
+
+        if (fullnameNormalMap.empty())
+        {
+          fullnameNormalMap = pbr.normal_map();
+        }
+
+        copyMaterial(copyPath, fullnameNormalMap);
+
+        CreateMaterialInput<pxr::SdfAssetPath>(
+          shaderPrim,
+          "normalmap_texture",
+          pxr::SdfValueTypeNames->Asset,
+          pxr::SdfAssetPath(copyPath),
+          customDataNormalTexture,
+          pxr::TfToken("Normal Map"),
+          pxr::TfToken("Normal"),
+          "",
+          pxr::TfToken("raw"));
+      }
+      if (!pbr.roughness_map().empty())
+      {
+        std::map<pxr::TfToken, pxr::VtValue> customDataRoughnessTexture =
+        {
+          {pxr::TfToken("default"), pxr::VtValue(pxr::SdfAssetPath())},
+        };
+
+        std::string copyPath = getMaterialCopyPath(pbr.roughness_map());
+
+        std::string fullnameRoughnessMap =
+          ignition::common::findFile(
+            ignition::common::basename(pbr.roughness_map()));
+
+        if (fullnameRoughnessMap.empty())
+        {
+          fullnameRoughnessMap = pbr.roughness_map();
+        }
+
+        copyMaterial(copyPath, fullnameRoughnessMap);
+
+        CreateMaterialInput<pxr::SdfAssetPath>(
+          shaderPrim,
+          "reflectionroughness_texture",
+          pxr::SdfValueTypeNames->Asset,
+          pxr::SdfAssetPath(copyPath),
+          customDataRoughnessTexture,
+          pxr::TfToken("RoughnessMap Map"),
+          pxr::TfToken("RoughnessMap"),
+          "",
+          pxr::TfToken("raw"));
+
+        std::map<pxr::TfToken, pxr::VtValue>
+          customDataRoughnessTextureInfluence =
+        {
+          {pxr::TfToken("default"), pxr::VtValue(0)},
+          {pxr::TfToken("range:max"), pxr::VtValue(1)},
+          {pxr::TfToken("range:min"), pxr::VtValue(0)}
+        };
+
+        CreateMaterialInput<bool>(
+          shaderPrim,
+          "reflection_roughness_texture_influence",
+          pxr::SdfValueTypeNames->Bool,
+          true,
+          customDataRoughnessTextureInfluence,
+          pxr::TfToken("Roughness Map Influence"),
+          pxr::TfToken("Reflectivity"),
+          "",
+          pxr::TfToken("raw"));
+      }
+    }
   }
   return material;
 }
