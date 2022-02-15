@@ -51,8 +51,30 @@ bool IgnitionVisual::AttachGeometry(const ignition::msgs::Visual &_visual,
 
   auto material = ignition::omniverse::ParseMaterial(_visual, this->scene);
 
-  return ignitionGeometry->AttachToVisual(_visual.geometry(), sdfVisualPath,
-                                          material);
+  bool result = ignitionGeometry->AttachToVisual(_visual.geometry(), sdfVisualPath,
+                                                 material);
+
+  usdVisualXform.AddTranslateOp(pxr::UsdGeomXformOp::Precision::PrecisionDouble)
+    .Set(
+      pxr::GfVec3d(
+        _visual.pose().position().x(),
+        _visual.pose().position().y(),
+        _visual.pose().position().z()));
+
+  ignition::math::Quaterniond q(
+    _visual.pose().orientation().w(),
+    _visual.pose().orientation().x(),
+    _visual.pose().orientation().y(),
+    _visual.pose().orientation().z());
+
+   usdVisualXform.AddRotateXYZOp(pxr::UsdGeomXformOp::Precision::PrecisionDouble)
+    .Set(
+       pxr::GfVec3d(
+         q.Roll() * 180.0 / 3.1416,
+         q.Pitch() * 180.0 / 3.1416,
+         q.Yaw() * 180. / 3.1416));
+
+  return result;
 }
 
 bool IgnitionVisual::DetachGeometry(const ignition::msgs::Visual &_visual,

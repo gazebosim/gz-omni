@@ -30,6 +30,7 @@
 #include <pxr/usd/usdGeom/capsule.h>
 #include <pxr/usd/usdGeom/cube.h>
 #include <pxr/usd/usdGeom/cylinder.h>
+#include <pxr/usd/usdGeom/mesh.h>
 #include <pxr/usd/usdShade/material.h>
 #include <pxr/usd/usdGeom/xform.h>
 
@@ -64,6 +65,9 @@ class Scene : public std::enable_shared_from_this<Scene>
   virtual pxr::UsdGeomXform CreateXform(const std::string &_name) = 0;
   virtual pxr::UsdShadeMaterial CreateMaterial(const std::string &_name) = 0;
   virtual pxr::UsdShadeShader CreateShader(const std::string &_name) = 0;
+  virtual pxr::UsdGeomMesh CreateMesh(const std::string &_name) = 0;
+  virtual pxr::UsdPrim CreateFixedJoint(const std::string &_name) = 0;
+  virtual pxr::UsdPrim CreateRevoluteJoint(const std::string &_name) = 0;
 
   // virtual pxr::UsdStageRefPtr Stage() const = 0;
  protected:

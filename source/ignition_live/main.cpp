@@ -23,6 +23,9 @@
 #include "SetOp.hpp"
 
 #include <ignition/common/Console.hh>
+#include <ignition/common/SystemPaths.hh>
+#include <ignition/common/StringUtils.hh>
+
 #include <ignition/utils/cli.hh>
 
 #include <pxr/usd/usd/stage.h>
@@ -54,6 +57,20 @@ int main(int argc, char* argv[])
                         []() { ignition::common::Console::SetVerbosity(4); });
 
   CLI11_PARSE(app, argc, argv);
+
+  std::string ignGazeboResourcePath;
+  auto systemPaths = ignition::common::systemPaths();
+  if(!ignition::common::env("IGN_GAZEBO_RESOURCE_PATH", ignGazeboResourcePath))
+  {
+    std::cerr << "IGN_GAZEBO_RESOURCE_PATH is not defined, some models may not load" << '\n';
+  }
+  else
+  {
+    for (const auto& resourcePath : ignition::common::Split(ignGazeboResourcePath, ':'))
+    {
+      systemPaths->AddFilePaths(resourcePath);
+    }
+  }
 
   pxr::UsdStageRefPtr stage;
 
