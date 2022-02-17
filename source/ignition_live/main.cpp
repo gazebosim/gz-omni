@@ -60,16 +60,11 @@ int main(int argc, char* argv[])
 
   std::string ignGazeboResourcePath;
   auto systemPaths = ignition::common::systemPaths();
-  if(!ignition::common::env("IGN_GAZEBO_RESOURCE_PATH", ignGazeboResourcePath))
+  ignition::common::env("IGN_GAZEBO_RESOURCE_PATH", ignGazeboResourcePath);
+  for (const auto& resourcePath :
+       ignition::common::Split(ignGazeboResourcePath, ':'))
   {
-    std::cerr << "IGN_GAZEBO_RESOURCE_PATH is not defined, some models may not load" << '\n';
-  }
-  else
-  {
-    for (const auto& resourcePath : ignition::common::Split(ignGazeboResourcePath, ':'))
-    {
-      systemPaths->AddFilePaths(resourcePath);
-    }
+    systemPaths->AddFilePaths(resourcePath);
   }
 
   pxr::UsdStageRefPtr stage;

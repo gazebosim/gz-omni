@@ -207,6 +207,7 @@ bool IgnitionGeometry::AttachToVisual(const ignition::msgs::Geometry &_geom,
       pxr::UsdShadeMaterialBindingAPI(usdCapsule).Bind(_material);
       break;
     }
+    // TODO: This can probably use code from sdformat
     case ignition::msgs::Geometry::MESH:
     {
       ignition::common::URI uri(_geom.mesh().filename());
