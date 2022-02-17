@@ -21,6 +21,7 @@
 #include <ignition/common/Console.hh>
 #include <ignition/math/Pose3.hh>
 
+#include <pxr/usd/usdGeom/camera.h>
 #include <pxr/usd/usdGeom/xform.h>
 
 #include <algorithm>
@@ -312,6 +313,98 @@ void SceneImpl::modelWorker()
           for (auto &link : model.link())
           {
             std::string sdfLinkPath = sdfModelPath + "/" + link.name();
+
+            for (auto &sensor : link.sensor())
+            {
+              std::string sdfSensorPath = sdfModelPath + "/" + link.name()
+                + "/" + sensor.name();
+
+              if (sensor.type() == "camera")
+              {
+                auto usdCamera = pxr::UsdGeomCamera::Define(
+                  this->stage, pxr::SdfPath(sdfSensorPath));
+
+                // TODO(ahcorde): The default value in USD is 50, but something more
+                // similar to ignition Gazebo is 40.
+                usdCamera.CreateFocalLengthAttr().Set(
+                    static_cast<float>(52.0f));
+
+                usdCamera.CreateClippingRangeAttr().Set(pxr::GfVec2f(
+                      static_cast<float>(sensor.camera().near_clip()),
+                      static_cast<float>(sensor.camera().far_clip())));
+                usdCamera.CreateHorizontalApertureAttr().Set(
+                  static_cast<float>(
+                    sensor.camera().horizontal_fov() * 180.0f / 3.1416f));
+
+                ignition::math::Pose3d poseCameraYUp(0, 0, 0, 1.57, 0, -1.57);
+                ignition::math::Quaterniond q(
+                  sensor.pose().orientation().w(),
+                  sensor.pose().orientation().x(),
+                  sensor.pose().orientation().y(),
+                  sensor.pose().orientation().z());
+
+                ignition::math::Pose3d poseCamera(
+                  sensor.pose().position().x(),
+                  sensor.pose().position().y(),
+                  sensor.pose().position().z(),
+                  q.Roll() * 180.0 / 3.1416,
+                  q.Pitch() * 180.0 / 3.1416,
+                  q.Yaw() * 180. / 3.1416);
+
+                poseCamera = poseCamera * poseCameraYUp;
+
+                usdCamera.AddTranslateOp(pxr::UsdGeomXformOp::Precision::PrecisionDouble)
+                  .Set(
+                    pxr::GfVec3d(
+                      poseCamera.Pos().X(),
+                      poseCamera.Pos().Y(),
+                      poseCamera.Pos().Z()));
+
+                usdCamera.AddRotateXYZOp(pxr::UsdGeomXformOp::Precision::PrecisionDouble)
+                 .Set(
+                    pxr::GfVec3d(
+                      poseCamera.Rot().Roll() * 180.0 / 3.1416,
+                      poseCamera.Rot().Pitch() * 180.0 / 3.1416,
+                      poseCamera.Rot().Yaw() * 180. / 3.1416));
+              }
+              else if (sensor.type() == "gpu_lidar")
+              {
+                pxr::UsdGeomXform::Define(
+                  this->stage, pxr::SdfPath(sdfSensorPath));
+                auto lidarPrim = this->stage->GetPrimAtPath(
+                      pxr::SdfPath(sdfSensorPath));
+                lidarPrim.SetTypeName(pxr::TfToken("Lidar"));
+
+                lidarPrim.CreateAttribute(pxr::TfToken("minRange"),
+                    pxr::SdfValueTypeNames->Float, false).Set(
+                      static_cast<float>(sensor.lidar().range_min()));
+                lidarPrim.CreateAttribute(pxr::TfToken("maxRange"),
+                    pxr::SdfValueTypeNames->Float, false).Set(
+                      static_cast<float>(sensor.lidar().range_max()));
+                const auto horizontalFov = sensor.lidar().horizontal_max_angle() -
+                  sensor.lidar().horizontal_min_angle();
+                // TODO(adlarkin) double check if these FOV calculations are correct
+                lidarPrim.CreateAttribute(pxr::TfToken("horizontalFov"),
+                    pxr::SdfValueTypeNames->Float, false).Set(
+                      static_cast<float>(horizontalFov * 180.0f / 3.1416f));
+                const auto verticalFov = sensor.lidar().vertical_max_angle() -
+                  sensor.lidar().vertical_min_angle();
+                lidarPrim.CreateAttribute(pxr::TfToken("verticalFov"),
+                    pxr::SdfValueTypeNames->Float, false).Set(
+                      static_cast<float>(verticalFov * 180.0f / 3.1416f));
+                lidarPrim.CreateAttribute(pxr::TfToken("horizontalResolution"),
+                    pxr::SdfValueTypeNames->Float, false).Set(
+                      static_cast<float>(sensor.lidar().horizontal_resolution()));
+                lidarPrim.CreateAttribute(pxr::TfToken("verticalResolution"),
+                    pxr::SdfValueTypeNames->Float, false).Set(
+                      static_cast<float>(sensor.lidar().vertical_resolution()));
+              }
+              else
+              {
+                  ignerr << "This kind of sensor [" << sensor.type()
+                         << "] is not supported" << std::endl;
+              }
+            }
 
             auto usdLinkXform = pxr::UsdGeomXform::Define(
                 this->stage, pxr::SdfPath(sdfLinkPath));
