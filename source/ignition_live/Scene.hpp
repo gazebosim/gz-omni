@@ -14,8 +14,8 @@
  *
  */
 
-#ifndef IGNITION_OMNIVERSE_SCENEIMPL_HPP
-#define IGNITION_OMNIVERSE_SCENEIMPL_HPP
+#ifndef IGNITION_OMNIVERSE_SCENE_HPP
+#define IGNITION_OMNIVERSE_SCENE_HPP
 
 #include "Error.hpp"
 #include "ThreadSafe.hpp"
