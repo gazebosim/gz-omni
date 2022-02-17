@@ -36,6 +36,7 @@
 #include <pxr/usd/usdGeom/capsule.h>
 #include <pxr/usd/usdGeom/cube.h>
 #include <pxr/usd/usdGeom/cylinder.h>
+#include <pxr/usd/usdGeom/mesh.h>
 #include <pxr/usd/usdShade/material.h>
 #include <pxr/usd/usdGeom/xformCommonAPI.h>
 

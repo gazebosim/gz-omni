@@ -14,23 +14,21 @@
  * limitations under the License.
  *
  */
-#ifndef IGNITION_OMNIVERSE_MATERIAL_HPP
-#define IGNITION_OMNIVERSE_MATERIAL_HPP
 
-#include <ignition/msgs/visual.pb.h>
+#ifndef IGNITION_OMNIVERSE_JOINT_HPP
+#define IGNITION_OMNIVERSE_JOINT_HPP
 
+#include <ignition/msgs/joint.pb.h>
+
+#include <pxr/usd/usd/prim.h>
 #include <pxr/usd/usd/stage.h>
-#include <pxr/usd/usdGeom/gprim.h>
-#include <pxr/usd/usdShade/material.h>
 
-namespace ignition
+namespace ignition::omniverse
 {
-namespace omniverse
-{
-bool SetMaterial(const pxr::UsdGeomGprim& _gprim,
-                 const ignition::msgs::Visual& _visualMsg,
-                 const pxr::UsdStageRefPtr& _stage);
-}
-}  // namespace ignition
+pxr::UsdPrim CreateFixedJoint(const std::string& _path,
+                              const pxr::UsdStageRefPtr& _stage);
+pxr::UsdPrim CreateRevoluteJoint(const std::string& _path,
+                                 const pxr::UsdStageRefPtr& _stage);
+}  // namespace ignition::omniverse
 
 #endif

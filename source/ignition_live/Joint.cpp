@@ -14,23 +14,19 @@
  * limitations under the License.
  *
  */
-#ifndef IGNITION_OMNIVERSE_MATERIAL_HPP
-#define IGNITION_OMNIVERSE_MATERIAL_HPP
 
-#include <ignition/msgs/visual.pb.h>
+#include "Joint.hpp"
 
-#include <pxr/usd/usd/stage.h>
-#include <pxr/usd/usdGeom/gprim.h>
-#include <pxr/usd/usdShade/material.h>
-
-namespace ignition
+pxr::UsdPrim CreateFixedJoint(const std::string& _path,
+                              const pxr::UsdStageRefPtr& _stage)
 {
-namespace omniverse
-{
-bool SetMaterial(const pxr::UsdGeomGprim& _gprim,
-                 const ignition::msgs::Visual& _visualMsg,
-                 const pxr::UsdStageRefPtr& _stage);
+  pxr::TfToken usdPrimTypeName("PhysicsFixedJoint");
+  return _stage->DefinePrim(pxr::SdfPath(_path), usdPrimTypeName);
 }
-}  // namespace ignition
 
-#endif
+pxr::UsdPrim CreateRevoluteJoint(const std::string& _path,
+                                 const pxr::UsdStageRefPtr& _stage)
+{
+  pxr::TfToken usdPrimTypeName("PhysicsRevoluteJoint");
+  return _stage->DefinePrim(pxr::SdfPath(_path), usdPrimTypeName);
+}

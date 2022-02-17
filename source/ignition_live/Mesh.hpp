@@ -14,22 +14,21 @@
  * limitations under the License.
  *
  */
-#ifndef IGNITION_OMNIVERSE_MATERIAL_HPP
-#define IGNITION_OMNIVERSE_MATERIAL_HPP
+#ifndef IGNITION_OMNIVERSE_MESH_HPP
+#define IGNITION_OMNIVERSE_MESH_HPP
 
-#include <ignition/msgs/visual.pb.h>
+#include <ignition/msgs/meshgeom.pb.h>
 
 #include <pxr/usd/usd/stage.h>
-#include <pxr/usd/usdGeom/gprim.h>
-#include <pxr/usd/usdShade/material.h>
+#include <pxr/usd/usdGeom/mesh.h>
 
 namespace ignition
 {
 namespace omniverse
 {
-bool SetMaterial(const pxr::UsdGeomGprim& _gprim,
-                 const ignition::msgs::Visual& _visualMsg,
-                 const pxr::UsdStageRefPtr& _stage);
+pxr::UsdGeomMesh UpdateMesh(const ignition::msgs::MeshGeom& _meshMsg,
+                            const std::string& _path,
+                            const pxr::UsdStageRefPtr& _stage);
 }
 }  // namespace ignition
 

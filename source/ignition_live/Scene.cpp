@@ -15,8 +15,10 @@
  *
  */
 
-#include "Material.hpp"
 #include "Scene.hpp"
+
+#include "Material.hpp"
+#include "Mesh.hpp"
 
 #include <ignition/common/Console.hh>
 #include <ignition/math/Quaternion.hh>
@@ -112,7 +114,7 @@ bool Scene::UpdateVisual(const ignition::msgs::Visual &_visual,
   }
   this->entities[_visual.id()] = usdVisualXform.GetPrim();
 
-  pxr::SdfPath usdGeomPath(usdVisualPath + "/geometry");
+  std::string usdGeomPath(usdVisualPath + "/geometry");
   const auto &geom = _visual.geometry();
 
   switch (geom.type())
@@ -241,6 +243,22 @@ bool Scene::UpdateVisual(const ignition::msgs::Visual &_visual,
         ignwarn << "Failed to set material" << std::endl;
       }
       break;
+    }
+    case ignition::msgs::Geometry::MESH:
+    {
+      auto usdMesh = UpdateMesh(geom.mesh(), usdGeomPath, *stage);
+      if (!usdMesh)
+      {
+        ignerr << "Failed to update visual [" << _visual.name() << "]"
+               << std::endl;
+        return false;
+      }
+      if (!SetMaterial(usdMesh, _visual, *stage))
+      {
+        ignerr << "Failed to update visual [" << _visual.name() << "]"
+               << std::endl;
+        return false;
+      }
     }
     default:
       ignerr << "Failed to update geometry (unsuported geometry type '"
