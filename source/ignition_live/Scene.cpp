@@ -21,6 +21,7 @@
 #include "Mesh.hpp"
 
 #include <ignition/common/Console.hh>
+#include <ignition/common/Filesystem.hh>
 #include <ignition/math/Quaternion.hh>
 
 #include <pxr/usd/usdGeom/xform.h>
@@ -37,18 +38,51 @@ namespace ignition
 {
 namespace omniverse
 {
+class Scene::Implementation
+{
+public:
+  std::string worldName;
+  std::shared_ptr<ThreadSafe<pxr::UsdStageRefPtr>> stage;
+  std::shared_ptr<ignition::transport::Node> node;
+  std::string stageDirUrl;
+  std::unordered_map<uint32_t, pxr::UsdPrim> entities;
+
+  bool UpdateScene(const ignition::msgs::Scene &_scene);
+  bool UpdateVisual(const ignition::msgs::Visual &_visual,
+                    const std::string &_usdPath);
+  bool UpdateLink(const ignition::msgs::Link &_link,
+                  const std::string &_usdModelPath);
+  bool UpdateJoint(const ignition::msgs::Joint &_joint);
+  bool UpdateModel(const ignition::msgs::Model &_model);
+  void SetPose(const pxr::UsdGeomXformCommonAPI &_prim,
+               const ignition::msgs::Pose &_pose);
+  void ResetPose(const pxr::UsdGeomXformCommonAPI &_prim);
+  void SetScale(const pxr::UsdGeomXformCommonAPI &_xform,
+                const ignition::msgs::Vector3d &_scale);
+  void ResetScale(const pxr::UsdGeomXformCommonAPI &_prim);
+  void CallbackPoses(const ignition::msgs::Pose_V &_msg);
+  void CallbackJoint(const ignition::msgs::Model &_msg);
+  void CallbackScene(const ignition::msgs::Scene &_scene);
+  void CallbackSceneDeletion(const ignition::msgs::UInt32_V &_msg);
+};
+
 //////////////////////////////////////////////////
 Scene::Scene(const std::string &_worldName, const std::string &_stageUrl)
-    : worldName(_worldName), stage(pxr::UsdStage::Open(_stageUrl))
+    : dataPtr(ignition::utils::MakeImpl<Implementation>())
+
 {
   ignmsg << "Opened stage [" << _stageUrl << "]" << std::endl;
+  this->dataPtr->worldName = _worldName;
+  this->dataPtr->stage = std::make_shared<ThreadSafe<pxr::UsdStageRefPtr>>(pxr::UsdStage::Open(_stageUrl));
+  this->dataPtr->node = std::make_shared<ignition::transport::Node>();
+  this->dataPtr->stageDirUrl = ignition::common::parentPath(_stageUrl);
 }
 
 // //////////////////////////////////////////////////
-ThreadSafe<pxr::UsdStageRefPtr> &Scene::Stage() { return this->stage; }
+std::shared_ptr<ThreadSafe<pxr::UsdStageRefPtr>> &Scene::Stage() { return this->dataPtr->stage; }
 
 //////////////////////////////////////////////////
-void Scene::SetPose(const pxr::UsdGeomXformCommonAPI &_prim,
+void Scene::Implementation::SetPose(const pxr::UsdGeomXformCommonAPI &_prim,
                     const ignition::msgs::Pose &_pose)
 {
   pxr::UsdGeomXformCommonAPI xformApi(_prim);
@@ -64,7 +98,7 @@ void Scene::SetPose(const pxr::UsdGeomXformCommonAPI &_prim,
 }
 
 //////////////////////////////////////////////////
-void Scene::ResetPose(const pxr::UsdGeomXformCommonAPI &_prim)
+void Scene::Implementation::ResetPose(const pxr::UsdGeomXformCommonAPI &_prim)
 {
   pxr::UsdGeomXformCommonAPI xformApi(_prim);
   xformApi.SetTranslate(pxr::GfVec3d(0));
@@ -72,7 +106,7 @@ void Scene::ResetPose(const pxr::UsdGeomXformCommonAPI &_prim)
 }
 
 //////////////////////////////////////////////////
-void Scene::SetScale(const pxr::UsdGeomXformCommonAPI &_prim,
+void Scene::Implementation::SetScale(const pxr::UsdGeomXformCommonAPI &_prim,
                      const ignition::msgs::Vector3d &_scale)
 {
   pxr::UsdGeomXformCommonAPI xformApi(_prim);
@@ -80,17 +114,17 @@ void Scene::SetScale(const pxr::UsdGeomXformCommonAPI &_prim,
 }
 
 //////////////////////////////////////////////////
-void Scene::ResetScale(const pxr::UsdGeomXformCommonAPI &_prim)
+void Scene::Implementation::ResetScale(const pxr::UsdGeomXformCommonAPI &_prim)
 {
   pxr::UsdGeomXformCommonAPI xformApi(_prim);
   xformApi.SetScale(pxr::GfVec3f(1));
 }
 
 //////////////////////////////////////////////////
-bool Scene::UpdateVisual(const ignition::msgs::Visual &_visual,
+bool Scene::Implementation::UpdateVisual(const ignition::msgs::Visual &_visual,
                          const std::string &_usdLinkPath)
 {
-  auto stage = this->stage.Lock();
+  auto stage = this->stage->Lock();
 
   std::string usdVisualPath = _usdLinkPath + "/" + _visual.name();
   auto usdVisualXform =
@@ -246,7 +280,8 @@ bool Scene::UpdateVisual(const ignition::msgs::Visual &_visual,
     }
     case ignition::msgs::Geometry::MESH:
     {
-      auto usdMesh = UpdateMesh(geom.mesh(), usdGeomPath, *stage);
+      auto usdMesh =
+        UpdateMesh(geom.mesh(), usdGeomPath, *stage);
       if (!usdMesh)
       {
         ignerr << "Failed to update visual [" << _visual.name() << "]"
@@ -271,10 +306,10 @@ bool Scene::UpdateVisual(const ignition::msgs::Visual &_visual,
 }
 
 //////////////////////////////////////////////////
-bool Scene::UpdateLink(const ignition::msgs::Link &_link,
+bool Scene::Implementation::UpdateLink(const ignition::msgs::Link &_link,
                        const std::string &_usdModelPath)
 {
-  auto stage = this->stage.Lock();
+  auto stage = this->stage->Lock();
   std::string usdLinkPath = _usdModelPath + "/" + _link.name();
   auto xform = pxr::UsdGeomXform::Define(*stage, pxr::SdfPath(usdLinkPath));
   pxr::UsdGeomXformCommonAPI xformApi(xform);
@@ -301,10 +336,10 @@ bool Scene::UpdateLink(const ignition::msgs::Link &_link,
 }
 
 //////////////////////////////////////////////////
-bool Scene::UpdateJoint(const ignition::msgs::Joint &_joint)
+bool Scene::Implementation::UpdateJoint(const ignition::msgs::Joint &_joint)
 {
   // TODO: this is not tested
-  auto stage = this->stage.Lock();
+  auto stage = this->stage->Lock();
   auto jointUSD =
       stage->GetPrimAtPath(pxr::SdfPath("/" + worldName + "/" + _joint.name()));
   // auto driveJoint = pxr::UsdPhysicsDriveAPI(jointUSD);
@@ -321,11 +356,14 @@ bool Scene::UpdateJoint(const ignition::msgs::Joint &_joint)
 }
 
 //////////////////////////////////////////////////
-bool Scene::UpdateModel(const ignition::msgs::Model &_model)
+bool Scene::Implementation::UpdateModel(const ignition::msgs::Model &_model)
 {
-  auto stage = this->stage.Lock();
+  auto stage = this->stage->Lock();
 
-  std::string usdModelPath = "/" + worldName + "/" + _model.name();
+  std::string modelName = _model.name();
+  std::replace(modelName.begin(), modelName.end(), ' ', '_');
+
+  std::string usdModelPath = "/" + worldName + "/" + modelName;
   auto xform = pxr::UsdGeomXform::Define(*stage, pxr::SdfPath(usdModelPath));
   pxr::UsdGeomXformCommonAPI xformApi(xform);
   if (_model.has_scale())
@@ -350,7 +388,7 @@ bool Scene::UpdateModel(const ignition::msgs::Model &_model)
   {
     if (!this->UpdateLink(link, usdModelPath))
     {
-      ignerr << "Failed to update model [" << _model.name() << "]" << std::endl;
+      ignerr << "Failed to update model [" << modelName << "]" << std::endl;
       return false;
     }
   }
@@ -359,7 +397,7 @@ bool Scene::UpdateModel(const ignition::msgs::Model &_model)
   {
     if (!this->UpdateJoint(joint))
     {
-      ignerr << "Failed to update model [" << _model.name() << "]" << std::endl;
+      ignerr << "Failed to update model [" << modelName << "]" << std::endl;
       return false;
     }
   }
@@ -368,7 +406,7 @@ bool Scene::UpdateModel(const ignition::msgs::Model &_model)
 }
 
 //////////////////////////////////////////////////
-bool Scene::UpdateScene(const ignition::msgs::Scene &_scene)
+bool Scene::Implementation::UpdateScene(const ignition::msgs::Scene &_scene)
 {
   for (const auto &model : _scene.model())
   {
@@ -383,7 +421,7 @@ bool Scene::UpdateScene(const ignition::msgs::Scene &_scene)
   for (const auto &light : _scene.light())
   {
     // TODO: This is just a stub remove warnings when updating poses
-    auto stage = this->stage.Lock();
+    auto stage = this->stage->Lock();
     auto xform = pxr::UsdGeomXform::Define(
         *stage, pxr::SdfPath("/" + worldName + "/" + light.name()));
     pxr::UsdGeomXformCommonAPI xformApi(xform);
@@ -399,26 +437,26 @@ bool Scene::Init()
   bool result;
   ignition::msgs::Empty req;
   ignition::msgs::Scene ignScene;
-  if (!node.Request("/world/" + worldName + "/scene/info", req, 5000, ignScene,
-                    result))
+  if (!this->dataPtr->node->Request(
+    "/world/" + this->dataPtr->worldName + "/scene/info", req, 5000, ignScene, result))
   {
-    ignwarn << "Error requesting scene info, make sure the world [" << worldName
+    ignwarn << "Error requesting scene info, make sure the world [" << this->dataPtr->worldName
             << "] is available, ignition-omniverse will keep trying..."
             << std::endl;
-    if (!node.Request("/world/" + worldName + "/scene/info", req, -1, ignScene,
+    if (!this->dataPtr->node->Request("/world/" + this->dataPtr->worldName + "/scene/info", req, -1, ignScene,
                       result))
     {
       ignerr << "Error request scene info" << std::endl;
       return false;
     }
   }
-  if (!this->UpdateScene(ignScene))
+  if (!this->dataPtr->UpdateScene(ignScene))
   {
     ignerr << "Failed to init scene" << std::endl;
     return false;
   }
 
-  if (!node.Subscribe("/joint_state", &Scene::CallbackJoint, this))
+  if (!this->dataPtr->node->Subscribe("/joint_state", &Scene::Implementation::CallbackJoint, this->dataPtr.Get()))
   {
     ignerr << "Error subscribing to topic [joint_state]" << std::endl;
     return false;
@@ -428,9 +466,9 @@ bool Scene::Init()
     ignmsg << "Subscribed to topic: [joint_state]" << std::endl;
   }
 
-  std::string topic = "/world/" + worldName + "/pose/info";
+  std::string topic = "/world/" + this->dataPtr->worldName + "/pose/info";
   // Subscribe to a topic by registering a callback.
-  if (!node.Subscribe(topic, &Scene::CallbackPoses, this))
+  if (!this->dataPtr->node->Subscribe(topic, &Scene::Implementation::CallbackPoses, this->dataPtr.Get()))
   {
     ignerr << "Error subscribing to topic [" << topic << "]" << std::endl;
     return false;
@@ -440,8 +478,8 @@ bool Scene::Init()
     ignmsg << "Subscribed to topic: [" << topic << "]" << std::endl;
   }
 
-  topic = "/world/" + worldName + "/scene/info";
-  if (!node.Subscribe(topic, &Scene::CallbackScene, this))
+  topic = "/world/" + this->dataPtr->worldName + "/scene/info";
+  if (!this->dataPtr->node->Subscribe(topic, &Scene::Implementation::CallbackScene, this->dataPtr.Get()))
   {
     ignerr << "Error subscribing to topic [" << topic << "]" << std::endl;
     return false;
@@ -451,8 +489,8 @@ bool Scene::Init()
     ignmsg << "Subscribed to topic: [" << topic << "]" << std::endl;
   }
 
-  topic = "/world/" + worldName + "/scene/deletion";
-  if (!node.Subscribe(topic, &Scene::CallbackSceneDeletion, this))
+  topic = "/world/" + this->dataPtr->worldName + "/scene/deletion";
+  if (!this->dataPtr->node->Subscribe(topic, &Scene::Implementation::CallbackSceneDeletion, this->dataPtr.Get()))
   {
     ignerr << "Error subscribing to topic [" << topic << "]" << std::endl;
     return false;
@@ -466,11 +504,11 @@ bool Scene::Init()
 }
 
 //////////////////////////////////////////////////
-void Scene::Save() { this->Stage().Lock()->Save(); }
+void Scene::Save() { this->Stage()->Lock()->Save(); }
 
 //////////////////////////////////////////////////
 /// \brief Function called each time a topic update is received.
-void Scene::CallbackPoses(const ignition::msgs::Pose_V &_msg)
+void Scene::Implementation::CallbackPoses(const ignition::msgs::Pose_V &_msg)
 {
   for (const auto &poseMsg : _msg.pose())
   {
@@ -489,26 +527,26 @@ void Scene::CallbackPoses(const ignition::msgs::Pose_V &_msg)
 
 //////////////////////////////////////////////////
 /// \brief Function called each time a topic update is received.
-void Scene::CallbackJoint(const ignition::msgs::Model &_msg)
+void Scene::Implementation::CallbackJoint(const ignition::msgs::Model &_msg)
 {
   this->UpdateModel(_msg);
 }
 
 //////////////////////////////////////////////////
-void Scene::CallbackScene(const ignition::msgs::Scene &_scene)
+void Scene::Implementation::CallbackScene(const ignition::msgs::Scene &_scene)
 {
   this->UpdateScene(_scene);
 }
 
 //////////////////////////////////////////////////
-void Scene::CallbackSceneDeletion(const ignition::msgs::UInt32_V &_msg)
+void Scene::Implementation::CallbackSceneDeletion(const ignition::msgs::UInt32_V &_msg)
 {
   for (const auto id : _msg.data())
   {
     try
     {
       const auto &prim = this->entities.at(id);
-      this->stage.Lock()->RemovePrim(prim.GetPath());
+      this->stage->Lock()->RemovePrim(prim.GetPath());
       ignmsg << "Removed [" << prim.GetPath() << "]" << std::endl;
     }
     catch (const std::out_of_range &)
