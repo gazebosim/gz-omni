@@ -21,6 +21,7 @@
 #include "Mesh.hpp"
 
 #include <ignition/common/Console.hh>
+#include <ignition/common/Filesystem.hh>
 #include <ignition/math/Quaternion.hh>
 
 #include <pxr/usd/usdGeom/xform.h>
@@ -39,7 +40,8 @@ namespace omniverse
 {
 //////////////////////////////////////////////////
 Scene::Scene(const std::string &_worldName, const std::string &_stageUrl)
-    : worldName(_worldName), stage(pxr::UsdStage::Open(_stageUrl))
+    : worldName(_worldName), stage(pxr::UsdStage::Open(_stageUrl)),
+      stageDirUrl(ignition::common::parentPath(_stageUrl))
 {
   ignmsg << "Opened stage [" << _stageUrl << "]" << std::endl;
 }
@@ -132,7 +134,7 @@ bool Scene::UpdateVisual(const ignition::msgs::Visual &_visual,
       pxr::UsdGeomXformCommonAPI cubeXformAPI(usdCube);
       cubeXformAPI.SetScale(pxr::GfVec3f(
           geom.box().size().x(), geom.box().size().y(), geom.box().size().z()));
-      if (!SetMaterial(usdCube, _visual, *stage))
+      if (!SetMaterial(usdCube, _visual, *stage, this->stageDirUrl))
       {
         ignwarn << "Failed to set material" << std::endl;
       }
@@ -155,7 +157,7 @@ bool Scene::UpdateVisual(const ignition::msgs::Visual &_visual,
       extentBounds.push_back(-1.0 * endPoint);
       extentBounds.push_back(endPoint);
       usdCylinder.CreateExtentAttr().Set(extentBounds);
-      if (!SetMaterial(usdCylinder, _visual, *stage))
+      if (!SetMaterial(usdCylinder, _visual, *stage, this->stageDirUrl))
       {
         ignwarn << "Failed to set material" << std::endl;
       }
@@ -174,8 +176,8 @@ bool Scene::UpdateVisual(const ignition::msgs::Visual &_visual,
 
       pxr::UsdGeomXformCommonAPI cubeXformAPI(usdCube);
       cubeXformAPI.SetScale(
-          pxr::GfVec3f(geom.plane().size().x(), geom.plane().size().y(), 0.25));
-      if (!SetMaterial(usdCube, _visual, *stage))
+          pxr::GfVec3f(geom.plane().size().x(), geom.plane().size().y(), 0.0025));
+      if (!SetMaterial(usdCube, _visual, *stage, this->stageDirUrl))
       {
         ignwarn << "Failed to set material" << std::endl;
       }
@@ -202,7 +204,7 @@ bool Scene::UpdateVisual(const ignition::msgs::Visual &_visual,
       extentBounds.push_back(pxr::GfVec3f{static_cast<float>(-maxRadii)});
       extentBounds.push_back(pxr::GfVec3f{static_cast<float>(maxRadii)});
       usdEllipsoid.CreateExtentAttr().Set(extentBounds);
-      if (!SetMaterial(usdEllipsoid, _visual, *stage))
+      if (!SetMaterial(usdEllipsoid, _visual, *stage, this->stageDirUrl))
       {
         ignwarn << "Failed to set material" << std::endl;
       }
@@ -218,7 +220,7 @@ bool Scene::UpdateVisual(const ignition::msgs::Visual &_visual,
       extentBounds.push_back(pxr::GfVec3f(-1.0 * radius));
       extentBounds.push_back(pxr::GfVec3f(radius));
       usdSphere.CreateExtentAttr().Set(extentBounds);
-      if (!SetMaterial(usdSphere, _visual, *stage))
+      if (!SetMaterial(usdSphere, _visual, *stage, this->stageDirUrl))
       {
         ignwarn << "Failed to set material" << std::endl;
       }
@@ -238,7 +240,7 @@ bool Scene::UpdateVisual(const ignition::msgs::Visual &_visual,
       extentBounds.push_back(-1.0 * endPoint);
       extentBounds.push_back(endPoint);
       usdCapsule.CreateExtentAttr().Set(extentBounds);
-      if (!SetMaterial(usdCapsule, _visual, *stage))
+      if (!SetMaterial(usdCapsule, _visual, *stage, this->stageDirUrl))
       {
         ignwarn << "Failed to set material" << std::endl;
       }
@@ -253,12 +255,13 @@ bool Scene::UpdateVisual(const ignition::msgs::Visual &_visual,
                << std::endl;
         return false;
       }
-      if (!SetMaterial(usdMesh, _visual, *stage))
+      if (!SetMaterial(usdMesh, _visual, *stage, this->stageDirUrl))
       {
         ignerr << "Failed to update visual [" << _visual.name() << "]"
                << std::endl;
         return false;
       }
+      break;
     }
     default:
       ignerr << "Failed to update geometry (unsuported geometry type '"
@@ -323,8 +326,9 @@ bool Scene::UpdateJoint(const ignition::msgs::Joint &_joint)
 bool Scene::UpdateModel(const ignition::msgs::Model &_model)
 {
   auto stage = this->stage.Lock();
-
-  std::string usdModelPath = "/" + worldName + "/" + _model.name();
+  std::string modelName = _model.name();
+  std::replace(modelName.begin(), modelName.end(), ' ', '_');
+  std::string usdModelPath = "/" + worldName + "/" + modelName;
   auto xform = pxr::UsdGeomXform::Define(*stage, pxr::SdfPath(usdModelPath));
   pxr::UsdGeomXformCommonAPI xformApi(xform);
   if (_model.has_scale())
@@ -349,7 +353,7 @@ bool Scene::UpdateModel(const ignition::msgs::Model &_model)
   {
     if (!this->UpdateLink(link, usdModelPath))
     {
-      ignerr << "Failed to update model [" << _model.name() << "]" << std::endl;
+      ignerr << "Failed to update model [" << modelName << "]" << std::endl;
       return false;
     }
   }
@@ -358,7 +362,7 @@ bool Scene::UpdateModel(const ignition::msgs::Model &_model)
   {
     if (!this->UpdateJoint(joint))
     {
-      ignerr << "Failed to update model [" << _model.name() << "]" << std::endl;
+      ignerr << "Failed to update model [" << modelName << "]" << std::endl;
       return false;
     }
   }

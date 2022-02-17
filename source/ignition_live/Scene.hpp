@@ -68,6 +68,7 @@ class Scene
  private:
   ThreadSafe<pxr::UsdStageRefPtr> stage;
   std::string worldName;
+  std::string stageDirUrl;
   ignition::transport::Node node;
   std::unordered_map<uint32_t, pxr::UsdPrim> entities;
 

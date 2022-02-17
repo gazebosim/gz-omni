@@ -208,6 +208,8 @@ pxr::UsdGeomMesh UpdateMesh(const ignition::msgs::MeshGeom &_meshMsg,
 
     meshXformAPI.SetScale(pxr::GfVec3f(
         _meshMsg.scale().x(), _meshMsg.scale().y(), _meshMsg.scale().z()));
+    return usdMesh;
   }
+  return pxr::UsdGeomMesh();
 }
 }  // namespace ignition::omniverse
