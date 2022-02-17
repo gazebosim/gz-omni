@@ -24,6 +24,9 @@
 #include <ignition/math/Quaternion.hh>
 
 #include <pxr/usd/usdGeom/xform.h>
+#include <pxr/usd/usdLux/diskLight.h>
+#include <pxr/usd/usdLux/distantLight.h>
+#include <pxr/usd/usdLux/sphereLight.h>
 
 #include <algorithm>
 #include <chrono>
@@ -296,6 +299,16 @@ bool Scene::UpdateLink(const ignition::msgs::Link &_link,
       return false;
     }
   }
+
+  for (const auto &light : _link.light())
+  {
+    if (!this->UpdateLights(light, usdLinkPath + "/" + light.name()))
+    {
+      ignerr << "Failed to add light [" << usdLinkPath + "/" + light.name() << "]" << std::endl;
+      return false;
+    }
+  }
+
   return true;
 }
 
@@ -381,13 +394,78 @@ bool Scene::UpdateScene(const ignition::msgs::Scene &_scene)
 
   for (const auto &light : _scene.light())
   {
-    // TODO: This is just a stub remove warnings when updating poses
-    auto stage = this->stage.Lock();
-    auto xform = pxr::UsdGeomXform::Define(
-        *stage, pxr::SdfPath("/" + worldName + "/" + light.name()));
-    pxr::UsdGeomXformCommonAPI xformApi(xform);
-    this->entities[light.id()] = xform.GetPrim();
+    if (!this->UpdateLights(light, "/" + worldName + "/" + light.name()))
+    {
+      ignerr << "Failed to add light [" << light.name() << "]" << std::endl;
+      return false;
+    }
   }
+
+  return true;
+}
+
+//////////////////////////////////////////////////
+bool Scene::UpdateLights(const ignition::msgs::Light &_light,
+                         const std::string &_usdLightPath)
+{
+  auto stage = this->stage.Lock();
+
+  const pxr::SdfPath sdfLightPath(_usdLightPath);
+  switch (_light.type())
+  {
+    case ignition::msgs::Light::POINT:
+    {
+      auto pointLight =
+        pxr::UsdLuxSphereLight::Define(*stage, sdfLightPath);
+      pointLight.CreateTreatAsPointAttr().Set(true);
+      this->entities[_light.id()] = pointLight.GetPrim();
+      pointLight.CreateRadiusAttr(pxr::VtValue(0.1f));
+      pointLight.CreateColorAttr(
+        pxr::VtValue(
+          pxr::GfVec3f(
+            _light.diffuse().r(),
+            _light.diffuse().g(),
+            _light.diffuse().b())));
+      break;
+    }
+   case ignition::msgs::Light::SPOT:
+   {
+     auto diskLight = pxr::UsdLuxDiskLight::Define(*stage, sdfLightPath);
+     this->entities[_light.id()] = diskLight.GetPrim();
+     diskLight.CreateColorAttr(
+       pxr::VtValue(
+         pxr::GfVec3f(
+           _light.diffuse().r(),
+           _light.diffuse().g(),
+           _light.diffuse().b())));
+     break;
+   }
+   case ignition::msgs::Light::DIRECTIONAL:
+   {
+      auto directionalLight =
+        pxr::UsdLuxDistantLight::Define(*stage, sdfLightPath);
+      this->entities[_light.id()] = directionalLight.GetPrim();
+      directionalLight.CreateColorAttr(
+        pxr::VtValue(
+          pxr::GfVec3f(
+            _light.diffuse().r(),
+            _light.diffuse().g(),
+            _light.diffuse().b())));
+      break;
+    }
+   default:
+    return false;
+  }
+
+  // This is a workaround to set the light's intensity attribute. Using the
+  // UsdLuxLightAPI sets the light's "inputs:intensity" attribute, but isaac
+  // sim reads the light's "intensity" attribute. Both inputs:intensity and
+  // intensity are set to provide flexibility with other USD renderers
+  const float usdLightIntensity =
+   static_cast<float>(_light.intensity()) * 1000.0f;
+  auto lightPrim = stage->GetPrimAtPath(sdfLightPath);
+  lightPrim.CreateAttribute(pxr::TfToken("intensity"),
+     pxr::SdfValueTypeNames->Float, false).Set(usdLightIntensity);
 
   return true;
 }

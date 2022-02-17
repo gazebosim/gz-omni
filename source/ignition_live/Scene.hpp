@@ -71,6 +71,8 @@ class Scene
   ignition::transport::Node node;
   std::unordered_map<uint32_t, pxr::UsdPrim> entities;
 
+  bool UpdateLights(const ignition::msgs::Light &_light,
+                    const std::string &_usdLightPath);
   bool UpdateScene(const ignition::msgs::Scene &_scene);
   bool UpdateVisual(const ignition::msgs::Visual &_visual,
                     const std::string &_usdPath);
