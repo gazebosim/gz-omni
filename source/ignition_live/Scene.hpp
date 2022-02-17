@@ -70,21 +70,22 @@ class Scene
   ignition::transport::Node node;
   std::unordered_map<uint32_t, pxr::UsdGeomXformCommonAPI> poses;
 
-  bool InitScene();
+  bool UpdateScene(const ignition::msgs::Scene &_scene);
   bool UpdateVisual(const ignition::msgs::Visual &_visual,
                     const std::string &_usdPath);
   bool UpdateLink(const ignition::msgs::Link &_link,
                   const std::string &_usdModelPath);
   bool UpdateJoint(const ignition::msgs::Joint &_joint);
   bool UpdateModel(const ignition::msgs::Model &_model);
-  void CallbackJoint(const ignition::msgs::Model &_msg);
-  void CallbackPoses(const ignition::msgs::Pose_V &_msg);
-  void SetScale(const pxr::UsdGeomXformCommonAPI &_xform,
-                const ignition::msgs::Vector3d &_scale);
-  void ResetScale(const pxr::UsdGeomXformCommonAPI &_prim);
   void SetPose(const pxr::UsdGeomXformCommonAPI &_prim,
                const ignition::msgs::Pose &_pose);
   void ResetPose(const pxr::UsdGeomXformCommonAPI &_prim);
+  void SetScale(const pxr::UsdGeomXformCommonAPI &_xform,
+                const ignition::msgs::Vector3d &_scale);
+  void ResetScale(const pxr::UsdGeomXformCommonAPI &_prim);
+  void CallbackPoses(const ignition::msgs::Pose_V &_msg);
+  void CallbackJoint(const ignition::msgs::Model &_msg);
+  void CallbackScene(const ignition::msgs::Scene &_scene);
 };
 }  // namespace omniverse
 }  // namespace ignition

@@ -46,14 +46,6 @@ Scene::Scene(const std::string &_worldName, const std::string &_stageUrl)
 ThreadSafe<pxr::UsdStageRefPtr> &Scene::Stage() { return this->stage; }
 
 //////////////////////////////////////////////////
-void Scene::ResetPose(const pxr::UsdGeomXformCommonAPI &_prim)
-{
-  pxr::UsdGeomXformCommonAPI xformApi(_prim);
-  xformApi.SetTranslate(pxr::GfVec3d(0));
-  xformApi.SetRotate(pxr::GfVec3f(0));
-}
-
-//////////////////////////////////////////////////
 void Scene::SetPose(const pxr::UsdGeomXformCommonAPI &_prim,
                     const ignition::msgs::Pose &_pose)
 {
@@ -70,10 +62,11 @@ void Scene::SetPose(const pxr::UsdGeomXformCommonAPI &_prim,
 }
 
 //////////////////////////////////////////////////
-void Scene::ResetScale(const pxr::UsdGeomXformCommonAPI &_prim)
+void Scene::ResetPose(const pxr::UsdGeomXformCommonAPI &_prim)
 {
   pxr::UsdGeomXformCommonAPI xformApi(_prim);
-  xformApi.SetScale(pxr::GfVec3f(1));
+  xformApi.SetTranslate(pxr::GfVec3d(0));
+  xformApi.SetRotate(pxr::GfVec3f(0));
 }
 
 //////////////////////////////////////////////////
@@ -82,6 +75,13 @@ void Scene::SetScale(const pxr::UsdGeomXformCommonAPI &_prim,
 {
   pxr::UsdGeomXformCommonAPI xformApi(_prim);
   xformApi.SetScale(pxr::GfVec3f(_scale.x(), _scale.y(), _scale.z()));
+}
+
+//////////////////////////////////////////////////
+void Scene::ResetScale(const pxr::UsdGeomXformCommonAPI &_prim)
+{
+  pxr::UsdGeomXformCommonAPI xformApi(_prim);
+  xformApi.SetScale(pxr::GfVec3f(1));
 }
 
 //////////////////////////////////////////////////
@@ -331,7 +331,33 @@ bool Scene::UpdateModel(const ignition::msgs::Model &_model)
 }
 
 //////////////////////////////////////////////////
-bool Scene::InitScene()
+bool Scene::UpdateScene(const ignition::msgs::Scene &_scene)
+{
+  for (const auto &model : _scene.model())
+  {
+    if (!this->UpdateModel(model))
+    {
+      ignerr << "Failed to add model [" << model.name() << "]" << std::endl;
+      return false;
+    }
+    igndbg << "added model [" << model.name() << "]" << std::endl;
+  }
+
+  for (const auto &light : _scene.light())
+  {
+    // TODO: This is just a stub remove warnings when updating poses
+    auto stage = this->stage.Lock();
+    auto xform = pxr::UsdGeomXform::Define(
+        *stage, pxr::SdfPath("/" + worldName + "/" + light.name()));
+    pxr::UsdGeomXformCommonAPI xformApi(xform);
+    this->poses[light.id()] = xformApi;
+  }
+
+  return true;
+}
+
+//////////////////////////////////////////////////
+bool Scene::Init()
 {
   bool result;
   ignition::msgs::Empty req;
@@ -349,35 +375,9 @@ bool Scene::InitScene()
       return false;
     }
   }
-
-  for (const auto &model : ignScene.model())
+  if (!this->UpdateScene(ignScene))
   {
-    if (!this->UpdateModel(model))
-    {
-      ignerr << "Failed to add model [" << model.name() << "]" << std::endl;
-      return false;
-    }
-    igndbg << "added model [" << model.name() << "]" << std::endl;
-  }
-
-  for (const auto &light : ignScene.light())
-  {
-    // TODO: This is just a stub remove warnings when updating poses
-    auto stage = this->stage.Lock();
-    auto xform = pxr::UsdGeomXform::Define(
-        *stage, pxr::SdfPath("/" + worldName + "/" + light.name()));
-    pxr::UsdGeomXformCommonAPI xformApi(xform);
-    this->poses[light.id()] = xformApi;
-  }
-
-  return true;
-}
-
-//////////////////////////////////////////////////
-bool Scene::Init()
-{
-  if (!this->InitScene())
-  {
+    ignerr << "Failed to init scene" << std::endl;
     return false;
   }
 
@@ -394,6 +394,17 @@ bool Scene::Init()
   std::string topic = "/world/" + worldName + "/pose/info";
   // Subscribe to a topic by registering a callback.
   if (!node.Subscribe(topic, &Scene::CallbackPoses, this))
+  {
+    ignerr << "Error subscribing to topic [" << topic << "]" << std::endl;
+    return false;
+  }
+  else
+  {
+    ignmsg << "Subscribed to topic: [" << topic << "]" << std::endl;
+  }
+
+  topic = "/world/" + worldName + "/scene/info";
+  if (!node.Subscribe(topic, &Scene::CallbackScene, this))
   {
     ignerr << "Error subscribing to topic [" << topic << "]" << std::endl;
     return false;
@@ -433,6 +444,12 @@ void Scene::CallbackPoses(const ignition::msgs::Pose_V &_msg)
 void Scene::CallbackJoint(const ignition::msgs::Model &_msg)
 {
   this->UpdateModel(_msg);
+}
+
+//////////////////////////////////////////////////
+void Scene::CallbackScene(const ignition::msgs::Scene &_scene)
+{
+  this->UpdateScene(_scene);
 }
 }  // namespace omniverse
 }  // namespace ignition
