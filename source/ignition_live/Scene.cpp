@@ -174,7 +174,7 @@ bool Scene::UpdateVisual(const ignition::msgs::Visual &_visual,
 
       pxr::UsdGeomXformCommonAPI cubeXformAPI(usdCube);
       cubeXformAPI.SetScale(
-          pxr::GfVec3f(geom.plane().size().x(), geom.plane().size().y(), 0.25));
+          pxr::GfVec3f(geom.plane().size().x(), geom.plane().size().y(), 0.0025));
       if (!SetMaterial(usdCube, _visual, *stage))
       {
         ignwarn << "Failed to set material" << std::endl;
@@ -259,6 +259,7 @@ bool Scene::UpdateVisual(const ignition::msgs::Visual &_visual,
                << std::endl;
         return false;
       }
+      break;
     }
     default:
       ignerr << "Failed to update geometry (unsuported geometry type '"
