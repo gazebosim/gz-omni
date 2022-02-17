@@ -99,11 +99,17 @@ void CreateMaterialInput(
   }
 }
 
-pxr::UsdShadeMaterial SetMaterial(const pxr::UsdGeomGprim &_gprim,
-                                  const ignition::msgs::Visual &_visualMsg,
-                                  const pxr::UsdStageRefPtr &_stage)
+bool SetMaterial(const pxr::UsdGeomGprim &_gprim,
+                 const ignition::msgs::Visual &_visualMsg,
+                 const pxr::UsdStageRefPtr &_stage)
 {
-  const std::string mtlPath = "/Looks/Material_" + _visualMsg.name();
+  if (!_visualMsg.has_material())
+  {
+    return true;
+  }
+
+  const std::string mtlPath = "/Looks/Material_" + _visualMsg.name() + "_" +
+                              std::to_string(_visualMsg.id());
   pxr::UsdShadeMaterial material =
       pxr::UsdShadeMaterial::Define(_stage, pxr::SdfPath(mtlPath));
   auto usdShader =
@@ -171,7 +177,7 @@ pxr::UsdShadeMaterial SetMaterial(const pxr::UsdGeomGprim &_gprim,
       pxr::TfToken("Emissive"), "Intensity of the emission");
 
   pxr::UsdShadeMaterialBindingAPI(_gprim).Bind(material);
-  return material;
+  return true;
 }
 }  // namespace omniverse
 }  // namespace ignition
