@@ -110,7 +110,7 @@ bool Scene::UpdateVisual(const ignition::msgs::Visual &_visual,
   {
     this->ResetPose(xformApi);
   }
-  this->poses[_visual.id()] = xformApi;
+  this->entities[_visual.id()] = usdVisualXform.GetPrim();
 
   pxr::SdfPath usdGeomPath(usdVisualPath + "/geometry");
   const auto &geom = _visual.geometry();
@@ -250,7 +250,7 @@ bool Scene::UpdateLink(const ignition::msgs::Link &_link,
   {
     this->ResetPose(xformApi);
   }
-  this->poses[_link.id()] = xformApi;
+  this->entities[_link.id()] = xform.GetPrim();
 
   for (const auto &visual : _link.visual())
   {
@@ -307,7 +307,7 @@ bool Scene::UpdateModel(const ignition::msgs::Model &_model)
   {
     this->ResetPose(xformApi);
   }
-  this->poses[_model.id()] = xformApi;
+  this->entities[_model.id()] = xform.GetPrim();
 
   for (const auto &link : _model.link())
   {
@@ -350,7 +350,7 @@ bool Scene::UpdateScene(const ignition::msgs::Scene &_scene)
     auto xform = pxr::UsdGeomXform::Define(
         *stage, pxr::SdfPath("/" + worldName + "/" + light.name()));
     pxr::UsdGeomXformCommonAPI xformApi(xform);
-    this->poses[light.id()] = xformApi;
+    this->entities[light.id()] = xform.GetPrim();
   }
 
   return true;
@@ -414,6 +414,17 @@ bool Scene::Init()
     ignmsg << "Subscribed to topic: [" << topic << "]" << std::endl;
   }
 
+  topic = "/world/" + worldName + "/scene/deletion";
+  if (!node.Subscribe(topic, &Scene::CallbackSceneDeletion, this))
+  {
+    ignerr << "Error subscribing to topic [" << topic << "]" << std::endl;
+    return false;
+  }
+  else
+  {
+    ignmsg << "Subscribed to topic: [" << topic << "]" << std::endl;
+  }
+
   return true;
 }
 
@@ -428,8 +439,8 @@ void Scene::CallbackPoses(const ignition::msgs::Pose_V &_msg)
   {
     try
     {
-      const auto &xformApi = this->poses.at(poseMsg.id());
-      this->SetPose(xformApi, poseMsg);
+      const auto &prim = this->entities.at(poseMsg.id());
+      this->SetPose(pxr::UsdGeomXformCommonAPI(prim), poseMsg);
     }
     catch (const std::out_of_range &)
     {
@@ -450,6 +461,25 @@ void Scene::CallbackJoint(const ignition::msgs::Model &_msg)
 void Scene::CallbackScene(const ignition::msgs::Scene &_scene)
 {
   this->UpdateScene(_scene);
+}
+
+//////////////////////////////////////////////////
+void Scene::CallbackSceneDeletion(const ignition::msgs::UInt32_V &_msg)
+{
+  for (const auto id : _msg.data())
+  {
+    try
+    {
+      const auto &prim = this->entities.at(id);
+      this->stage.Lock()->RemovePrim(prim.GetPath());
+      ignmsg << "Removed [" << prim.GetPath() << "]" << std::endl;
+    }
+    catch (const std::out_of_range &)
+    {
+      ignwarn << "Failed to delete [" << id << "] (Unable to find node)"
+              << std::endl;
+    }
+  }
 }
 }  // namespace omniverse
 }  // namespace ignition

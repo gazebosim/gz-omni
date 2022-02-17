@@ -68,7 +68,7 @@ class Scene
   ThreadSafe<pxr::UsdStageRefPtr> stage;
   std::string worldName;
   ignition::transport::Node node;
-  std::unordered_map<uint32_t, pxr::UsdGeomXformCommonAPI> poses;
+  std::unordered_map<uint32_t, pxr::UsdPrim> entities;
 
   bool UpdateScene(const ignition::msgs::Scene &_scene);
   bool UpdateVisual(const ignition::msgs::Visual &_visual,
@@ -86,6 +86,7 @@ class Scene
   void CallbackPoses(const ignition::msgs::Pose_V &_msg);
   void CallbackJoint(const ignition::msgs::Model &_msg);
   void CallbackScene(const ignition::msgs::Scene &_scene);
+  void CallbackSceneDeletion(const ignition::msgs::UInt32_V &_msg);
 };
 }  // namespace omniverse
 }  // namespace ignition
