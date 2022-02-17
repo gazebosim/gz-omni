@@ -121,10 +121,38 @@ pxr::UsdShadeShader SceneImpl::CreateShader(const std::string &_name)
   return pxr::UsdShadeShader::Define(this->stage, pxr::SdfPath(_name));
 }
 
+//////////////////////////////////////////////////
 pxr::UsdGeomXform SceneImpl::CreateXform(const std::string &_name)
 {
   std::unique_lock<std::mutex> lkStage(mutexStage);
   return pxr::UsdGeomXform::Define(this->stage, pxr::SdfPath(_name));
+}
+
+//////////////////////////////////////////////////
+pxr::UsdGeomMesh SceneImpl::CreateMesh(const std::string &_name)
+{
+  std::unique_lock<std::mutex> lkStage(mutexStage);
+  return pxr::UsdGeomMesh::Define(this->stage, pxr::SdfPath(_name));
+}
+
+//////////////////////////////////////////////////
+pxr::UsdPrim SceneImpl::CreateFixedJoint(const std::string &_name)
+{
+  std::unique_lock<std::mutex> lkStage(mutexStage);
+  pxr::TfToken usdPrimTypeName("PhysicsFixedJoint");
+  return this->stage->DefinePrim(
+    pxr::SdfPath(_name),
+    usdPrimTypeName);
+}
+
+//////////////////////////////////////////////////
+pxr::UsdPrim SceneImpl::CreateRevoluteJoint(const std::string &_name)
+{
+  std::unique_lock<std::mutex> lkStage(mutexStage);
+  pxr::TfToken usdPrimTypeName("PhysicsRevoluteJoint");
+  return this->stage->DefinePrim(
+    pxr::SdfPath(_name),
+    usdPrimTypeName);
 }
 
 //////////////////////////////////////////////////
@@ -204,7 +232,9 @@ void SceneImpl::modelWorker()
 
       for (auto &model : rep.model())
       {
-        modelNamesReceived.insert(model.name());
+        std::string modelName = model.name();
+        std::replace(modelName.begin(), modelName.end(), ' ', '_');
+        modelNamesReceived.insert(modelName);
       }
 
       std::vector<std::string> removed;
@@ -249,7 +279,9 @@ void SceneImpl::modelWorker()
 
       for (auto &model : rep.model())
       {
-        auto it = modelsTmp.find(model.name());
+        std::string modelName = model.name();
+        std::replace(modelName.begin(), modelName.end(), ' ', '_');
+        auto it = modelsTmp.find(modelName);
         if (it == modelsTmp.end())
         {
           IgnitionModel ignitionModel;
@@ -261,16 +293,16 @@ void SceneImpl::modelWorker()
               model.pose().orientation().z());
           ignitionModel.id = model.id();
           std::string sdfModelPath =
-              std::string("/") + worldName + "/" + model.name();
+              std::string("/") + worldName + "/" + modelName;
 
           auto modelPrim = this->GetPrimAtPath(sdfModelPath);
           if (modelPrim)
           {
-            igndbg << "Model [" << model.name()
+            igndbg << "Model [" << modelName
                    << "] already available in the scene" << std::endl;
             {
               std::unique_lock<std::mutex> lkPose(poseMutex);
-              this->models.insert({model.name(), ignitionModel});
+              this->models.insert({modelName, ignitionModel});
             }
             continue;
           }
@@ -283,6 +315,29 @@ void SceneImpl::modelWorker()
 
             auto usdLinkXform = pxr::UsdGeomXform::Define(
                 this->stage, pxr::SdfPath(sdfLinkPath));
+
+            ignition::math::Quaterniond q(
+              link.pose().orientation().w(),
+              link.pose().orientation().x(),
+              link.pose().orientation().y(),
+              link.pose().orientation().z());
+
+            usdLinkXform.AddTranslateOp(
+              pxr::UsdGeomXformOp::Precision::PrecisionDouble)
+                .Set(
+                  pxr::GfVec3d(
+                    link.pose().position().x(),
+                    link.pose().position().y(),
+                    link.pose().position().z()));
+
+            usdLinkXform.AddRotateXYZOp(
+              pxr::UsdGeomXformOp::Precision::PrecisionDouble)
+                .Set(
+                  pxr::GfVec3d(
+                    q.Roll() * 180 /3.1416,
+                    q.Pitch() * 180 /3.1416,
+                    q.Yaw() * 180 /3.1416));
+
             for (auto &visual : link.visual())
             {
               auto scene = this->SharedFromThis();
@@ -292,7 +347,7 @@ void SceneImpl::modelWorker()
 
               {
                 std::unique_lock<std::mutex> lkPose(poseMutex);
-                this->models.insert({model.name(), ignitionModel});
+                this->models.insert({modelName, ignitionModel});
               }
             }
           }
