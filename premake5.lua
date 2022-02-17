@@ -86,18 +86,6 @@ workspace "ignition-omniverse1"
                       ignitionInstallDir.."/include/ignition/common4" }
         libdirs { targetDepsDir.."/nv_usd/%{cfg.buildcfg}/lib", targetDepsDir.."/omni_client_library/%{cfg.buildcfg}", targetDepsDir.."/python/lib",
                   ignitionInstallDir.."/lib" }
-    filter { "system:windows" }
-        includedirs { targetDepsDir.."/nv_usd/%{cfg.buildcfg}/include", targetDepsDir.."/omni_client_library/include", targetDepsDir.."/python/include" }
-        libdirs { targetDepsDir.."/nv_usd/%{cfg.buildcfg}/lib", targetDepsDir.."/omni_client_library/%{cfg.buildcfg}", targetDepsDir.."/python/lib" }
-    filter {}
-
-    filter { "system:windows" }
-        defines { "BOOST_ALL_DYN_LINK" }
-        -- Work around https://github.com/intel/tbb/issues/154
-        defines { "TBB_USE_DEBUG=%{cfg.buildcfg == 'debug' and 1 or 0}" }
-        defines { "_CRT_SECURE_NO_WARNINGS" }
-    filter {}
-
     filter { "configurations:debug" }
         defines { "DEBUG", "NOMINMAX" }
         optimize "Off"
@@ -119,31 +107,6 @@ workspace "ignition-omniverse1"
     staticruntime "Off"
     cppdialect "C++17"
 
-    filter { "system:windows" }
-        -- add .editorconfig to all projects so that VS 2017 automatically picks it up
-        files {".editorconfig"}
-        editandcontinue "Off"
-        local paths = {}
-        -- This is where 64-bit cl.exe is located
-        paths.clExeDir = "_build/host-deps/vc/bin/HostX64/x64"
-        -- This is where 64-bit rc.exe is located
-        paths.rcExeDir = "_build/host-deps/winsdk/bin/x64"
-        -- This is where STL includes are located for your toolchain
-        paths.msvcInclude = "_build/host-deps/vc/include"
-        -- This is where the 64-bit vcruntime is located for your toolchain
-        paths.msvcLibs = "_build/host-deps/vc/lib/onecore/x64"
-        -- This is where Windows SDK includes are located
-        winSdkInclude = "_build/host-deps/winsdk/include"
-        -- This is where Windows SDK 64-bit libs are located
-        winSdkLibs = "_build/host-deps/winsdk/lib"
-        paths.sdkInclude = { winSdkInclude.."/winrt", winSdkInclude.."/um", winSdkInclude.."/ucrt", winSdkInclude.."/shared" }
-        paths.sdkLibs = { winSdkLibs.."/ucrt/x64", winSdkLibs.."/um/x64" }
-        bindirs { paths.clExeDir, paths.rcExeDir }
-        systemversion "10.0.17763.0"
-        syslibdirs { paths.msvcLibs, paths.sdkLibs }
-        sysincludedirs { paths.msvcInclude, paths.sdkInclude }
-        -- all of our source strings and executable strings are utf8
-        buildoptions {"/utf-8 /wd4244 /wd4305 /wd4267 -D_SCL_SECURE_NO_WARNINGS"}
     filter { "system:linux" }
         buildoptions {"-D_GLIBCXX_USE_CXX11_ABI=0 -Wno-deprecated-declarations -Wno-deprecated -Wno-unused-variable -pthread -lstdc++fs"}
     filter {}
@@ -156,10 +119,6 @@ function sample(projectName, sourceFolder)
     intrinsics "off"
     inlining "Explicit"
     flags { "NoManifest", "NoIncrementalLink", "NoPCH" }
-    filter { "system:windows", "configurations:debug" }
-        links { "ar","arch","gf","js","kind","pcp","plug","sdf","tf","trace","usd","usdGeom", "vt","work","usdShade","usdLux","omniclient","python37","boost_python37-vc141-mt-gd-x64-1_68" }
-    filter { "system:windows", "configurations:release" }
-        links { "ar","arch","gf","js","kind","pcp","plug","sdf","tf","trace","usd","usdGeom", "vt","work","usdShade","usdLux","omniclient","python37","boost_python37-vc141-mt-x64-1_68" }
     filter { "system:linux" }
         links { "ar","arch","gf","js","kind","pcp","plug","sdf","tf","trace","usd","usdGeom", "vt","work","usdShade","usdLux","omniclient","python3.7m","boost_python37", "pthread", "stdc++fs",
                 "ignition-math6", "ignition-utils1", "ignition-common4","ignition-transport11", "ignition-msgs8", "protobuf", "protoc" }
@@ -171,6 +130,5 @@ function sample(projectName, sourceFolder)
     filter {}
 end
 
--- sample("omnicli", "omnicli")
--- sample("ignition", "ignition")
+
 sample("ignition-omniverse1", "ignition_live")
