@@ -21,6 +21,7 @@
 #include "ThreadSafe.hpp"
 
 #include <ignition/math/Pose3.hh>
+#include <ignition/msgs/joint.pb.h>
 #include <ignition/msgs/link.pb.h>
 #include <ignition/msgs/model.pb.h>
 #include <ignition/msgs/pose.pb.h>
@@ -72,9 +73,10 @@ class Scene
   bool InitScene();
   bool UpdateVisual(const ignition::msgs::Visual &_visual,
                     const std::string &_usdPath);
-  bool UpdateModel(const ignition::msgs::Model &_model);
   bool UpdateLink(const ignition::msgs::Link &_link,
                   const std::string &_usdModelPath);
+  bool UpdateJoint(const ignition::msgs::Joint &_joint);
+  bool UpdateModel(const ignition::msgs::Model &_model);
   void CallbackJoint(const ignition::msgs::Model &_msg);
   void CallbackPoses(const ignition::msgs::Pose_V &_msg);
   void SetScale(const pxr::UsdGeomXformCommonAPI &_xform,

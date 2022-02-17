@@ -24,9 +24,9 @@
 #include <pxr/usd/usdGeom/xform.h>
 
 #include <algorithm>
-#include <chrono>  // std::chrono::seconds
+#include <chrono>
 #include <string>
-#include <thread>  // std::this_thread::sleep_for
+#include <thread>
 #include <vector>
 
 using namespace std::chrono_literals;
@@ -264,6 +264,26 @@ bool Scene::UpdateLink(const ignition::msgs::Link &_link,
 }
 
 //////////////////////////////////////////////////
+bool Scene::UpdateJoint(const ignition::msgs::Joint &_joint)
+{
+  // TODO: this is not tested
+  auto stage = this->stage.Lock();
+  auto jointUSD =
+      stage->GetPrimAtPath(pxr::SdfPath("/" + worldName + "/" + _joint.name()));
+  // auto driveJoint = pxr::UsdPhysicsDriveAPI(jointUSD);
+  auto attrTargetPos = jointUSD.GetAttribute(
+      pxr::TfToken("drive:angular:physics:targetPosition"));
+  if (attrTargetPos)
+  {
+    float pos;
+    attrTargetPos.Get(&pos);
+    attrTargetPos.Set(pxr::VtValue(
+        ignition::math::Angle(_joint.axis1().position()).Degree()));
+  }
+  return true;
+}
+
+//////////////////////////////////////////////////
 bool Scene::UpdateModel(const ignition::msgs::Model &_model)
 {
   auto stage = this->stage.Lock();
@@ -297,6 +317,16 @@ bool Scene::UpdateModel(const ignition::msgs::Model &_model)
       return false;
     }
   }
+
+  for (const auto &joint : _model.joint())
+  {
+    if (!this->UpdateJoint(joint))
+    {
+      ignerr << "Failed to update model [" << _model.name() << "]" << std::endl;
+      return false;
+    }
+  }
+
   return true;
 }
 
@@ -351,16 +381,15 @@ bool Scene::Init()
     return false;
   }
 
-  // modelThread = std::make_shared<std::thread>(&Scene::modelWorker, this);
-  // if (!node.Subscribe("/joint_state", &Scene::CallbackJoint, this))
-  // {
-  //   ignerr << "Error subscribing to topic [joint_state]" << std::endl;
-  //   return false;
-  // }
-  // else
-  // {
-  //   ignmsg << "Subscribed to topic: [joint_state]" << std::endl;
-  // }
+  if (!node.Subscribe("/joint_state", &Scene::CallbackJoint, this))
+  {
+    ignerr << "Error subscribing to topic [joint_state]" << std::endl;
+    return false;
+  }
+  else
+  {
+    ignmsg << "Subscribed to topic: [joint_state]" << std::endl;
+  }
 
   std::string topic = "/world/" + worldName + "/pose/info";
   // Subscribe to a topic by registering a callback.
@@ -403,34 +432,7 @@ void Scene::CallbackPoses(const ignition::msgs::Pose_V &_msg)
 /// \brief Function called each time a topic update is received.
 void Scene::CallbackJoint(const ignition::msgs::Model &_msg)
 {
-  // auto it = this->models.find(_msg.name());
-  // if (it != this->models.end())
-  // {
-  //   auto &joints = it->second.ignitionJoints;
-  //   for (auto &joint : _msg.joint())
-  //   {
-  //     ignition::math::Pose3d poseJoint(
-  //         joint.pose().position().x(), joint.pose().position().y(),
-  //         joint.pose().position().z(), joint.pose().orientation().w(),
-  //         joint.pose().orientation().x(), joint.pose().orientation().y(),
-  //         joint.pose().orientation().z());
-
-  //     auto itJoint = joints.find(joint.name());
-  //     if (itJoint != joints.end())
-  //     {
-  //       itJoint->second->pose = poseJoint;
-  //       itJoint->second->position = joint.axis1().position();
-  //     }
-  //     else
-  //     {
-  //       std::shared_ptr<IgnitionJoint> ignitionJoint =
-  //           std::make_shared<IgnitionJoint>();
-  //       ignitionJoint->pose = poseJoint;
-  //       ignitionJoint->position = joint.axis1().position();
-  //       joints.insert({joint.name(), ignitionJoint});
-  //     }
-  //   }
-  // }
+  this->UpdateModel(_msg);
 }
 }  // namespace omniverse
 }  // namespace ignition
