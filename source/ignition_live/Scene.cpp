@@ -25,6 +25,9 @@
 #include <ignition/math/Quaternion.hh>
 
 #include <pxr/usd/usdGeom/xform.h>
+#include <pxr/usd/usdLux/diskLight.h>
+#include <pxr/usd/usdLux/distantLight.h>
+#include <pxr/usd/usdLux/sphereLight.h>
 
 #include <algorithm>
 #include <chrono>
@@ -40,13 +43,15 @@ namespace omniverse
 {
 class Scene::Implementation
 {
-public:
+ public:
   std::string worldName;
   std::shared_ptr<ThreadSafe<pxr::UsdStageRefPtr>> stage;
   std::shared_ptr<ignition::transport::Node> node;
   std::string stageDirUrl;
   std::unordered_map<uint32_t, pxr::UsdPrim> entities;
 
+  bool UpdateLights(const ignition::msgs::Light &_light,
+                    const std::string &_usdLightPath);
   bool UpdateScene(const ignition::msgs::Scene &_scene);
   bool UpdateVisual(const ignition::msgs::Visual &_visual,
                     const std::string &_usdPath);
@@ -73,17 +78,21 @@ Scene::Scene(const std::string &_worldName, const std::string &_stageUrl)
 {
   ignmsg << "Opened stage [" << _stageUrl << "]" << std::endl;
   this->dataPtr->worldName = _worldName;
-  this->dataPtr->stage = std::make_shared<ThreadSafe<pxr::UsdStageRefPtr>>(pxr::UsdStage::Open(_stageUrl));
+  this->dataPtr->stage = std::make_shared<ThreadSafe<pxr::UsdStageRefPtr>>(
+      pxr::UsdStage::Open(_stageUrl));
   this->dataPtr->node = std::make_shared<ignition::transport::Node>();
   this->dataPtr->stageDirUrl = ignition::common::parentPath(_stageUrl);
 }
 
 // //////////////////////////////////////////////////
-std::shared_ptr<ThreadSafe<pxr::UsdStageRefPtr>> &Scene::Stage() { return this->dataPtr->stage; }
+std::shared_ptr<ThreadSafe<pxr::UsdStageRefPtr>> &Scene::Stage()
+{
+  return this->dataPtr->stage;
+}
 
 //////////////////////////////////////////////////
 void Scene::Implementation::SetPose(const pxr::UsdGeomXformCommonAPI &_prim,
-                    const ignition::msgs::Pose &_pose)
+                                    const ignition::msgs::Pose &_pose)
 {
   pxr::UsdGeomXformCommonAPI xformApi(_prim);
   const auto &pos = _pose.position();
@@ -107,7 +116,7 @@ void Scene::Implementation::ResetPose(const pxr::UsdGeomXformCommonAPI &_prim)
 
 //////////////////////////////////////////////////
 void Scene::Implementation::SetScale(const pxr::UsdGeomXformCommonAPI &_prim,
-                     const ignition::msgs::Vector3d &_scale)
+                                     const ignition::msgs::Vector3d &_scale)
 {
   pxr::UsdGeomXformCommonAPI xformApi(_prim);
   xformApi.SetScale(pxr::GfVec3f(_scale.x(), _scale.y(), _scale.z()));
@@ -122,7 +131,7 @@ void Scene::Implementation::ResetScale(const pxr::UsdGeomXformCommonAPI &_prim)
 
 //////////////////////////////////////////////////
 bool Scene::Implementation::UpdateVisual(const ignition::msgs::Visual &_visual,
-                         const std::string &_usdLinkPath)
+                                         const std::string &_usdLinkPath)
 {
   auto stage = this->stage->Lock();
 
@@ -207,8 +216,8 @@ bool Scene::Implementation::UpdateVisual(const ignition::msgs::Visual &_visual,
       usdCube.CreateExtentAttr().Set(extentBounds);
 
       pxr::UsdGeomXformCommonAPI cubeXformAPI(usdCube);
-      cubeXformAPI.SetScale(
-          pxr::GfVec3f(geom.plane().size().x(), geom.plane().size().y(), 0.0025));
+      cubeXformAPI.SetScale(pxr::GfVec3f(geom.plane().size().x(),
+                                         geom.plane().size().y(), 0.0025));
       if (!SetMaterial(usdCube, _visual, *stage))
       {
         ignwarn << "Failed to set material" << std::endl;
@@ -280,8 +289,7 @@ bool Scene::Implementation::UpdateVisual(const ignition::msgs::Visual &_visual,
     }
     case ignition::msgs::Geometry::MESH:
     {
-      auto usdMesh =
-        UpdateMesh(geom.mesh(), usdGeomPath, *stage);
+      auto usdMesh = UpdateMesh(geom.mesh(), usdGeomPath, *stage);
       if (!usdMesh)
       {
         ignerr << "Failed to update visual [" << _visual.name() << "]"
@@ -307,7 +315,7 @@ bool Scene::Implementation::UpdateVisual(const ignition::msgs::Visual &_visual,
 
 //////////////////////////////////////////////////
 bool Scene::Implementation::UpdateLink(const ignition::msgs::Link &_link,
-                       const std::string &_usdModelPath)
+                                       const std::string &_usdModelPath)
 {
   auto stage = this->stage->Lock();
   std::string usdLinkPath = _usdModelPath + "/" + _link.name();
@@ -332,6 +340,17 @@ bool Scene::Implementation::UpdateLink(const ignition::msgs::Link &_link,
       return false;
     }
   }
+
+  for (const auto &light : _link.light())
+  {
+    if (!this->UpdateLights(light, usdLinkPath + "/" + light.name()))
+    {
+      ignerr << "Failed to add light [" << usdLinkPath + "/" + light.name()
+             << "]" << std::endl;
+      return false;
+    }
+  }
+
   return true;
 }
 
@@ -420,13 +439,69 @@ bool Scene::Implementation::UpdateScene(const ignition::msgs::Scene &_scene)
 
   for (const auto &light : _scene.light())
   {
-    // TODO: This is just a stub remove warnings when updating poses
-    auto stage = this->stage->Lock();
-    auto xform = pxr::UsdGeomXform::Define(
-        *stage, pxr::SdfPath("/" + worldName + "/" + light.name()));
-    pxr::UsdGeomXformCommonAPI xformApi(xform);
-    this->entities[light.id()] = xform.GetPrim();
+    if (!this->UpdateLights(light, "/" + worldName + "/" + light.name()))
+    {
+      ignerr << "Failed to add light [" << light.name() << "]" << std::endl;
+      return false;
+    }
   }
+
+  return true;
+}
+
+//////////////////////////////////////////////////
+bool Scene::Implementation::UpdateLights(const ignition::msgs::Light &_light,
+                                       const std::string &_usdLightPath)
+{
+  // TODO: We can probably re-use code from sdformat
+
+  auto stage = this->stage->Lock();
+
+  const pxr::SdfPath sdfLightPath(_usdLightPath);
+  switch (_light.type())
+  {
+    case ignition::msgs::Light::POINT:
+    {
+      auto pointLight = pxr::UsdLuxSphereLight::Define(*stage, sdfLightPath);
+      pointLight.CreateTreatAsPointAttr().Set(true);
+      this->entities[_light.id()] = pointLight.GetPrim();
+      pointLight.CreateRadiusAttr(pxr::VtValue(0.1f));
+      pointLight.CreateColorAttr(pxr::VtValue(pxr::GfVec3f(
+          _light.diffuse().r(), _light.diffuse().g(), _light.diffuse().b())));
+      break;
+    }
+    case ignition::msgs::Light::SPOT:
+    {
+      auto diskLight = pxr::UsdLuxDiskLight::Define(*stage, sdfLightPath);
+      this->entities[_light.id()] = diskLight.GetPrim();
+      diskLight.CreateColorAttr(pxr::VtValue(pxr::GfVec3f(
+          _light.diffuse().r(), _light.diffuse().g(), _light.diffuse().b())));
+      break;
+    }
+    case ignition::msgs::Light::DIRECTIONAL:
+    {
+      auto directionalLight =
+          pxr::UsdLuxDistantLight::Define(*stage, sdfLightPath);
+      this->entities[_light.id()] = directionalLight.GetPrim();
+      directionalLight.CreateColorAttr(pxr::VtValue(pxr::GfVec3f(
+          _light.diffuse().r(), _light.diffuse().g(), _light.diffuse().b())));
+      break;
+    }
+    default:
+      return false;
+  }
+
+  // This is a workaround to set the light's intensity attribute. Using the
+  // UsdLuxLightAPI sets the light's "inputs:intensity" attribute, but isaac
+  // sim reads the light's "intensity" attribute. Both inputs:intensity and
+  // intensity are set to provide flexibility with other USD renderers
+  const float usdLightIntensity =
+      static_cast<float>(_light.intensity()) * 1000.0f;
+  auto lightPrim = stage->GetPrimAtPath(sdfLightPath);
+  lightPrim
+      .CreateAttribute(pxr::TfToken("intensity"), pxr::SdfValueTypeNames->Float,
+                       false)
+      .Set(usdLightIntensity);
 
   return true;
 }
@@ -438,13 +513,16 @@ bool Scene::Init()
   ignition::msgs::Empty req;
   ignition::msgs::Scene ignScene;
   if (!this->dataPtr->node->Request(
-    "/world/" + this->dataPtr->worldName + "/scene/info", req, 5000, ignScene, result))
+          "/world/" + this->dataPtr->worldName + "/scene/info", req, 5000,
+          ignScene, result))
   {
-    ignwarn << "Error requesting scene info, make sure the world [" << this->dataPtr->worldName
+    ignwarn << "Error requesting scene info, make sure the world ["
+            << this->dataPtr->worldName
             << "] is available, ignition-omniverse will keep trying..."
             << std::endl;
-    if (!this->dataPtr->node->Request("/world/" + this->dataPtr->worldName + "/scene/info", req, -1, ignScene,
-                      result))
+    if (!this->dataPtr->node->Request(
+            "/world/" + this->dataPtr->worldName + "/scene/info", req, -1,
+            ignScene, result))
     {
       ignerr << "Error request scene info" << std::endl;
       return false;
@@ -456,7 +534,9 @@ bool Scene::Init()
     return false;
   }
 
-  if (!this->dataPtr->node->Subscribe("/joint_state", &Scene::Implementation::CallbackJoint, this->dataPtr.Get()))
+  if (!this->dataPtr->node->Subscribe("/joint_state",
+                                      &Scene::Implementation::CallbackJoint,
+                                      this->dataPtr.Get()))
   {
     ignerr << "Error subscribing to topic [joint_state]" << std::endl;
     return false;
@@ -468,7 +548,8 @@ bool Scene::Init()
 
   std::string topic = "/world/" + this->dataPtr->worldName + "/pose/info";
   // Subscribe to a topic by registering a callback.
-  if (!this->dataPtr->node->Subscribe(topic, &Scene::Implementation::CallbackPoses, this->dataPtr.Get()))
+  if (!this->dataPtr->node->Subscribe(
+          topic, &Scene::Implementation::CallbackPoses, this->dataPtr.Get()))
   {
     ignerr << "Error subscribing to topic [" << topic << "]" << std::endl;
     return false;
@@ -479,7 +560,8 @@ bool Scene::Init()
   }
 
   topic = "/world/" + this->dataPtr->worldName + "/scene/info";
-  if (!this->dataPtr->node->Subscribe(topic, &Scene::Implementation::CallbackScene, this->dataPtr.Get()))
+  if (!this->dataPtr->node->Subscribe(
+          topic, &Scene::Implementation::CallbackScene, this->dataPtr.Get()))
   {
     ignerr << "Error subscribing to topic [" << topic << "]" << std::endl;
     return false;
@@ -490,7 +572,9 @@ bool Scene::Init()
   }
 
   topic = "/world/" + this->dataPtr->worldName + "/scene/deletion";
-  if (!this->dataPtr->node->Subscribe(topic, &Scene::Implementation::CallbackSceneDeletion, this->dataPtr.Get()))
+  if (!this->dataPtr->node->Subscribe(
+          topic, &Scene::Implementation::CallbackSceneDeletion,
+          this->dataPtr.Get()))
   {
     ignerr << "Error subscribing to topic [" << topic << "]" << std::endl;
     return false;
@@ -539,7 +623,8 @@ void Scene::Implementation::CallbackScene(const ignition::msgs::Scene &_scene)
 }
 
 //////////////////////////////////////////////////
-void Scene::Implementation::CallbackSceneDeletion(const ignition::msgs::UInt32_V &_msg)
+void Scene::Implementation::CallbackSceneDeletion(
+    const ignition::msgs::UInt32_V &_msg)
 {
   for (const auto id : _msg.data())
   {
