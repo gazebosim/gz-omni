@@ -20,6 +20,8 @@
 #include "Error.hpp"
 #include "ThreadSafe.hpp"
 
+#include <ignition/utils/ImplPtr.hh>
+
 #include <ignition/math/Pose3.hh>
 #include <ignition/msgs/joint.pb.h>
 #include <ignition/msgs/link.pb.h>
@@ -63,31 +65,11 @@ class Scene
   /// \brief Equivalent to `scene.Stage().Lock()->Save()`.
   void Save();
 
-  ThreadSafe<pxr::UsdStageRefPtr> &Stage();
+  std::shared_ptr<ThreadSafe<pxr::UsdStageRefPtr>> &Stage();
 
- private:
-  ThreadSafe<pxr::UsdStageRefPtr> stage;
-  std::string worldName;
-  ignition::transport::Node node;
-  std::unordered_map<uint32_t, pxr::UsdPrim> entities;
-
-  bool UpdateScene(const ignition::msgs::Scene &_scene);
-  bool UpdateVisual(const ignition::msgs::Visual &_visual,
-                    const std::string &_usdPath);
-  bool UpdateLink(const ignition::msgs::Link &_link,
-                  const std::string &_usdModelPath);
-  bool UpdateJoint(const ignition::msgs::Joint &_joint);
-  bool UpdateModel(const ignition::msgs::Model &_model);
-  void SetPose(const pxr::UsdGeomXformCommonAPI &_prim,
-               const ignition::msgs::Pose &_pose);
-  void ResetPose(const pxr::UsdGeomXformCommonAPI &_prim);
-  void SetScale(const pxr::UsdGeomXformCommonAPI &_xform,
-                const ignition::msgs::Vector3d &_scale);
-  void ResetScale(const pxr::UsdGeomXformCommonAPI &_prim);
-  void CallbackPoses(const ignition::msgs::Pose_V &_msg);
-  void CallbackJoint(const ignition::msgs::Model &_msg);
-  void CallbackScene(const ignition::msgs::Scene &_scene);
-  void CallbackSceneDeletion(const ignition::msgs::UInt32_V &_msg);
+  /// \internal
+  /// \brief Private data pointer
+  IGN_UTILS_IMPL_PTR(dataPtr)
 };
 }  // namespace omniverse
 }  // namespace ignition
