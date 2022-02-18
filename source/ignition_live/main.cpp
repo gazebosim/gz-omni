@@ -78,8 +78,6 @@ int main(int argc, char* argv[])
   }
 
   // Open the USD model in Omniverse
-  // TODO(ahcorde): For now, we can modify a preload a world in IssacSim but we
-  // cannot create the object
   const std::string stageUrl = [&]()
   {
     auto result = CreateOmniverseModel(destinationPath);
