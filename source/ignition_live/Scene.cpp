@@ -304,7 +304,8 @@ bool Scene::UpdateLink(const ignition::msgs::Link &_link,
   {
     if (!this->UpdateLights(light, usdLinkPath + "/" + light.name()))
     {
-      ignerr << "Failed to add light [" << usdLinkPath + "/" + light.name() << "]" << std::endl;
+      ignerr << "Failed to add light [" << usdLinkPath + "/" + light.name()
+             << "]" << std::endl;
       return false;
     }
   }
@@ -408,6 +409,8 @@ bool Scene::UpdateScene(const ignition::msgs::Scene &_scene)
 bool Scene::UpdateLights(const ignition::msgs::Light &_light,
                          const std::string &_usdLightPath)
 {
+  // TODO: We can probably re-use code from sdformat
+
   auto stage = this->stage.Lock();
 
   const pxr::SdfPath sdfLightPath(_usdLightPath);
@@ -415,46 +418,33 @@ bool Scene::UpdateLights(const ignition::msgs::Light &_light,
   {
     case ignition::msgs::Light::POINT:
     {
-      auto pointLight =
-        pxr::UsdLuxSphereLight::Define(*stage, sdfLightPath);
+      auto pointLight = pxr::UsdLuxSphereLight::Define(*stage, sdfLightPath);
       pointLight.CreateTreatAsPointAttr().Set(true);
       this->entities[_light.id()] = pointLight.GetPrim();
       pointLight.CreateRadiusAttr(pxr::VtValue(0.1f));
-      pointLight.CreateColorAttr(
-        pxr::VtValue(
-          pxr::GfVec3f(
-            _light.diffuse().r(),
-            _light.diffuse().g(),
-            _light.diffuse().b())));
+      pointLight.CreateColorAttr(pxr::VtValue(pxr::GfVec3f(
+          _light.diffuse().r(), _light.diffuse().g(), _light.diffuse().b())));
       break;
     }
-   case ignition::msgs::Light::SPOT:
-   {
-     auto diskLight = pxr::UsdLuxDiskLight::Define(*stage, sdfLightPath);
-     this->entities[_light.id()] = diskLight.GetPrim();
-     diskLight.CreateColorAttr(
-       pxr::VtValue(
-         pxr::GfVec3f(
-           _light.diffuse().r(),
-           _light.diffuse().g(),
-           _light.diffuse().b())));
-     break;
-   }
-   case ignition::msgs::Light::DIRECTIONAL:
-   {
+    case ignition::msgs::Light::SPOT:
+    {
+      auto diskLight = pxr::UsdLuxDiskLight::Define(*stage, sdfLightPath);
+      this->entities[_light.id()] = diskLight.GetPrim();
+      diskLight.CreateColorAttr(pxr::VtValue(pxr::GfVec3f(
+          _light.diffuse().r(), _light.diffuse().g(), _light.diffuse().b())));
+      break;
+    }
+    case ignition::msgs::Light::DIRECTIONAL:
+    {
       auto directionalLight =
-        pxr::UsdLuxDistantLight::Define(*stage, sdfLightPath);
+          pxr::UsdLuxDistantLight::Define(*stage, sdfLightPath);
       this->entities[_light.id()] = directionalLight.GetPrim();
-      directionalLight.CreateColorAttr(
-        pxr::VtValue(
-          pxr::GfVec3f(
-            _light.diffuse().r(),
-            _light.diffuse().g(),
-            _light.diffuse().b())));
+      directionalLight.CreateColorAttr(pxr::VtValue(pxr::GfVec3f(
+          _light.diffuse().r(), _light.diffuse().g(), _light.diffuse().b())));
       break;
     }
-   default:
-    return false;
+    default:
+      return false;
   }
 
   // This is a workaround to set the light's intensity attribute. Using the
@@ -462,10 +452,12 @@ bool Scene::UpdateLights(const ignition::msgs::Light &_light,
   // sim reads the light's "intensity" attribute. Both inputs:intensity and
   // intensity are set to provide flexibility with other USD renderers
   const float usdLightIntensity =
-   static_cast<float>(_light.intensity()) * 1000.0f;
+      static_cast<float>(_light.intensity()) * 1000.0f;
   auto lightPrim = stage->GetPrimAtPath(sdfLightPath);
-  lightPrim.CreateAttribute(pxr::TfToken("intensity"),
-     pxr::SdfValueTypeNames->Float, false).Set(usdLightIntensity);
+  lightPrim
+      .CreateAttribute(pxr::TfToken("intensity"), pxr::SdfValueTypeNames->Float,
+                       false)
+      .Set(usdLightIntensity);
 
   return true;
 }
