@@ -310,6 +310,21 @@ bool Scene::Implementation::UpdateVisual(const ignition::msgs::Visual &_visual,
       return false;
   }
 
+  // TODO(ahcorde): When usdphysics will be available in nv-usd we should
+  // replace this code with pxr::UsdPhysicsCollisionAPI::Apply(geomPrim)
+  pxr::TfToken appliedSchemaNamePhysicsCollisionAPI("PhysicsCollisionAPI");
+  pxr::SdfPrimSpecHandle primSpec = pxr::SdfCreatePrimInLayer(
+          stage->GetEditTarget().GetLayer(),
+          pxr::SdfPath(usdGeomPath));
+  pxr::SdfTokenListOp listOpPanda;
+  // Use ReplaceOperations to append in place.
+  if (!listOpPanda.ReplaceOperations(pxr::SdfListOpTypeExplicit,
+       0, 0, {appliedSchemaNamePhysicsCollisionAPI})) {
+     std::cerr << "Error Applying schema PhysicsCollisionAPI" << '\n';
+  }
+  primSpec->SetInfo(
+    pxr::UsdTokens->apiSchemas, pxr::VtValue::Take(listOpPanda));
+
   return true;
 }
 
