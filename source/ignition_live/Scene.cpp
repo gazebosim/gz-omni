@@ -361,6 +361,175 @@ bool Scene::Implementation::UpdateJoint(const ignition::msgs::Joint &_joint)
   auto stage = this->stage->Lock();
   auto jointUSD =
       stage->GetPrimAtPath(pxr::SdfPath("/" + worldName + "/" + _joint.name()));
+  if (!jointUSD)
+  {
+    switch (_joint.type())
+    {
+      case ignition::msgs::Joint::FIXED:
+      {
+        pxr::TfToken usdPrimTypeName("PhysicsFixedJoint");
+        auto jointFixedUSD = stage->DefinePrim(
+          pxr::SdfPath("/" + this->worldName + "/" + _joint.name()),
+          usdPrimTypeName);
+
+        auto body0 = jointFixedUSD.CreateRelationship(
+          pxr::TfToken("physics:body0"), false);
+        body0.AddTarget(pxr::SdfPath(
+          "/" + this->worldName + "/" + _joint.parent()));
+        auto body1 = jointFixedUSD.CreateRelationship(
+          pxr::TfToken("physics:body1"), false);
+        body1.AddTarget(pxr::SdfPath(
+          "/" + this->worldName + "/" + _joint.child()));
+
+        jointFixedUSD.CreateAttribute(pxr::TfToken("physics:localPos1"),
+                pxr::SdfValueTypeNames->Point3fArray, false).Set(
+                  pxr::GfVec3f(0, 0, 0));
+
+        jointFixedUSD.CreateAttribute(pxr::TfToken("physics:localPos0"),
+                pxr::SdfValueTypeNames->Point3fArray, false).Set(
+                  pxr::GfVec3f(_joint.pose().position().x(),
+                               _joint.pose().position().y(),
+                               _joint.pose().position().z()));
+        return true;
+      }
+      case ignition::msgs::Joint::REVOLUTE:
+      {
+        igndbg << "Creating a revolute joint" << '\n';
+
+        pxr::TfToken usdPrimTypeName("PhysicsRevoluteJoint");
+        auto revoluteJointUSD = stage->DefinePrim(
+          pxr::SdfPath("/" + this->worldName + "/" + _joint.name()),
+          usdPrimTypeName);
+
+        igndbg << "\tParent "
+               << "/" + this->worldName + "/" + _joint.parent() << '\n';
+        igndbg << "\tchild "
+               << "/" + this->worldName + "/" + _joint.child() << '\n';
+
+        pxr::TfTokenVector identifiersBody0 =
+            {pxr::TfToken("physics"), pxr::TfToken("body0")};
+
+        if (pxr::UsdRelationship body0 = revoluteJointUSD.CreateRelationship(
+          pxr::TfToken(pxr::SdfPath::JoinIdentifier(identifiersBody0)), false))
+        {
+          body0.AddTarget(
+            pxr::SdfPath("/" + this->worldName + "/panda/" + _joint.parent()),
+            pxr::UsdListPositionFrontOfAppendList);
+        }
+        else
+        {
+          igndbg << "Not able to create UsdRelationship for body1" << '\n';
+        }
+
+        pxr::TfTokenVector identifiersBody1 =
+            {pxr::TfToken("physics"), pxr::TfToken("body1")};
+
+        if (pxr::UsdRelationship body1 = revoluteJointUSD.CreateRelationship(
+          pxr::TfToken(pxr::SdfPath::JoinIdentifier(identifiersBody1)), false))
+        {
+          body1.AddTarget(
+            pxr::SdfPath("/" + this->worldName + "/panda/" + _joint.child()),
+            pxr::UsdListPositionFrontOfAppendList);
+        }
+        else
+        {
+          igndbg << "Not able to create UsdRelationship for body1" << '\n';
+        }
+
+        ignition::math::Vector3i axis(
+          _joint.axis1().xyz().x(),
+          _joint.axis1().xyz().y(),
+          _joint.axis1().xyz().z());
+
+        if (axis == ignition::math::Vector3i(1, 0, 0))
+        {
+          revoluteJointUSD.CreateAttribute(pxr::TfToken("physics:axis"),
+            pxr::SdfValueTypeNames->Token, false).Set(pxr::TfToken("X"));
+        }
+        else if (axis == ignition::math::Vector3i(0, 1, 0))
+        {
+          revoluteJointUSD.CreateAttribute(pxr::TfToken("physics:axis"),
+            pxr::SdfValueTypeNames->Token, false).Set(pxr::TfToken("Y"));
+        }
+        else if (axis == ignition::math::Vector3i(0, 0, 1))
+        {
+          revoluteJointUSD.CreateAttribute(pxr::TfToken("physics:axis"),
+            pxr::SdfValueTypeNames->Token, false).Set(pxr::TfToken("Z"));
+        }
+
+        revoluteJointUSD.CreateAttribute(pxr::TfToken("physics:localPos1"),
+                pxr::SdfValueTypeNames->Point3f, false).Set(
+                  pxr::GfVec3f(0, 0, 0));
+
+        revoluteJointUSD.CreateAttribute(pxr::TfToken("physics:localPos0"),
+          pxr::SdfValueTypeNames->Point3f, false).Set(
+            pxr::GfVec3f(
+              _joint.pose().position().x(),
+              _joint.pose().position().y(),
+              _joint.pose().position().z()));
+
+        revoluteJointUSD.CreateAttribute(
+          pxr::TfToken("drive:angular:physics:damping"),
+          pxr::SdfValueTypeNames->Float, false).Set(100000.0f);
+        revoluteJointUSD.CreateAttribute(
+          pxr::TfToken("drive:angular:physics:stiffness"),
+          pxr::SdfValueTypeNames->Float, false).Set(1000000.0f);
+
+        revoluteJointUSD.CreateAttribute(
+          pxr::TfToken("drive:angular:physics:targetPosition"),
+          pxr::SdfValueTypeNames->Float, false).Set(0.0f);
+
+        revoluteJointUSD.CreateAttribute(
+          pxr::TfToken("physics:lowerLimit"),
+          pxr::SdfValueTypeNames->Float, false).Set(
+            static_cast<float>(_joint.axis1().limit_lower() * 180 / 3.1416));
+
+        revoluteJointUSD.CreateAttribute(
+          pxr::TfToken("physics:upperLimit"),
+          pxr::SdfValueTypeNames->Float, false).Set(
+            static_cast<float>(_joint.axis1().limit_upper() * 180 / 3.1416));
+
+        pxr::TfToken appliedSchemaNamePhysicsArticulationRootAPI(
+          "PhysicsArticulationRootAPI");
+        pxr::TfToken appliedSchemaNamePhysxArticulationAPI(
+          "PhysxArticulationAPI");
+        pxr::SdfPrimSpecHandle primSpecPanda = pxr::SdfCreatePrimInLayer(
+          stage->GetEditTarget().GetLayer(),
+          pxr::SdfPath("/" + this->worldName + "/panda"));
+        pxr::SdfTokenListOp listOpPanda;
+        // Use ReplaceOperations to append in place.
+        if (!listOpPanda.ReplaceOperations(
+          pxr::SdfListOpTypeExplicit,
+          0,
+          0,
+          {appliedSchemaNamePhysicsArticulationRootAPI,
+           appliedSchemaNamePhysxArticulationAPI})) {
+          ignerr << "Not able to setup the schema PhysxArticulationAPI "
+                 << "and PhysicsArticulationRootAPI\n";
+        }
+        primSpecPanda->SetInfo(
+          pxr::UsdTokens->apiSchemas, pxr::VtValue::Take(listOpPanda));
+
+        pxr::TfToken appliedSchemaName("PhysicsDriveAPI:angular");
+        pxr::SdfPrimSpecHandle primSpec = pxr::SdfCreatePrimInLayer(
+          stage->GetEditTarget().GetLayer(),
+          pxr::SdfPath("/" + this->worldName + "/" + _joint.name()));
+        pxr::SdfTokenListOp listOp;
+
+        // Use ReplaceOperations to append in place.
+        if (!listOp.ReplaceOperations(pxr::SdfListOpTypeExplicit,
+                0, 0, {appliedSchemaName})) {
+          ignerr << "Not able to setup the schema PhysicsDriveAPI\n";
+        }
+
+        primSpec->SetInfo(
+          pxr::UsdTokens->apiSchemas, pxr::VtValue::Take(listOp));
+        break;
+      }
+      default:
+        return false;
+    }
+  }
   // auto driveJoint = pxr::UsdPhysicsDriveAPI(jointUSD);
   auto attrTargetPos = jointUSD.GetAttribute(
       pxr::TfToken("drive:angular:physics:targetPosition"));
@@ -534,16 +703,24 @@ bool Scene::Init()
     return false;
   }
 
-  if (!this->dataPtr->node->Subscribe("/joint_state",
-                                      &Scene::Implementation::CallbackJoint,
-                                      this->dataPtr.Get()))
+  std::vector<std::string> topics;
+  this->dataPtr->node->TopicList(topics);
+
+  for (auto const &topic : topics)
   {
-    ignerr << "Error subscribing to topic [joint_state]" << std::endl;
-    return false;
-  }
-  else
-  {
-    ignmsg << "Subscribed to topic: [joint_state]" << std::endl;
+    if (topic.find("/joint_state") != std::string::npos)
+    {
+      if (!this->dataPtr->node->Subscribe(
+        topic, &Scene::Implementation::CallbackJoint, this->dataPtr.Get()))
+      {
+        ignerr << "Error subscribing to topic [" << topic << "]" << std::endl;
+        return false;
+      }
+      else
+      {
+        ignmsg << "Subscribed to topic: [joint_state]" << std::endl;
+      }
+    }
   }
 
   std::string topic = "/world/" + this->dataPtr->worldName + "/pose/info";
@@ -598,6 +775,7 @@ void Scene::Implementation::CallbackPoses(const ignition::msgs::Pose_V &_msg)
   {
     try
     {
+      auto stage = this->stage->Lock();
       const auto &prim = this->entities.at(poseMsg.id());
       this->SetPose(pxr::UsdGeomXformCommonAPI(prim), poseMsg);
     }
@@ -630,8 +808,9 @@ void Scene::Implementation::CallbackSceneDeletion(
   {
     try
     {
+      auto stage = this->stage->Lock();
       const auto &prim = this->entities.at(id);
-      this->stage->Lock()->RemovePrim(prim.GetPath());
+      stage->RemovePrim(prim.GetPath());
       ignmsg << "Removed [" << prim.GetPath() << "]" << std::endl;
     }
     catch (const std::out_of_range &)
