@@ -198,6 +198,7 @@ bool Scene::Implementation::UpdateVisual(const ignition::msgs::Visual &_visual,
       extentBounds.push_back(endPoint);
       usdCylinder.CreateExtentAttr().Set(extentBounds);
       if (!SetMaterial(usdCylinder, _visual, *stage, this->stageDirUrl))
+
       {
         ignwarn << "Failed to set material" << std::endl;
       }
