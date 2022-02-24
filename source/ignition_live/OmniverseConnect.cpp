@@ -137,7 +137,9 @@ MaybeError<std::string, GenericError> CreateOmniverseModel(
   {
     if (entry.Error() != eOmniClientResult_ErrorNotFound)
     {
-      return GenericError("Failure to create stage in Omniverse");
+      auto errString = omniClientGetResultString(entry.Error());
+      return GenericError("Failure to create stage in Omniverse (" +
+                          std::string(errString) + ")");
     }
     else
     {

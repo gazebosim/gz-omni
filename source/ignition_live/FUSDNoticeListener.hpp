@@ -32,7 +32,7 @@ namespace omniverse
 class FUSDNoticeListener : public pxr::TfWeakBase
 {
  public:
-  FUSDNoticeListener(Scene::SharedPtr &_scene, const std::string &_worldName)
+  FUSDNoticeListener(Scene &_scene, const std::string &_worldName)
       : scene(_scene), worldName(_worldName)
   {
   }
@@ -158,73 +158,75 @@ class FUSDNoticeListener : public pxr::TfWeakBase
 
   void Handle(const class pxr::UsdNotice::ObjectsChanged &ObjectsChanged)
   {
-    for (const pxr::SdfPath &Path : ObjectsChanged.GetResyncedPaths())
-    {
-      ignmsg << "Resynced Path: " << Path.GetText() << std::endl;
-      auto modelUSD = this->scene->GetPrimAtPath(std::string(Path.GetText()));
-      // if (modelUSD)
-      // {
-      // 	std::cerr << "Model is here" << '\n';
-      //
-      // 	std::string sdfString = std::string("<sdf version='1.7'>\n");
-      //
-      // 	sdfString += std::string("\t<model name='") +
-      // 		modelUSD.GetPath().GetName() + std::string("'>\n");
-      //
-      // 	sdfString += "\t\t\t<pose>" +
-      //     std::to_string(3) + " " +
-      //     std::to_string(3) + " " +
-      //     std::to_string(0.5) + " " +
-      //     std::to_string(0) + " " +
-      //     std::to_string(0) + " " +
-      //     std::to_string(0) + "</pose>\n";
-      //
-      // 	sdfString += "\t\t<link name='" + modelUSD.GetPath().GetName()+
-      // "_link'>\n";
-      //
-      // 	createSDF(sdfString, modelUSD);
-      //
-      // 	sdfString += "\t\t</link>\n";
-      //
-      // 	sdfString += std::string("\t</model>\n</sdf>\n");
-      //
-      // 	std::cerr << sdfString;
-      //
-      // 	// Prepare the input parameters.
-      // 	ignition::msgs::EntityFactory req;
-      // 	req.set_sdf(sdfString);
-      // 	req.set_name(modelUSD.GetPath().GetName());
-      // 	req.set_allow_renaming(false);
-      //
-      //   ignition::msgs::Boolean rep;
-      //   bool result;
-      //   unsigned int timeout = 5000;
-      //   bool executed = node.Request(
-      //     "/world/" + worldName + "/create", req, timeout, rep, result);
-      // 	if (executed)
-      //   {
-      // 		if (rep.data())
-      // 		{
-      // 			std::cerr << "model was inserted" << '\n';
-      // 		}
-      // 		else
-      // 		{
-      // 			std::cerr << "Error model was not inserted" <<
-      // '\n';
-      // 		}
-      // 	}
-      // }
-      // else
-      // {
-      // 	std::cerr << "Model is not yet here" << '\n';
-      // }
-    }
-    for (const pxr::SdfPath &Path : ObjectsChanged.GetChangedInfoOnlyPaths())
-    {
-      ignmsg << "Changed Info Path: " << Path.GetText() << std::endl;
-    }
+    // for (const pxr::SdfPath &Path : ObjectsChanged.GetResyncedPaths())
+    // {
+    //   ignmsg << "Resynced Path: " << Path.GetText() << std::endl;
+    //   auto modelUSD =
+    //   this->scene->GetPrimAtPath(std::string(Path.GetText()));
+    //   // if (modelUSD)
+    //   // {
+    //   // 	std::cerr << "Model is here" << '\n';
+    //   //
+    //   // 	std::string sdfString = std::string("<sdf version='1.7'>\n");
+    //   //
+    //   // 	sdfString += std::string("\t<model name='") +
+    //   // 		modelUSD.GetPath().GetName() + std::string("'>\n");
+    //   //
+    //   // 	sdfString += "\t\t\t<pose>" +
+    //   //     std::to_string(3) + " " +
+    //   //     std::to_string(3) + " " +
+    //   //     std::to_string(0.5) + " " +
+    //   //     std::to_string(0) + " " +
+    //   //     std::to_string(0) + " " +
+    //   //     std::to_string(0) + "</pose>\n";
+    //   //
+    //   // 	sdfString += "\t\t<link name='" + modelUSD.GetPath().GetName()+
+    //   // "_link'>\n";
+    //   //
+    //   // 	createSDF(sdfString, modelUSD);
+    //   //
+    //   // 	sdfString += "\t\t</link>\n";
+    //   //
+    //   // 	sdfString += std::string("\t</model>\n</sdf>\n");
+    //   //
+    //   // 	std::cerr << sdfString;
+    //   //
+    //   // 	// Prepare the input parameters.
+    //   // 	ignition::msgs::EntityFactory req;
+    //   // 	req.set_sdf(sdfString);
+    //   // 	req.set_name(modelUSD.GetPath().GetName());
+    //   // 	req.set_allow_renaming(false);
+    //   //
+    //   //   ignition::msgs::Boolean rep;
+    //   //   bool result;
+    //   //   unsigned int timeout = 5000;
+    //   //   bool executed = node.Request(
+    //   //     "/world/" + worldName + "/create", req, timeout, rep, result);
+    //   // 	if (executed)
+    //   //   {
+    //   // 		if (rep.data())
+    //   // 		{
+    //   // 			std::cerr << "model was inserted" << '\n';
+    //   // 		}
+    //   // 		else
+    //   // 		{
+    //   // 			std::cerr << "Error model was not inserted" <<
+    //   // '\n';
+    //   // 		}
+    //   // 	}
+    //   // }
+    //   // else
+    //   // {
+    //   // 	std::cerr << "Model is not yet here" << '\n';
+    //   // }
+    // }
+    // for (const pxr::SdfPath &Path : ObjectsChanged.GetChangedInfoOnlyPaths())
+    // {
+    //   ignmsg << "Changed Info Path: " << Path.GetText() << std::endl;
+    // }
   }
-  Scene::SharedPtr scene;
+
+  Scene &scene;
   std::string worldName;
   ignition::transport::Node node;
 };

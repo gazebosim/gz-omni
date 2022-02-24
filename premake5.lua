@@ -51,7 +51,7 @@ local targetDepsDir = "_build/target-deps"
 local currentAbsPath = get_abs_path(".");
 
 -- premake5.lua
-workspace "ignition-omni1"
+workspace "ignition-omniverse1"
 
     configurations { "debug", "release" }
     platforms { "x86_64" }
@@ -121,7 +121,7 @@ function sample(projectName, sourceFolder)
     flags { "NoManifest", "NoIncrementalLink", "NoPCH" }
     filter { "system:linux" }
         links { "ar","arch","gf","js","kind","pcp","plug","sdf","tf","trace","usd","usdGeom", "vt","work","usdShade","usdLux","omniclient","python3.7m","boost_python37", "pthread", "stdc++fs",
-                "ignition-math6", "ignition-utils1", "ignition-common4","ignition-transport11", "ignition-msgs8", "protobuf", "protoc" }
+                "ignition-math6", "ignition-utils1", "ignition-common4", "ignition-common4-graphics", "ignition-transport11", "ignition-msgs8", "protobuf", "protoc" }
     filter {}
     location (workspaceDir.."/%{prj.name}")
     files { "source/"..sourceFolder.."/**.*" }

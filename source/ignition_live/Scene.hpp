@@ -17,12 +17,20 @@
 #ifndef IGNITION_OMNIVERSE_SCENE_HPP
 #define IGNITION_OMNIVERSE_SCENE_HPP
 
-#include "IgnitionModel.hpp"
+#include "Error.hpp"
+#include "ThreadSafe.hpp"
+
+#include <ignition/utils/ImplPtr.hh>
 
 #include <ignition/math/Pose3.hh>
+#include <ignition/msgs/joint.pb.h>
+#include <ignition/msgs/link.pb.h>
 #include <ignition/msgs/model.pb.h>
 #include <ignition/msgs/pose.pb.h>
 #include <ignition/msgs/pose_v.pb.h>
+#include <ignition/msgs/scene.pb.h>
+#include <ignition/msgs/vector3d.pb.h>
+#include <ignition/msgs/visual.pb.h>
 #include <ignition/transport.hh>
 
 #include <pxr/usd/usd/stage.h>
@@ -32,8 +40,9 @@
 #include <pxr/usd/usdGeom/cylinder.h>
 #include <pxr/usd/usdGeom/mesh.h>
 #include <pxr/usd/usdShade/material.h>
-#include <pxr/usd/usdGeom/xform.h>
+#include <pxr/usd/usdGeom/xformCommonAPI.h>
 
+#include <cstdint>
 #include <memory>
 #include <string>
 #include <thread>
@@ -43,35 +52,24 @@ namespace ignition
 {
 namespace omniverse
 {
-class Scene : public std::enable_shared_from_this<Scene>
+class Scene
 {
  public:
-  using SharedPtr = std::shared_ptr<Scene>;
+  Scene(const std::string &_worldName, const std::string &_stageUrl);
 
-  virtual std::unordered_map<std::string, IgnitionModel> GetModels() = 0;
-  virtual bool SetModelPose(const std::string &_name,
-                            const ignition::math::Pose3d &_pose) = 0;
+  /// \brief Initialize the scene and subscribes for updates. This blocks until
+  /// the scene is initialized.
+  /// \return true if success
+  bool Init();
 
-  virtual bool RemoveModel(const std::string &_name) = 0;
+  /// \brief Equivalent to `scene.Stage().Lock()->Save()`.
+  void Save();
 
-  virtual pxr::UsdPrim GetPrimAtPath(const std::string &_path) = 0;
-  virtual void SaveStage() = 0;
+  std::shared_ptr<ThreadSafe<pxr::UsdStageRefPtr>> &Stage();
 
-  virtual pxr::UsdGeomCapsule CreateCapsule(const std::string &_name) = 0;
-  virtual pxr::UsdGeomSphere CreateSphere(const std::string &_name) = 0;
-  virtual pxr::UsdGeomCube CreateCube(const std::string &_name) = 0;
-  virtual pxr::UsdGeomSphere CreateEllipsoid(const std::string &_name) = 0;
-  virtual pxr::UsdGeomCylinder CreateCylinder(const std::string &_name) = 0;
-  virtual pxr::UsdGeomXform CreateXform(const std::string &_name) = 0;
-  virtual pxr::UsdShadeMaterial CreateMaterial(const std::string &_name) = 0;
-  virtual pxr::UsdShadeShader CreateShader(const std::string &_name) = 0;
-  virtual pxr::UsdGeomMesh CreateMesh(const std::string &_name) = 0;
-  virtual pxr::UsdPrim CreateFixedJoint(const std::string &_name) = 0;
-  virtual pxr::UsdPrim CreateRevoluteJoint(const std::string &_name) = 0;
-
-  // virtual pxr::UsdStageRefPtr Stage() const = 0;
- protected:
-  Scene() = default;
+  /// \internal
+  /// \brief Private data pointer
+  IGN_UTILS_IMPL_PTR(dataPtr)
 };
 }  // namespace omniverse
 }  // namespace ignition

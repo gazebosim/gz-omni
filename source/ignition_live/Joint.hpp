@@ -14,21 +14,21 @@
  * limitations under the License.
  *
  */
-#ifndef IGNITION_OMNIVERSE_IGNITION_JOINT_HPP
-#define IGNITION_OMNIVERSE_IGNITION_JOINT_HPP
 
-#include <ignition/math/Pose3.hh>
+#ifndef IGNITION_OMNIVERSE_JOINT_HPP
+#define IGNITION_OMNIVERSE_JOINT_HPP
 
-namespace ignition
+#include <ignition/msgs/joint.pb.h>
+
+#include <pxr/usd/usd/prim.h>
+#include <pxr/usd/usd/stage.h>
+
+namespace ignition::omniverse
 {
-namespace omniverse
-{
-class IgnitionJoint
-{
- public:
-  ignition::math::Pose3d pose;
-  float position;
-};
-}  // namespace omniverse
-}  // namespace ignition
+pxr::UsdPrim CreateFixedJoint(const std::string& _path,
+                              const pxr::UsdStageRefPtr& _stage);
+pxr::UsdPrim CreateRevoluteJoint(const std::string& _path,
+                                 const pxr::UsdStageRefPtr& _stage);
+}  // namespace ignition::omniverse
+
 #endif

@@ -19,8 +19,9 @@
 #include "FUSDNoticeListener.hpp"
 #include "GetOp.hpp"
 #include "OmniverseConnect.hpp"
-#include "SceneImpl.hpp"
+#include "Scene.hpp"
 #include "SetOp.hpp"
+#include "ThreadSafe.hpp"
 
 #include <ignition/common/Console.hh>
 #include <ignition/common/SystemPaths.hh>
@@ -77,8 +78,6 @@ int main(int argc, char* argv[])
   }
 
   // Open the USD model in Omniverse
-  // TODO(ahcorde): For now, we can modify a preload a world in IssacSim but we
-  // cannot create the object
   const std::string stageUrl = [&]()
   {
     auto result = CreateOmniverseModel(destinationPath);
@@ -89,15 +88,17 @@ int main(int argc, char* argv[])
     }
     return result.Value();
   }();
-  stage = pxr::UsdStage::Open(stageUrl);
-  ignmsg << "Opened stage [" << stageUrl << "]" << std::endl;
 
   omniUsdLiveSetModeForUrl(stageUrl.c_str(),
                            OmniUsdLiveMode::eOmniUsdLiveModeEnabled);
 
   PrintConnectedUsername(stageUrl);
 
-  SceneImpl::SharedPtr scene = SceneImpl::Make(worldName, stage);
+  Scene scene(worldName, stageUrl);
+  if (!scene.Init())
+  {
+    return -1;
+  };
 
   // TODO: disabled omniverse -> ignition sync to focus on ignition -> omniverse
   // FUSDLayerNoticeListener USDLayerNoticeListener(scene, worldName);
@@ -114,94 +115,26 @@ int main(int argc, char* argv[])
       pxr::TfCreateWeakPtr(&USDNoticeListener), &FUSDNoticeListener::Handle);
 
   auto lastUpdate = std::chrono::steady_clock::now();
-  double curFps = 0;
+  // don't spam the console, show the fps only once a sec
+  auto nextShowFps =
+      lastUpdate.time_since_epoch() + std::chrono::duration<double>(1);
 
   while (true)
   {
     std::this_thread::sleep_for((lastUpdate + kUpdateRate) -
                                 std::chrono::steady_clock::now());
     auto now = std::chrono::steady_clock::now();
-    curFps = 1 / std::chrono::duration<double>(now - lastUpdate).count();
+    if (now.time_since_epoch() > nextShowFps)
+    {
+      double curFps =
+          1 / std::chrono::duration<double>(now - lastUpdate).count();
+      nextShowFps = now.time_since_epoch() + std::chrono::duration<double>(1);
+      igndbg << "fps: " << curFps << std::endl;
+    }
     lastUpdate = now;
 
+    scene.Save();
     omniUsdLiveProcess();
-
-    std::unordered_map<std::string, IgnitionModel> models;
-    models = scene->GetModels();
-
-    for (const auto& model : models)
-    {
-      auto modelUSD = scene->GetPrimAtPath("/" + worldName + "/" + model.first);
-      if (modelUSD)
-      {
-        // Get the xform ops stack
-        pxr::UsdGeomXformable xForm = pxr::UsdGeomXformable(modelUSD);
-
-        GetOp getOp(xForm);
-
-        {
-          pxr::GfVec3d newPosition(model.second.pose.Pos().X(),
-                                   model.second.pose.Pos().Y(),
-                                   model.second.pose.Pos().Z());
-
-          pxr::GfVec3f newRotZYX(model.second.pose.Rot().Roll() * 180 / 3.1416,
-                                 model.second.pose.Rot().Pitch() * 180 / 3.1416,
-                                 model.second.pose.Rot().Yaw() * 180 / 3.1416);
-
-          SetOp(xForm, getOp.translateOp, pxr::UsdGeomXformOp::TypeTranslate,
-                newPosition, pxr::UsdGeomXformOp::Precision::PrecisionDouble);
-          SetOp(xForm, getOp.rotateOp, pxr::UsdGeomXformOp::TypeRotateXYZ,
-                newRotZYX, pxr::UsdGeomXformOp::Precision::PrecisionFloat);
-          // SetOp(
-          // 	xForm,
-          // 	scaleOp,
-          // 	pxr::UsdGeomXformOp::TypeScale,
-          // 	scale,
-          // 	pxr::UsdGeomXformOp::Precision::PrecisionFloat);
-
-          // Make sure the xform op order is correct (translate, rotate, scale)
-          std::vector<pxr::UsdGeomXformOp> xFormOpsReordered;
-          xFormOpsReordered.push_back(getOp.translateOp);
-          xFormOpsReordered.push_back(getOp.rotateOp);
-          // xFormOpsReordered.push_back(scaleOp);
-          xForm.SetXformOpOrder(xFormOpsReordered);
-
-          if (!model.second.ignitionJoints.empty())
-          {
-            for (auto& joint : model.second.ignitionJoints)
-            {
-              igndbg << "joint.first " << joint.first << '\n';
-              auto jointUSD =
-                  scene->GetPrimAtPath("/" + worldName + joint.first);
-              // auto driveJoint = pxr::UsdPhysicsDriveAPI(jointUSD);
-              if (!jointUSD)
-              {
-                igndbg << "no joint" << '\n';
-              }
-              else
-              {
-                auto attrTargetPos = jointUSD.GetAttribute(
-                    pxr::TfToken("drive:angular:physics:targetPosition"));
-                if (attrTargetPos)
-                {
-                  float pos;
-                  attrTargetPos.Get(&pos);
-                  attrTargetPos.Set(
-                      pxr::VtValue(joint.second->position * 180.0f / 3.1416f));
-                  igndbg << joint.first << " pos :" << pos << '\n';
-                }
-              }
-            }
-          }
-          scene->SaveStage();
-        }
-      }
-      else
-      {
-        ignerr << "Not able to find path "
-               << "/" + worldName + "/" + model.first << '\n';
-      }
-    }
   }
 
   return 0;

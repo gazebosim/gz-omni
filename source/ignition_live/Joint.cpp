@@ -15,8 +15,18 @@
  *
  */
 
-// #include "IgnitionModel.hpp"
-//
-// #include <vector>
-//
-// #include <ignition/transport.hh>
+#include "Joint.hpp"
+
+pxr::UsdPrim CreateFixedJoint(const std::string& _path,
+                              const pxr::UsdStageRefPtr& _stage)
+{
+  pxr::TfToken usdPrimTypeName("PhysicsFixedJoint");
+  return _stage->DefinePrim(pxr::SdfPath(_path), usdPrimTypeName);
+}
+
+pxr::UsdPrim CreateRevoluteJoint(const std::string& _path,
+                                 const pxr::UsdStageRefPtr& _stage)
+{
+  pxr::TfToken usdPrimTypeName("PhysicsRevoluteJoint");
+  return _stage->DefinePrim(pxr::SdfPath(_path), usdPrimTypeName);
+}

@@ -14,34 +14,22 @@
  * limitations under the License.
  *
  */
-#ifndef IGNITION_OMNIVERSE_IGNITION_MODEL_HPP
-#define IGNITION_OMNIVERSE_IGNITION_MODEL_HPP
+#ifndef IGNITION_OMNIVERSE_MESH_HPP
+#define IGNITION_OMNIVERSE_MESH_HPP
 
-#include "IgnitionJoint.hpp"
-// #include "IgnitionVisual.hpp"
+#include <ignition/msgs/meshgeom.pb.h>
 
-#include <string>
-#include <unordered_map>
-#include <vector>
+#include <pxr/usd/usd/stage.h>
+#include <pxr/usd/usdGeom/mesh.h>
 
 namespace ignition
 {
 namespace omniverse
 {
-class IgnitionModel
-{
- public:
-  IgnitionModel() = default;
-
-  ignition::math::Pose3d pose;
-  uint id;
-  std::string name;
-  std::unordered_map<std::string, std::shared_ptr<IgnitionJoint>>
-      ignitionJoints;
-  // std::vector<IgnitionVisual::SharedPtr> visuals;
-};
-}  // namespace omniverse
+pxr::UsdGeomMesh UpdateMesh(const ignition::msgs::MeshGeom& _meshMsg,
+                            const std::string& _path,
+                            const pxr::UsdStageRefPtr& _stage);
+}
 }  // namespace ignition
-// std::vector<std::shared_ptr<IgnitionVisual>> visuals;
 
 #endif
