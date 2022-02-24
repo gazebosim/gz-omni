@@ -17,6 +17,8 @@
 
 #include "Scene.hpp"
 
+#include "FUSDLayerNoticeListener.hpp"
+#include "FUSDNoticeListener.hpp"
 #include "Material.hpp"
 #include "Mesh.hpp"
 
@@ -51,6 +53,10 @@ class Scene::Implementation
   std::string stageDirUrl;
   std::unordered_map<uint32_t, pxr::UsdPrim> entities;
 
+  std::shared_ptr<FUSDLayerNoticeListener> USDLayerNoticeListener;
+  std::shared_ptr<FUSDNoticeListener> USDNoticeListener;
+  bool ignitionControlPoses = true;
+
   bool UpdateSensors(const ignition::msgs::Sensor &_sensor,
                     const std::string &_usdSensorPath);
   bool UpdateLights(const ignition::msgs::Light &_light,
@@ -75,9 +81,11 @@ class Scene::Implementation
 };
 
 //////////////////////////////////////////////////
-Scene::Scene(const std::string &_worldName, const std::string &_stageUrl)
+Scene::Scene(
+  const std::string &_worldName,
+  const std::string &_stageUrl,
+  const std::string &_simulatorPoses)
     : dataPtr(ignition::utils::MakeImpl<Implementation>())
-
 {
   ignmsg << "Opened stage [" << _stageUrl << "]" << std::endl;
   this->dataPtr->worldName = _worldName;
@@ -85,6 +93,14 @@ Scene::Scene(const std::string &_worldName, const std::string &_stageUrl)
       pxr::UsdStage::Open(_stageUrl));
   this->dataPtr->node = std::make_shared<ignition::transport::Node>();
   this->dataPtr->stageDirUrl = ignition::common::parentPath(_stageUrl);
+  if (_simulatorPoses == "ignition")
+  {
+    this->dataPtr->ignitionControlPoses = true;
+  }
+  else
+  {
+    this->dataPtr->ignitionControlPoses = false;
+  }
 }
 
 // //////////////////////////////////////////////////
@@ -97,16 +113,19 @@ std::shared_ptr<ThreadSafe<pxr::UsdStageRefPtr>> &Scene::Stage()
 void Scene::Implementation::SetPose(const pxr::UsdGeomXformCommonAPI &_prim,
                                     const ignition::msgs::Pose &_pose)
 {
-  pxr::UsdGeomXformCommonAPI xformApi(_prim);
-  const auto &pos = _pose.position();
-  const auto &orient = _pose.orientation();
-  ignition::math::Quaterniond quat(orient.w(), orient.x(), orient.y(),
-                                   orient.z());
-  xformApi.SetTranslate(pxr::GfVec3d(pos.x(), pos.y(), pos.z()));
-  xformApi.SetRotate(pxr::GfVec3f(ignition::math::Angle(quat.Roll()).Degree(),
-                                  ignition::math::Angle(quat.Pitch()).Degree(),
-                                  ignition::math::Angle(quat.Yaw()).Degree()),
-                     pxr::UsdGeomXformCommonAPI::RotationOrderXYZ);
+  if (this->ignitionControlPoses)
+  {
+    pxr::UsdGeomXformCommonAPI xformApi(_prim);
+    const auto &pos = _pose.position();
+    const auto &orient = _pose.orientation();
+    ignition::math::Quaterniond quat(orient.w(), orient.x(), orient.y(),
+                                     orient.z());
+    xformApi.SetTranslate(pxr::GfVec3d(pos.x(), pos.y(), pos.z()));
+    xformApi.SetRotate(pxr::GfVec3f(ignition::math::Angle(quat.Roll()).Degree(),
+                                    ignition::math::Angle(quat.Pitch()).Degree(),
+                                    ignition::math::Angle(quat.Yaw()).Degree()),
+                       pxr::UsdGeomXformCommonAPI::RotationOrderXYZ);
+  }
 }
 
 //////////////////////////////////////////////////
@@ -885,6 +904,28 @@ bool Scene::Init()
     ignmsg << "Subscribed to topic: [" << topic << "]" << std::endl;
   }
 
+  if (!this->dataPtr->ignitionControlPoses)
+  {
+    // TODO: disabled omniverse -> ignition sync to focus on ignition -> omniverse
+    this->dataPtr->USDLayerNoticeListener =
+      std::make_shared<FUSDLayerNoticeListener>(
+        this->dataPtr->stage,
+        this->dataPtr->worldName);
+    auto LayerReloadKey = pxr::TfNotice::Register(
+        pxr::TfCreateWeakPtr(this->dataPtr->USDLayerNoticeListener.get()),
+        &FUSDLayerNoticeListener::HandleGlobalLayerReload);
+    auto LayerChangeKey = pxr::TfNotice::Register(
+        pxr::TfCreateWeakPtr(this->dataPtr->USDLayerNoticeListener.get()),
+        &FUSDLayerNoticeListener::HandleRootOrSubLayerChange,
+        this->dataPtr->stage->Lock()->GetRootLayer());
+
+    this->dataPtr->USDNoticeListener = std::make_shared<FUSDNoticeListener>(
+      this->dataPtr->stage,
+      this->dataPtr->worldName);
+    auto USDNoticeKey = pxr::TfNotice::Register(
+        pxr::TfCreateWeakPtr(this->dataPtr->USDNoticeListener.get()),
+        &FUSDNoticeListener::Handle);
+  }
   return true;
 }
 
@@ -936,6 +977,7 @@ void Scene::Implementation::CallbackSceneDeletion(
       const auto &prim = this->entities.at(id);
       stage->RemovePrim(prim.GetPath());
       ignmsg << "Removed [" << prim.GetPath() << "]" << std::endl;
+      this->entities.erase(id);
     }
     catch (const std::out_of_range &)
     {

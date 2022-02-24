@@ -17,6 +17,8 @@
 #ifndef IGNITION_OMNIVERSE_FUSDNOTICELISTENER_HPP
 #define IGNITION_OMNIVERSE_FUSDNOTICELISTENER_HPP
 
+#include "GetOp.hpp"
+
 #include <ignition/common/Console.hh>
 
 #include <pxr/usd/sdf/path.h>
@@ -32,8 +34,10 @@ namespace omniverse
 class FUSDNoticeListener : public pxr::TfWeakBase
 {
  public:
-  FUSDNoticeListener(Scene &_scene, const std::string &_worldName)
-      : scene(_scene), worldName(_worldName)
+  FUSDNoticeListener(
+    std::shared_ptr<ThreadSafe<pxr::UsdStageRefPtr>> _stage,
+    const std::string &_worldName)
+      : stage(_stage), worldName(_worldName)
   {
   }
 
@@ -46,7 +50,6 @@ class FUSDNoticeListener : public pxr::TfWeakBase
     double x, y, z;
 
     // TODO(ahcorde): Fix scale
-
     x = size;  // * _scale.X(),
     y = size;  // * _scale.Y(),
     z = size;  // * _scale.Z()
@@ -133,11 +136,14 @@ class FUSDNoticeListener : public pxr::TfWeakBase
 
   void CreateSDF(std::string &_stringSDF, const pxr::UsdPrim &_prim)
   {
-    if (!_prim) return;
+    if (!_prim)
+      return;
     auto children = _prim.GetChildren();
     for (const pxr::UsdPrim &childPrim : children)
     {
-      if (!childPrim) continue;
+      igndbg << childPrim.GetPath().GetText() << "\n";
+      if (!childPrim)
+        continue;
       if (childPrim.IsA<pxr::UsdGeomSphere>())
       {
         ParseSphere(childPrim, _stringSDF);
@@ -158,75 +164,123 @@ class FUSDNoticeListener : public pxr::TfWeakBase
 
   void Handle(const class pxr::UsdNotice::ObjectsChanged &ObjectsChanged)
   {
-    // for (const pxr::SdfPath &Path : ObjectsChanged.GetResyncedPaths())
-    // {
-    //   ignmsg << "Resynced Path: " << Path.GetText() << std::endl;
-    //   auto modelUSD =
-    //   this->scene->GetPrimAtPath(std::string(Path.GetText()));
-    //   // if (modelUSD)
-    //   // {
-    //   // 	std::cerr << "Model is here" << '\n';
-    //   //
-    //   // 	std::string sdfString = std::string("<sdf version='1.7'>\n");
-    //   //
-    //   // 	sdfString += std::string("\t<model name='") +
-    //   // 		modelUSD.GetPath().GetName() + std::string("'>\n");
-    //   //
-    //   // 	sdfString += "\t\t\t<pose>" +
-    //   //     std::to_string(3) + " " +
-    //   //     std::to_string(3) + " " +
-    //   //     std::to_string(0.5) + " " +
-    //   //     std::to_string(0) + " " +
-    //   //     std::to_string(0) + " " +
-    //   //     std::to_string(0) + "</pose>\n";
-    //   //
-    //   // 	sdfString += "\t\t<link name='" + modelUSD.GetPath().GetName()+
-    //   // "_link'>\n";
-    //   //
-    //   // 	createSDF(sdfString, modelUSD);
-    //   //
-    //   // 	sdfString += "\t\t</link>\n";
-    //   //
-    //   // 	sdfString += std::string("\t</model>\n</sdf>\n");
-    //   //
-    //   // 	std::cerr << sdfString;
-    //   //
-    //   // 	// Prepare the input parameters.
-    //   // 	ignition::msgs::EntityFactory req;
-    //   // 	req.set_sdf(sdfString);
-    //   // 	req.set_name(modelUSD.GetPath().GetName());
-    //   // 	req.set_allow_renaming(false);
-    //   //
-    //   //   ignition::msgs::Boolean rep;
-    //   //   bool result;
-    //   //   unsigned int timeout = 5000;
-    //   //   bool executed = node.Request(
-    //   //     "/world/" + worldName + "/create", req, timeout, rep, result);
-    //   // 	if (executed)
-    //   //   {
-    //   // 		if (rep.data())
-    //   // 		{
-    //   // 			std::cerr << "model was inserted" << '\n';
-    //   // 		}
-    //   // 		else
-    //   // 		{
-    //   // 			std::cerr << "Error model was not inserted" <<
-    //   // '\n';
-    //   // 		}
-    //   // 	}
-    //   // }
-    //   // else
-    //   // {
-    //   // 	std::cerr << "Model is not yet here" << '\n';
-    //   // }
-    // }
-    // for (const pxr::SdfPath &Path : ObjectsChanged.GetChangedInfoOnlyPaths())
-    // {
-    //   ignmsg << "Changed Info Path: " << Path.GetText() << std::endl;
-    // }
+    for (const pxr::SdfPath &path : ObjectsChanged.GetResyncedPaths())
+    {
+      ignmsg << "Resynced Path: " << path.GetText() << std::endl;
+      auto stage = this->stage->Lock();
+      auto modelUSD = stage->GetPrimAtPath(path);
+      if (modelUSD)
+      {
+        std::string strPath = path.GetText();
+        if (strPath.find("_link") != std::string::npos
+           || strPath.find("_visual") != std::string::npos
+           || strPath.find("geometry") != std::string::npos) {
+          return;
+        }
+      	std::string sdfString = std::string("<sdf version='1.7'>\n");
+
+      	sdfString += std::string("\t<model name='") +
+      		modelUSD.GetPath().GetName() + std::string("'>\n");
+
+      	sdfString += "\t\t<pose>" +
+          std::to_string(3) + " " +
+          std::to_string(3) + " " +
+          std::to_string(0.5) + " " +
+          std::to_string(0) + " " +
+          std::to_string(0) + " " +
+          std::to_string(0) + "</pose>\n";
+
+      	sdfString += "\t\t<link name='" + modelUSD.GetPath().GetName() + "_link'>\n";
+
+      	CreateSDF(sdfString, modelUSD);
+
+      	sdfString += "\t\t</link>\n";
+
+      	sdfString += std::string("\t</model>\n</sdf>\n");
+
+      	std::cerr << sdfString;
+
+      	// Prepare the input parameters.
+      	ignition::msgs::EntityFactory req;
+      	req.set_sdf(sdfString);
+      	req.set_name(modelUSD.GetPath().GetName());
+      	req.set_allow_renaming(false);
+
+        ignition::msgs::Boolean rep;
+        bool result;
+        unsigned int timeout = 5000;
+        bool executed = node.Request(
+          "/world/" + this->worldName + "/create",
+          req, timeout, rep, result);
+      	if (executed)
+        {
+      		if (rep.data())
+      		{
+      			std::cerr << "Model was inserted [" << modelUSD.GetPath().GetName()
+                      << "]" << '\n';
+      		}
+      		else
+      		{
+      			std::cerr << "Error model was not inserted" << '\n';
+      		}
+      	}
+      }
+    }
+    for (const pxr::SdfPath &path : ObjectsChanged.GetChangedInfoOnlyPaths())
+    {
+      auto stage = this->stage->Lock();
+      auto modelUSD = stage->GetPrimAtPath(path.GetParentPath());
+      auto property = modelUSD.GetPropertyAtPath(path);
+      std::string strProperty = property.GetBaseName().GetText();
+      if (strProperty == "radius")
+      {
+        double radius;
+        auto attribute = modelUSD.GetAttributeAtPath(path);
+        attribute.Get(&radius);
+      }
+      if (strProperty == "translate")
+      {
+        auto xform = pxr::UsdGeomXformable(modelUSD);
+
+        auto transforms = GetOp(xform);
+
+        // Prepare the input parameters.
+        ignition::msgs::Pose req;
+        ignition::msgs::Boolean rep;
+
+        req.set_name(modelUSD.GetPath().GetName());
+
+        req.mutable_position()->set_x(transforms.position[0]);
+        req.mutable_position()->set_y(transforms.position[1]);
+        req.mutable_position()->set_z(transforms.position[2]);
+
+        ignition::math::Quaterniond q(
+          transforms.rotZYX[0],
+          transforms.rotZYX[1],
+          transforms.rotZYX[2]);
+
+        req.mutable_orientation()->set_x(q.X());
+        req.mutable_orientation()->set_y(q.Y());
+        req.mutable_orientation()->set_z(q.Z());
+        req.mutable_orientation()->set_w(q.W());
+
+        bool result;
+        unsigned int timeout = 500;
+        bool executed = this->node.Request(
+        	"/world/" + this->worldName + "/set_pose",
+          req, timeout, rep, result);
+        if (executed)
+        {
+          if (!result)
+            ignerr << "Service call failed" << std::endl;
+        }
+        else
+          ignerr << "Service call timed out" << std::endl;
+      }
+    }
   }
 
-  Scene &scene;
+  std::shared_ptr<ThreadSafe<pxr::UsdStageRefPtr>> stage;
   std::string worldName;
   ignition::transport::Node node;
 };
