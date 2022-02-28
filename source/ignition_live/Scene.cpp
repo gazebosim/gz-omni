@@ -468,6 +468,7 @@ bool Scene::Implementation::UpdateSensors(const ignition::msgs::Sensor &_sensor,
 {
   auto stage = this->stage->Lock();
 
+  // TODO(ahcorde): This code is duplicated in the USD converter (sdformat)
   if (_sensor.type() == "camera")
   {
     auto usdCamera = pxr::UsdGeomCamera::Define(
@@ -483,9 +484,9 @@ bool Scene::Implementation::UpdateSensors(const ignition::msgs::Sensor &_sensor,
           static_cast<float>(_sensor.camera().far_clip())));
     usdCamera.CreateHorizontalApertureAttr().Set(
       static_cast<float>(
-        _sensor.camera().horizontal_fov() * 180.0f / 3.1416f));
+        _sensor.camera().horizontal_fov() * 180.0f / IGN_PI));
 
-    ignition::math::Pose3d poseCameraYUp(0, 0, 0, 1.57, 0, -1.57);
+    ignition::math::Pose3d poseCameraYUp(0, 0, 0, IGN_PI_2, 0, -IGN_PI_2);
     ignition::math::Quaterniond q(
       _sensor.pose().orientation().w(),
       _sensor.pose().orientation().x(),
@@ -496,9 +497,9 @@ bool Scene::Implementation::UpdateSensors(const ignition::msgs::Sensor &_sensor,
       _sensor.pose().position().x(),
       _sensor.pose().position().y(),
       _sensor.pose().position().z(),
-      q.Roll() * 180.0 / 3.1416,
-      q.Pitch() * 180.0 / 3.1416,
-      q.Yaw() * 180. / 3.1416);
+      q.Roll() * 180.0 / IGN_PI,
+      q.Pitch() * 180.0 / IGN_PI,
+      q.Yaw() * 180. / IGN_PI);
 
     poseCamera = poseCamera * poseCameraYUp;
 
@@ -512,9 +513,9 @@ bool Scene::Implementation::UpdateSensors(const ignition::msgs::Sensor &_sensor,
     usdCamera.AddRotateXYZOp(pxr::UsdGeomXformOp::Precision::PrecisionDouble)
      .Set(
         pxr::GfVec3d(
-          poseCamera.Rot().Roll() * 180.0 / 3.1416,
-          poseCamera.Rot().Pitch() * 180.0 / 3.1416,
-          poseCamera.Rot().Yaw() * 180. / 3.1416));
+          poseCamera.Rot().Roll() * 180.0 / IGN_PI,
+          poseCamera.Rot().Pitch() * 180.0 / IGN_PI,
+          poseCamera.Rot().Yaw() * 180. / IGN_PI));
   }
   else if (_sensor.type() == "gpu_lidar")
   {
@@ -535,12 +536,12 @@ bool Scene::Implementation::UpdateSensors(const ignition::msgs::Sensor &_sensor,
     // TODO(adlarkin) double check if these FOV calculations are correct
     lidarPrim.CreateAttribute(pxr::TfToken("horizontalFov"),
         pxr::SdfValueTypeNames->Float, false).Set(
-          static_cast<float>(horizontalFov * 180.0f / 3.1416f));
+          static_cast<float>(horizontalFov * 180.0f / IGN_PI));
     const auto verticalFov = _sensor.lidar().vertical_max_angle() -
       _sensor.lidar().vertical_min_angle();
     lidarPrim.CreateAttribute(pxr::TfToken("verticalFov"),
         pxr::SdfValueTypeNames->Float, false).Set(
-          static_cast<float>(verticalFov * 180.0f / 3.1416f));
+          static_cast<float>(verticalFov * 180.0f / IGN_PI));
     lidarPrim.CreateAttribute(pxr::TfToken("horizontalResolution"),
         pxr::SdfValueTypeNames->Float, false).Set(
           static_cast<float>(_sensor.lidar().horizontal_resolution()));
