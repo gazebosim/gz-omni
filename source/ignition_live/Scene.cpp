@@ -361,6 +361,7 @@ bool Scene::Implementation::UpdateJoint(const ignition::msgs::Joint &_joint)
   auto stage = this->stage->Lock();
   auto jointUSD =
       stage->GetPrimAtPath(pxr::SdfPath("/" + worldName + "/" + _joint.name()));
+  // TODO(ahcorde): This code is duplicated in the sdformat converter.
   if (!jointUSD)
   {
     switch (_joint.type())
