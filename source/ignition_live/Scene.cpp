@@ -24,6 +24,7 @@
 #include <ignition/common/Filesystem.hh>
 #include <ignition/math/Quaternion.hh>
 
+#include <pxr/usd/usdGeom/camera.h>
 #include <pxr/usd/usdGeom/xform.h>
 #include <pxr/usd/usdLux/diskLight.h>
 #include <pxr/usd/usdLux/distantLight.h>
@@ -50,6 +51,8 @@ class Scene::Implementation
   std::string stageDirUrl;
   std::unordered_map<uint32_t, pxr::UsdPrim> entities;
 
+  bool UpdateSensors(const ignition::msgs::Sensor &_sensor,
+                    const std::string &_usdSensorPath);
   bool UpdateLights(const ignition::msgs::Light &_light,
                     const std::string &_usdLightPath);
   bool UpdateScene(const ignition::msgs::Scene &_scene);
@@ -310,6 +313,21 @@ bool Scene::Implementation::UpdateVisual(const ignition::msgs::Visual &_visual,
       return false;
   }
 
+  // TODO(ahcorde): When usdphysics will be available in nv-usd we should
+  // replace this code with pxr::UsdPhysicsCollisionAPI::Apply(geomPrim)
+  pxr::TfToken appliedSchemaNamePhysicsCollisionAPI("PhysicsCollisionAPI");
+  pxr::SdfPrimSpecHandle primSpec = pxr::SdfCreatePrimInLayer(
+          stage->GetEditTarget().GetLayer(),
+          pxr::SdfPath(usdGeomPath));
+  pxr::SdfTokenListOp listOpPanda;
+  // Use ReplaceOperations to append in place.
+  if (!listOpPanda.ReplaceOperations(pxr::SdfListOpTypeExplicit,
+       0, 0, {appliedSchemaNamePhysicsCollisionAPI})) {
+     std::cerr << "Error Applying schema PhysicsCollisionAPI" << '\n';
+  }
+  primSpec->SetInfo(
+    pxr::UsdTokens->apiSchemas, pxr::VtValue::Take(listOpPanda));
+
   return true;
 }
 
@@ -341,6 +359,16 @@ bool Scene::Implementation::UpdateLink(const ignition::msgs::Link &_link,
     }
   }
 
+  for (const auto &sensor : _link.sensor())
+  {
+    std::string usdSensorPath = usdLinkPath + "/" + sensor.name();
+    if (!this->UpdateSensors(sensor, usdSensorPath))
+    {
+      ignerr << "Failed to add sensor [" << usdSensorPath << "]" << std::endl;
+      return false;
+    }
+  }
+
   for (const auto &light : _link.light())
   {
     if (!this->UpdateLights(light, usdLinkPath + "/" + light.name()))
@@ -361,6 +389,176 @@ bool Scene::Implementation::UpdateJoint(const ignition::msgs::Joint &_joint)
   auto stage = this->stage->Lock();
   auto jointUSD =
       stage->GetPrimAtPath(pxr::SdfPath("/" + worldName + "/" + _joint.name()));
+  // TODO(ahcorde): This code is duplicated in the sdformat converter.
+  if (!jointUSD)
+  {
+    switch (_joint.type())
+    {
+      case ignition::msgs::Joint::FIXED:
+      {
+        pxr::TfToken usdPrimTypeName("PhysicsFixedJoint");
+        auto jointFixedUSD = stage->DefinePrim(
+          pxr::SdfPath("/" + this->worldName + "/" + _joint.name()),
+          usdPrimTypeName);
+
+        auto body0 = jointFixedUSD.CreateRelationship(
+          pxr::TfToken("physics:body0"), false);
+        body0.AddTarget(pxr::SdfPath(
+          "/" + this->worldName + "/" + _joint.parent()));
+        auto body1 = jointFixedUSD.CreateRelationship(
+          pxr::TfToken("physics:body1"), false);
+        body1.AddTarget(pxr::SdfPath(
+          "/" + this->worldName + "/" + _joint.child()));
+
+        jointFixedUSD.CreateAttribute(pxr::TfToken("physics:localPos1"),
+                pxr::SdfValueTypeNames->Point3fArray, false).Set(
+                  pxr::GfVec3f(0, 0, 0));
+
+        jointFixedUSD.CreateAttribute(pxr::TfToken("physics:localPos0"),
+                pxr::SdfValueTypeNames->Point3fArray, false).Set(
+                  pxr::GfVec3f(_joint.pose().position().x(),
+                               _joint.pose().position().y(),
+                               _joint.pose().position().z()));
+        return true;
+      }
+      case ignition::msgs::Joint::REVOLUTE:
+      {
+        igndbg << "Creating a revolute joint" << '\n';
+
+        pxr::TfToken usdPrimTypeName("PhysicsRevoluteJoint");
+        auto revoluteJointUSD = stage->DefinePrim(
+          pxr::SdfPath("/" + this->worldName + "/" + _joint.name()),
+          usdPrimTypeName);
+
+        igndbg << "\tParent "
+               << "/" + this->worldName + "/" + _joint.parent() << '\n';
+        igndbg << "\tchild "
+               << "/" + this->worldName + "/" + _joint.child() << '\n';
+
+        pxr::TfTokenVector identifiersBody0 =
+            {pxr::TfToken("physics"), pxr::TfToken("body0")};
+
+        if (pxr::UsdRelationship body0 = revoluteJointUSD.CreateRelationship(
+          pxr::TfToken(pxr::SdfPath::JoinIdentifier(identifiersBody0)), false))
+        {
+          body0.AddTarget(
+            pxr::SdfPath("/" + this->worldName + "/panda/" + _joint.parent()),
+            pxr::UsdListPositionFrontOfAppendList);
+        }
+        else
+        {
+          igndbg << "Not able to create UsdRelationship for body1" << '\n';
+        }
+
+        pxr::TfTokenVector identifiersBody1 =
+            {pxr::TfToken("physics"), pxr::TfToken("body1")};
+
+        if (pxr::UsdRelationship body1 = revoluteJointUSD.CreateRelationship(
+          pxr::TfToken(pxr::SdfPath::JoinIdentifier(identifiersBody1)), false))
+        {
+          body1.AddTarget(
+            pxr::SdfPath("/" + this->worldName + "/panda/" + _joint.child()),
+            pxr::UsdListPositionFrontOfAppendList);
+        }
+        else
+        {
+          igndbg << "Not able to create UsdRelationship for body1" << '\n';
+        }
+
+        ignition::math::Vector3i axis(
+          _joint.axis1().xyz().x(),
+          _joint.axis1().xyz().y(),
+          _joint.axis1().xyz().z());
+
+        if (axis == ignition::math::Vector3i(1, 0, 0))
+        {
+          revoluteJointUSD.CreateAttribute(pxr::TfToken("physics:axis"),
+            pxr::SdfValueTypeNames->Token, false).Set(pxr::TfToken("X"));
+        }
+        else if (axis == ignition::math::Vector3i(0, 1, 0))
+        {
+          revoluteJointUSD.CreateAttribute(pxr::TfToken("physics:axis"),
+            pxr::SdfValueTypeNames->Token, false).Set(pxr::TfToken("Y"));
+        }
+        else if (axis == ignition::math::Vector3i(0, 0, 1))
+        {
+          revoluteJointUSD.CreateAttribute(pxr::TfToken("physics:axis"),
+            pxr::SdfValueTypeNames->Token, false).Set(pxr::TfToken("Z"));
+        }
+
+        revoluteJointUSD.CreateAttribute(pxr::TfToken("physics:localPos1"),
+                pxr::SdfValueTypeNames->Point3f, false).Set(
+                  pxr::GfVec3f(0, 0, 0));
+
+        revoluteJointUSD.CreateAttribute(pxr::TfToken("physics:localPos0"),
+          pxr::SdfValueTypeNames->Point3f, false).Set(
+            pxr::GfVec3f(
+              _joint.pose().position().x(),
+              _joint.pose().position().y(),
+              _joint.pose().position().z()));
+
+        revoluteJointUSD.CreateAttribute(
+          pxr::TfToken("drive:angular:physics:damping"),
+          pxr::SdfValueTypeNames->Float, false).Set(100000.0f);
+        revoluteJointUSD.CreateAttribute(
+          pxr::TfToken("drive:angular:physics:stiffness"),
+          pxr::SdfValueTypeNames->Float, false).Set(1000000.0f);
+
+        revoluteJointUSD.CreateAttribute(
+          pxr::TfToken("drive:angular:physics:targetPosition"),
+          pxr::SdfValueTypeNames->Float, false).Set(0.0f);
+
+        revoluteJointUSD.CreateAttribute(
+          pxr::TfToken("physics:lowerLimit"),
+          pxr::SdfValueTypeNames->Float, false).Set(
+            static_cast<float>(_joint.axis1().limit_lower() * 180 / 3.1416));
+
+        revoluteJointUSD.CreateAttribute(
+          pxr::TfToken("physics:upperLimit"),
+          pxr::SdfValueTypeNames->Float, false).Set(
+            static_cast<float>(_joint.axis1().limit_upper() * 180 / 3.1416));
+
+        pxr::TfToken appliedSchemaNamePhysicsArticulationRootAPI(
+          "PhysicsArticulationRootAPI");
+        pxr::TfToken appliedSchemaNamePhysxArticulationAPI(
+          "PhysxArticulationAPI");
+        pxr::SdfPrimSpecHandle primSpecPanda = pxr::SdfCreatePrimInLayer(
+          stage->GetEditTarget().GetLayer(),
+          pxr::SdfPath("/" + this->worldName + "/panda"));
+        pxr::SdfTokenListOp listOpPanda;
+        // Use ReplaceOperations to append in place.
+        if (!listOpPanda.ReplaceOperations(
+          pxr::SdfListOpTypeExplicit,
+          0,
+          0,
+          {appliedSchemaNamePhysicsArticulationRootAPI,
+           appliedSchemaNamePhysxArticulationAPI})) {
+          ignerr << "Not able to setup the schema PhysxArticulationAPI "
+                 << "and PhysicsArticulationRootAPI\n";
+        }
+        primSpecPanda->SetInfo(
+          pxr::UsdTokens->apiSchemas, pxr::VtValue::Take(listOpPanda));
+
+        pxr::TfToken appliedSchemaName("PhysicsDriveAPI:angular");
+        pxr::SdfPrimSpecHandle primSpec = pxr::SdfCreatePrimInLayer(
+          stage->GetEditTarget().GetLayer(),
+          pxr::SdfPath("/" + this->worldName + "/" + _joint.name()));
+        pxr::SdfTokenListOp listOp;
+
+        // Use ReplaceOperations to append in place.
+        if (!listOp.ReplaceOperations(pxr::SdfListOpTypeExplicit,
+                0, 0, {appliedSchemaName})) {
+          ignerr << "Not able to setup the schema PhysicsDriveAPI\n";
+        }
+
+        primSpec->SetInfo(
+          pxr::UsdTokens->apiSchemas, pxr::VtValue::Take(listOp));
+        break;
+      }
+      default:
+        return false;
+    }
+  }
   // auto driveJoint = pxr::UsdPhysicsDriveAPI(jointUSD);
   auto attrTargetPos = jointUSD.GetAttribute(
       pxr::TfToken("drive:angular:physics:targetPosition"));
@@ -450,6 +648,101 @@ bool Scene::Implementation::UpdateScene(const ignition::msgs::Scene &_scene)
 }
 
 //////////////////////////////////////////////////
+bool Scene::Implementation::UpdateSensors(const ignition::msgs::Sensor &_sensor,
+                   const std::string &_usdSensorPath)
+{
+  auto stage = this->stage->Lock();
+
+  // TODO(ahcorde): This code is duplicated in the USD converter (sdformat)
+  if (_sensor.type() == "camera")
+  {
+    auto usdCamera = pxr::UsdGeomCamera::Define(
+      *stage, pxr::SdfPath(_usdSensorPath));
+
+    // TODO(ahcorde): The default value in USD is 50, but something more
+    // similar to ignition Gazebo is 40.
+    usdCamera.CreateFocalLengthAttr().Set(
+        static_cast<float>(52.0f));
+
+    usdCamera.CreateClippingRangeAttr().Set(pxr::GfVec2f(
+          static_cast<float>(_sensor.camera().near_clip()),
+          static_cast<float>(_sensor.camera().far_clip())));
+    usdCamera.CreateHorizontalApertureAttr().Set(
+      static_cast<float>(
+        _sensor.camera().horizontal_fov() * 180.0f / IGN_PI));
+
+    ignition::math::Pose3d poseCameraYUp(0, 0, 0, IGN_PI_2, 0, -IGN_PI_2);
+    ignition::math::Quaterniond q(
+      _sensor.pose().orientation().w(),
+      _sensor.pose().orientation().x(),
+      _sensor.pose().orientation().y(),
+      _sensor.pose().orientation().z());
+
+    ignition::math::Pose3d poseCamera(
+      _sensor.pose().position().x(),
+      _sensor.pose().position().y(),
+      _sensor.pose().position().z(),
+      q.Roll() * 180.0 / IGN_PI,
+      q.Pitch() * 180.0 / IGN_PI,
+      q.Yaw() * 180. / IGN_PI);
+
+    poseCamera = poseCamera * poseCameraYUp;
+
+    usdCamera.AddTranslateOp(pxr::UsdGeomXformOp::Precision::PrecisionDouble)
+      .Set(
+        pxr::GfVec3d(
+          poseCamera.Pos().X(),
+          poseCamera.Pos().Y(),
+          poseCamera.Pos().Z()));
+
+    usdCamera.AddRotateXYZOp(pxr::UsdGeomXformOp::Precision::PrecisionDouble)
+     .Set(
+        pxr::GfVec3d(
+          poseCamera.Rot().Roll() * 180.0 / IGN_PI,
+          poseCamera.Rot().Pitch() * 180.0 / IGN_PI,
+          poseCamera.Rot().Yaw() * 180. / IGN_PI));
+  }
+  else if (_sensor.type() == "gpu_lidar")
+  {
+    pxr::UsdGeomXform::Define(
+      *stage, pxr::SdfPath(_usdSensorPath));
+    auto lidarPrim = stage->GetPrimAtPath(
+          pxr::SdfPath(_usdSensorPath));
+    lidarPrim.SetTypeName(pxr::TfToken("Lidar"));
+
+    lidarPrim.CreateAttribute(pxr::TfToken("minRange"),
+        pxr::SdfValueTypeNames->Float, false).Set(
+          static_cast<float>(_sensor.lidar().range_min()));
+    lidarPrim.CreateAttribute(pxr::TfToken("maxRange"),
+        pxr::SdfValueTypeNames->Float, false).Set(
+          static_cast<float>(_sensor.lidar().range_max()));
+    const auto horizontalFov = _sensor.lidar().horizontal_max_angle() -
+      _sensor.lidar().horizontal_min_angle();
+    // TODO(adlarkin) double check if these FOV calculations are correct
+    lidarPrim.CreateAttribute(pxr::TfToken("horizontalFov"),
+        pxr::SdfValueTypeNames->Float, false).Set(
+          static_cast<float>(horizontalFov * 180.0f / IGN_PI));
+    const auto verticalFov = _sensor.lidar().vertical_max_angle() -
+      _sensor.lidar().vertical_min_angle();
+    lidarPrim.CreateAttribute(pxr::TfToken("verticalFov"),
+        pxr::SdfValueTypeNames->Float, false).Set(
+          static_cast<float>(verticalFov * 180.0f / IGN_PI));
+    lidarPrim.CreateAttribute(pxr::TfToken("horizontalResolution"),
+        pxr::SdfValueTypeNames->Float, false).Set(
+          static_cast<float>(_sensor.lidar().horizontal_resolution()));
+    lidarPrim.CreateAttribute(pxr::TfToken("verticalResolution"),
+        pxr::SdfValueTypeNames->Float, false).Set(
+          static_cast<float>(_sensor.lidar().vertical_resolution()));
+  }
+  else
+  {
+    ignerr << "This kind of sensor [" << _sensor.type()
+           << "] is not supported" << std::endl;
+    return false;
+  }
+  return true;
+}
+//////////////////////////////////////////////////
 bool Scene::Implementation::UpdateLights(const ignition::msgs::Light &_light,
                                        const std::string &_usdLightPath)
 {
@@ -534,16 +827,24 @@ bool Scene::Init()
     return false;
   }
 
-  if (!this->dataPtr->node->Subscribe("/joint_state",
-                                      &Scene::Implementation::CallbackJoint,
-                                      this->dataPtr.Get()))
+  std::vector<std::string> topics;
+  this->dataPtr->node->TopicList(topics);
+
+  for (auto const &topic : topics)
   {
-    ignerr << "Error subscribing to topic [joint_state]" << std::endl;
-    return false;
-  }
-  else
-  {
-    ignmsg << "Subscribed to topic: [joint_state]" << std::endl;
+    if (topic.find("/joint_state") != std::string::npos)
+    {
+      if (!this->dataPtr->node->Subscribe(
+        topic, &Scene::Implementation::CallbackJoint, this->dataPtr.Get()))
+      {
+        ignerr << "Error subscribing to topic [" << topic << "]" << std::endl;
+        return false;
+      }
+      else
+      {
+        ignmsg << "Subscribed to topic: [joint_state]" << std::endl;
+      }
+    }
   }
 
   std::string topic = "/world/" + this->dataPtr->worldName + "/pose/info";
@@ -598,6 +899,7 @@ void Scene::Implementation::CallbackPoses(const ignition::msgs::Pose_V &_msg)
   {
     try
     {
+      auto stage = this->stage->Lock();
       const auto &prim = this->entities.at(poseMsg.id());
       this->SetPose(pxr::UsdGeomXformCommonAPI(prim), poseMsg);
     }
@@ -630,8 +932,9 @@ void Scene::Implementation::CallbackSceneDeletion(
   {
     try
     {
+      auto stage = this->stage->Lock();
       const auto &prim = this->entities.at(id);
-      this->stage->Lock()->RemovePrim(prim.GetPath());
+      stage->RemovePrim(prim.GetPath());
       ignmsg << "Removed [" << prim.GetPath() << "]" << std::endl;
     }
     catch (const std::out_of_range &)
