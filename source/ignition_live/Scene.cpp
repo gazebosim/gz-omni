@@ -314,16 +314,16 @@ bool Scene::Implementation::UpdateVisual(const ignition::msgs::Visual &_visual,
   // replace this code with pxr::UsdPhysicsCollisionAPI::Apply(geomPrim)
   pxr::TfToken appliedSchemaNamePhysicsCollisionAPI("PhysicsCollisionAPI");
   pxr::SdfPrimSpecHandle primSpec = pxr::SdfCreatePrimInLayer(
-          stage->GetEditTarget().GetLayer(),
-          pxr::SdfPath(usdGeomPath));
+      stage->GetEditTarget().GetLayer(), pxr::SdfPath(usdGeomPath));
   pxr::SdfTokenListOp listOpPanda;
   // Use ReplaceOperations to append in place.
-  if (!listOpPanda.ReplaceOperations(pxr::SdfListOpTypeExplicit,
-       0, 0, {appliedSchemaNamePhysicsCollisionAPI})) {
-     std::cerr << "Error Applying schema PhysicsCollisionAPI" << '\n';
+  if (!listOpPanda.ReplaceOperations(pxr::SdfListOpTypeExplicit, 0, 0,
+                                     {appliedSchemaNamePhysicsCollisionAPI}))
+  {
+    std::cerr << "Error Applying schema PhysicsCollisionAPI" << '\n';
   }
-  primSpec->SetInfo(
-    pxr::UsdTokens->apiSchemas, pxr::VtValue::Take(listOpPanda));
+  primSpec->SetInfo(pxr::UsdTokens->apiSchemas,
+                    pxr::VtValue::Take(listOpPanda));
 
   return true;
 }
@@ -366,6 +366,7 @@ bool Scene::Implementation::UpdateLink(const ignition::msgs::Link &_link,
     }
   }
 
+  ignmsg << "updated link [" << _link.name() << "]" << std::endl;
   return true;
 }
 
@@ -386,6 +387,8 @@ bool Scene::Implementation::UpdateJoint(const ignition::msgs::Joint &_joint)
     attrTargetPos.Set(pxr::VtValue(
         ignition::math::Angle(_joint.axis1().position()).Degree()));
   }
+
+  ignmsg << "updated joint [" << _joint.name() << "]" << std::endl;
   return true;
 }
 
@@ -436,6 +439,7 @@ bool Scene::Implementation::UpdateModel(const ignition::msgs::Model &_model)
     }
   }
 
+  ignmsg << "updated model [" << modelName << "]" << std::endl;
   return true;
 }
 
@@ -449,7 +453,7 @@ bool Scene::Implementation::UpdateScene(const ignition::msgs::Scene &_scene)
       ignerr << "Failed to add model [" << model.name() << "]" << std::endl;
       return false;
     }
-    igndbg << "added model [" << model.name() << "]" << std::endl;
+    ignmsg << "added model [" << model.name() << "]" << std::endl;
   }
 
   for (const auto &light : _scene.light())
@@ -459,14 +463,16 @@ bool Scene::Implementation::UpdateScene(const ignition::msgs::Scene &_scene)
       ignerr << "Failed to add light [" << light.name() << "]" << std::endl;
       return false;
     }
+    ignmsg << "added light [" << light.name() << "]" << std::endl;
   }
 
+  ignmsg << "updated scene" << std::endl;
   return true;
 }
 
 //////////////////////////////////////////////////
 bool Scene::Implementation::UpdateLights(const ignition::msgs::Light &_light,
-                                       const std::string &_usdLightPath)
+                                         const std::string &_usdLightPath)
 {
   // TODO: We can probably re-use code from sdformat
 
@@ -518,6 +524,7 @@ bool Scene::Implementation::UpdateLights(const ignition::msgs::Light &_light,
                        false)
       .Set(usdLightIntensity);
 
+  ignmsg << "updated light [" << _light.name() << "]" << std::endl;
   return true;
 }
 

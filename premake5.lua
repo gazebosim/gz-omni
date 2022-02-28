@@ -83,7 +83,8 @@ workspace "ignition-omniverse1"
                       ignitionInstallDir.."/include/ignition/transport11",
                       ignitionInstallDir.."/include/ignition/msgs8",
                       ignitionInstallDir.."/include/ignition/cmake2",
-                      ignitionInstallDir.."/include/ignition/common4" }
+                      ignitionInstallDir.."/include/ignition/common4",
+                      ignitionInstallDir.."/include/ignition/sdformat12" }
         libdirs { targetDepsDir.."/nv_usd/%{cfg.buildcfg}/lib", targetDepsDir.."/omni_client_library/%{cfg.buildcfg}", targetDepsDir.."/python/lib",
                   ignitionInstallDir.."/lib" }
     filter { "configurations:debug" }
@@ -121,7 +122,7 @@ function sample(projectName, sourceFolder)
     flags { "NoManifest", "NoIncrementalLink", "NoPCH" }
     filter { "system:linux" }
         links { "ar","arch","gf","js","kind","pcp","plug","sdf","tf","trace","usd","usdGeom", "vt","work","usdShade","usdLux","omniclient","python3.7m","boost_python37", "pthread", "stdc++fs",
-                "ignition-math6", "ignition-utils1", "ignition-common4", "ignition-common4-graphics", "ignition-transport11", "ignition-msgs8", "protobuf", "protoc" }
+                "ignition-math6", "ignition-utils1", "ignition-common4", "ignition-common4-graphics", "ignition-transport11", "ignition-msgs8", "protobuf", "protoc", "sdformat12" }
     filter {}
     location (workspaceDir.."/%{prj.name}")
     files { "source/"..sourceFolder.."/**.*" }

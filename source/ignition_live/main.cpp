@@ -101,18 +101,18 @@ int main(int argc, char* argv[])
   };
 
   // TODO: disabled omniverse -> ignition sync to focus on ignition -> omniverse
-  // FUSDLayerNoticeListener USDLayerNoticeListener(scene, worldName);
+  FUSDLayerNoticeListener USDLayerNoticeListener(scene, worldName);
   // auto LayerReloadKey = pxr::TfNotice::Register(
   //     pxr::TfCreateWeakPtr(&USDLayerNoticeListener),
   //     &FUSDLayerNoticeListener::HandleGlobalLayerReload);
-  // auto LayerChangeKey = pxr::TfNotice::Register(
+  // auto layerChangeKey = pxr::TfNotice::Register(
   //     pxr::TfCreateWeakPtr(&USDLayerNoticeListener),
   //     &FUSDLayerNoticeListener::HandleRootOrSubLayerChange,
   //     stage->GetRootLayer());
 
-  FUSDNoticeListener USDNoticeListener(scene, worldName);
-  auto USDNoticeKey = pxr::TfNotice::Register(
-      pxr::TfCreateWeakPtr(&USDNoticeListener), &FUSDNoticeListener::Handle);
+  FUSDNoticeListener usdNoticeListener(scene, worldName);
+  auto usdNoticeKey = pxr::TfNotice::Register(
+      pxr::TfCreateWeakPtr(&usdNoticeListener), &FUSDNoticeListener::Handle);
 
   auto lastUpdate = std::chrono::steady_clock::now();
   // don't spam the console, show the fps only once a sec

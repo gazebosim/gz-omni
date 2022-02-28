@@ -156,73 +156,73 @@ class FUSDNoticeListener : public pxr::TfWeakBase
     }
   }
 
-  void Handle(const class pxr::UsdNotice::ObjectsChanged &ObjectsChanged)
+  void Handle(const class pxr::UsdNotice::ObjectsChanged &_objectsChanged)
   {
-    // for (const pxr::SdfPath &Path : ObjectsChanged.GetResyncedPaths())
+    /**
+     * FIXME: Below commented out code doesn't work because
+     * 1. It doesn't check if the updated prim is a light, model, visuals, collisions, joints, physics etc.
+     * 2. It hardcodes the pose and geometry.
+     * 3. It triggers sdf->usd path to update, which triggers usd->sdf to update (infinite loop).
+     */
+
+    // auto stage = this->scene.Stage()->Lock();
+    // for (const pxr::SdfPath &path : _objectsChanged.GetResyncedPaths())
     // {
-    //   ignmsg << "Resynced Path: " << Path.GetText() << std::endl;
-    //   auto modelUSD =
-    //   this->scene->GetPrimAtPath(std::string(Path.GetText()));
-    //   // if (modelUSD)
-    //   // {
-    //   // 	std::cerr << "Model is here" << '\n';
-    //   //
-    //   // 	std::string sdfString = std::string("<sdf version='1.7'>\n");
-    //   //
-    //   // 	sdfString += std::string("\t<model name='") +
-    //   // 		modelUSD.GetPath().GetName() + std::string("'>\n");
-    //   //
-    //   // 	sdfString += "\t\t\t<pose>" +
-    //   //     std::to_string(3) + " " +
-    //   //     std::to_string(3) + " " +
-    //   //     std::to_string(0.5) + " " +
-    //   //     std::to_string(0) + " " +
-    //   //     std::to_string(0) + " " +
-    //   //     std::to_string(0) + "</pose>\n";
-    //   //
-    //   // 	sdfString += "\t\t<link name='" + modelUSD.GetPath().GetName()+
-    //   // "_link'>\n";
-    //   //
-    //   // 	createSDF(sdfString, modelUSD);
-    //   //
-    //   // 	sdfString += "\t\t</link>\n";
-    //   //
-    //   // 	sdfString += std::string("\t</model>\n</sdf>\n");
-    //   //
-    //   // 	std::cerr << sdfString;
-    //   //
-    //   // 	// Prepare the input parameters.
-    //   // 	ignition::msgs::EntityFactory req;
-    //   // 	req.set_sdf(sdfString);
-    //   // 	req.set_name(modelUSD.GetPath().GetName());
-    //   // 	req.set_allow_renaming(false);
-    //   //
-    //   //   ignition::msgs::Boolean rep;
-    //   //   bool result;
-    //   //   unsigned int timeout = 5000;
-    //   //   bool executed = node.Request(
-    //   //     "/world/" + worldName + "/create", req, timeout, rep, result);
-    //   // 	if (executed)
-    //   //   {
-    //   // 		if (rep.data())
-    //   // 		{
-    //   // 			std::cerr << "model was inserted" << '\n';
-    //   // 		}
-    //   // 		else
-    //   // 		{
-    //   // 			std::cerr << "Error model was not inserted" <<
-    //   // '\n';
-    //   // 		}
-    //   // 	}
-    //   // }
-    //   // else
-    //   // {
-    //   // 	std::cerr << "Model is not yet here" << '\n';
-    //   // }
+    //   ignmsg << "Resynced Path: " << path.GetText() << std::endl;
+    //   auto modelUSD = stage->GetPrimAtPath(path);
+    //   if (modelUSD && modelUSD.IsA<pxr::UsdGeomGprim>())
+    //   {
+    //     // updates the sdf
+    //     std::string sdfString = std::string("<sdf version='1.7'>\n");
+
+    //     sdfString += std::string("\t<model name='") +
+    //                  modelUSD.GetPath().GetName() + std::string("'>\n");
+
+    //     sdfString += "\t\t\t<pose>" + std::to_string(3) + " " +
+    //                  std::to_string(3) + " " + std::to_string(0.5) + " " +
+    //                  std::to_string(0) + " " + std::to_string(0) + " " +
+    //                  std::to_string(0) + "</pose>\n";
+
+    //     sdfString +=
+    //         "\t\t<link name='" + modelUSD.GetPath().GetName() + "_link'>\n";
+
+    //     CreateSDF(sdfString, modelUSD);
+
+    //     sdfString += "\t\t</link>\n";
+
+    //     sdfString += std::string("\t</model>\n</sdf>\n");
+
+    //     // Prepare the input parameters.
+    //     ignition::msgs::EntityFactory req;
+    //     req.set_sdf(sdfString);
+    //     req.set_name(modelUSD.GetPath().GetName());
+    //     req.set_allow_renaming(false);
+
+    //     ignition::msgs::Boolean rep;
+    //     bool result;
+    //     unsigned int timeout = 5000;
+    //     bool executed = node.Request("/world/" + worldName + "/create", req,
+    //                                  timeout, rep, result);
+    //     if (executed)
+    //     {
+    //       if (rep.data())
+    //       {
+    //         ignmsg << "model was inserted" << std::endl;
+    //       }
+    //       else
+    //       {
+    //         ignerr << "Error model was not inserted" << std::endl;
+    //       }
+    //     }
+    //   }
+    //   else
+    //   {
+    //     ignwarn << "Model is not yet here or prim is not a model" << std::endl;
+    //   }
     // }
-    // for (const pxr::SdfPath &Path : ObjectsChanged.GetChangedInfoOnlyPaths())
+    // for (const pxr::SdfPath &path : _objectsChanged.GetChangedInfoOnlyPaths())
     // {
-    //   ignmsg << "Changed Info Path: " << Path.GetText() << std::endl;
+    //   ignmsg << "Changed Info Path: " << path.GetText() << std::endl;
     // }
   }
 
