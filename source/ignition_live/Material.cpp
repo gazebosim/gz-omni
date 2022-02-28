@@ -41,13 +41,14 @@ namespace omniverse
 /// \brief _fullPath URI of the resource
 std::string checkURI(const std::string _fullPath)
 {
+  // TODO (ahcorde): This code is duplicated is the USD converter (sdformat)
   ignition::common::URI uri(_fullPath);
   std::string fullPath = _fullPath;
   std::string home;
   if (!ignition::common::env("HOME", home, false))
   {
-    std::cerr << "The HOME environment variable was not defined, "
-              << "so the resource [" << fullPath << "] could not be found\n";
+    ignwarn << "The HOME environment variable was not defined, "
+            << "so the resource [" << fullPath << "] could not be found\n";
     return "";
   }
   if (uri.Scheme() == "http" || uri.Scheme() == "https")
@@ -91,13 +92,16 @@ bool copyMaterial(
     auto fileName = ignition::common::basename(_path);
     auto filePathIndex = _path.rfind(fileName);
     auto filePath = _path.substr(0, filePathIndex);
-    std::cerr << "_path.c_str() " << _path.c_str() << '\n';
-    std::cerr << "_fullPath.c_str() " << _fullPath.c_str() << '\n';
-    omniClientWait(omniClientCopy(
+    if (!omniClientWaitFor(omniClientCopy(
       _fullPath.c_str(),
       std::string(_stageDirUrl + "/" + _path).c_str(),
       nullptr,
-      nullptr));
+      nullptr), 1000))
+    {
+      ignerr << "omniClientCopy timeout. Not able to copy file ["
+             << _fullPath.c_str() << "]" << "in nucleus ["
+             << std::string(_stageDirUrl + "/" + _path) << "]." ;
+    }
   }
   return false;
 }
