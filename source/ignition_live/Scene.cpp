@@ -24,6 +24,7 @@
 #include <ignition/common/Filesystem.hh>
 #include <ignition/math/Quaternion.hh>
 
+#include <pxr/usd/usdGeom/camera.h>
 #include <pxr/usd/usdGeom/xform.h>
 #include <pxr/usd/usdLux/diskLight.h>
 #include <pxr/usd/usdLux/distantLight.h>
@@ -50,6 +51,8 @@ class Scene::Implementation
   std::string stageDirUrl;
   std::unordered_map<uint32_t, pxr::UsdPrim> entities;
 
+  bool UpdateSensors(const ignition::msgs::Sensor &_sensor,
+                    const std::string &_usdSensorPath);
   bool UpdateLights(const ignition::msgs::Light &_light,
                     const std::string &_usdLightPath);
   bool UpdateScene(const ignition::msgs::Scene &_scene);
@@ -356,6 +359,16 @@ bool Scene::Implementation::UpdateLink(const ignition::msgs::Link &_link,
     }
   }
 
+  for (const auto &sensor : _link.sensor())
+  {
+    std::string usdSensorPath = usdLinkPath + "/" + sensor.name();
+    if (!this->UpdateSensors(sensor, usdSensorPath))
+    {
+      ignerr << "Failed to add sensor [" << usdSensorPath << "]" << std::endl;
+      return false;
+    }
+  }
+
   for (const auto &light : _link.light())
   {
     if (!this->UpdateLights(light, usdLinkPath + "/" + light.name()))
@@ -634,6 +647,101 @@ bool Scene::Implementation::UpdateScene(const ignition::msgs::Scene &_scene)
   return true;
 }
 
+//////////////////////////////////////////////////
+bool Scene::Implementation::UpdateSensors(const ignition::msgs::Sensor &_sensor,
+                   const std::string &_usdSensorPath)
+{
+  auto stage = this->stage->Lock();
+
+  // TODO(ahcorde): This code is duplicated in the USD converter (sdformat)
+  if (_sensor.type() == "camera")
+  {
+    auto usdCamera = pxr::UsdGeomCamera::Define(
+      *stage, pxr::SdfPath(_usdSensorPath));
+
+    // TODO(ahcorde): The default value in USD is 50, but something more
+    // similar to ignition Gazebo is 40.
+    usdCamera.CreateFocalLengthAttr().Set(
+        static_cast<float>(52.0f));
+
+    usdCamera.CreateClippingRangeAttr().Set(pxr::GfVec2f(
+          static_cast<float>(_sensor.camera().near_clip()),
+          static_cast<float>(_sensor.camera().far_clip())));
+    usdCamera.CreateHorizontalApertureAttr().Set(
+      static_cast<float>(
+        _sensor.camera().horizontal_fov() * 180.0f / IGN_PI));
+
+    ignition::math::Pose3d poseCameraYUp(0, 0, 0, IGN_PI_2, 0, -IGN_PI_2);
+    ignition::math::Quaterniond q(
+      _sensor.pose().orientation().w(),
+      _sensor.pose().orientation().x(),
+      _sensor.pose().orientation().y(),
+      _sensor.pose().orientation().z());
+
+    ignition::math::Pose3d poseCamera(
+      _sensor.pose().position().x(),
+      _sensor.pose().position().y(),
+      _sensor.pose().position().z(),
+      q.Roll() * 180.0 / IGN_PI,
+      q.Pitch() * 180.0 / IGN_PI,
+      q.Yaw() * 180. / IGN_PI);
+
+    poseCamera = poseCamera * poseCameraYUp;
+
+    usdCamera.AddTranslateOp(pxr::UsdGeomXformOp::Precision::PrecisionDouble)
+      .Set(
+        pxr::GfVec3d(
+          poseCamera.Pos().X(),
+          poseCamera.Pos().Y(),
+          poseCamera.Pos().Z()));
+
+    usdCamera.AddRotateXYZOp(pxr::UsdGeomXformOp::Precision::PrecisionDouble)
+     .Set(
+        pxr::GfVec3d(
+          poseCamera.Rot().Roll() * 180.0 / IGN_PI,
+          poseCamera.Rot().Pitch() * 180.0 / IGN_PI,
+          poseCamera.Rot().Yaw() * 180. / IGN_PI));
+  }
+  else if (_sensor.type() == "gpu_lidar")
+  {
+    pxr::UsdGeomXform::Define(
+      *stage, pxr::SdfPath(_usdSensorPath));
+    auto lidarPrim = stage->GetPrimAtPath(
+          pxr::SdfPath(_usdSensorPath));
+    lidarPrim.SetTypeName(pxr::TfToken("Lidar"));
+
+    lidarPrim.CreateAttribute(pxr::TfToken("minRange"),
+        pxr::SdfValueTypeNames->Float, false).Set(
+          static_cast<float>(_sensor.lidar().range_min()));
+    lidarPrim.CreateAttribute(pxr::TfToken("maxRange"),
+        pxr::SdfValueTypeNames->Float, false).Set(
+          static_cast<float>(_sensor.lidar().range_max()));
+    const auto horizontalFov = _sensor.lidar().horizontal_max_angle() -
+      _sensor.lidar().horizontal_min_angle();
+    // TODO(adlarkin) double check if these FOV calculations are correct
+    lidarPrim.CreateAttribute(pxr::TfToken("horizontalFov"),
+        pxr::SdfValueTypeNames->Float, false).Set(
+          static_cast<float>(horizontalFov * 180.0f / IGN_PI));
+    const auto verticalFov = _sensor.lidar().vertical_max_angle() -
+      _sensor.lidar().vertical_min_angle();
+    lidarPrim.CreateAttribute(pxr::TfToken("verticalFov"),
+        pxr::SdfValueTypeNames->Float, false).Set(
+          static_cast<float>(verticalFov * 180.0f / IGN_PI));
+    lidarPrim.CreateAttribute(pxr::TfToken("horizontalResolution"),
+        pxr::SdfValueTypeNames->Float, false).Set(
+          static_cast<float>(_sensor.lidar().horizontal_resolution()));
+    lidarPrim.CreateAttribute(pxr::TfToken("verticalResolution"),
+        pxr::SdfValueTypeNames->Float, false).Set(
+          static_cast<float>(_sensor.lidar().vertical_resolution()));
+  }
+  else
+  {
+    ignerr << "This kind of sensor [" << _sensor.type()
+           << "] is not supported" << std::endl;
+    return false;
+  }
+  return true;
+}
 //////////////////////////////////////////////////
 bool Scene::Implementation::UpdateLights(const ignition::msgs::Light &_light,
                                        const std::string &_usdLightPath)
