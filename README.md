@@ -6,7 +6,11 @@ malfunctions or some undocumented features.
  - This code will only run on Linux (for now).
  - You should [install Ignition Fortress](https://ignitionrobotics.org/docs/fortress) (from source).
 
-**Fatures**:
+**Requeriments**:
+ -  ROS 2 Galactic.
+ - Ignition Gazebo fortress
+
+**Features**:
  - Ignition -> IssacSim
    - Move/rotate models
    - Create/remove models
@@ -39,11 +43,12 @@ colcon build --merge-install --event-handlers console_direct+ --packages-up-to i
 
 ### Run Ignition
 
-Run the `shapes.sdf` world in Ignition
+Run the `shapes.sdf` world in Ignition Gazebo. This should run in a separate terminal using your normal Ignition Gazebo installation.
 
 ```bash
 ign gazebo v -4 shapes.sdf
 ```
+
 ### Run IssacSim
 
 Launch `IssacSim` and activate the `live sync`
@@ -56,6 +61,9 @@ And finally run:
 
 **Note**: `ignition-omni` will be built under `src/ign-omni/_build`, this is because
 it uses a custom build system by NVidia which is hard coded to put output in that directory.
+
+In this case you need to source the special workspace that we have created
+with the `ign-omni-meta` repository.
 
 ```bash
 cd ~/ign-omni/src/ign-omni
@@ -81,9 +89,12 @@ Compile it
 ```bash
 cd ~/turtlebot3_ws/
 source /opt/ros/galactic/setup.sh
+export IGNITION_VERSION=fortress
 colcon build --merge-install --event-handlers console_direct+
 ```
 ### Run Ignition
+
+This should run in a separate terminal using your normal Ignition Gazebo installation.
 
 ```bash
 source ~/turtlebot3_ws/install/setup.bash
