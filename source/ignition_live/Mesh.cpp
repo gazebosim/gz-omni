@@ -48,9 +48,35 @@ pxr::UsdGeomMesh UpdateMesh(const ignition::msgs::MeshGeom &_meshMsg,
   ignition::common::URI uri(_meshMsg.filename());
   std::string fullname;
 
+  std::string home;
+  if (!ignition::common::env("HOME", home, false))
+  {
+    std::cerr << "The HOME environment variable was not defined, "
+              << "so the resource [" << fullname << "] could not be found\n";
+    return pxr::UsdGeomMesh();
+  }
   if (uri.Scheme() == "https" || uri.Scheme() == "http")
   {
-    fullname = ignition::common::findFile(uri.Str());
+    auto systemPaths = ignition::common::systemPaths();
+
+    std::vector<std::string> tokens = ignition::common::split(uri.Path().Str(), "/");
+    std::string server = tokens[0];
+    std::string versionServer = tokens[1];
+    std::string owner = ignition::common::lowercase(tokens[2]);
+    std::string type = ignition::common::lowercase(tokens[3]);
+    std::string modelName = ignition::common::lowercase(tokens[4]);
+    std::string modelVersion = ignition::common::lowercase(tokens[5]);
+
+    fullname = ignition::common::joinPaths(
+      home, ".ignition", "fuel", server, owner, type, modelName, modelVersion);
+    systemPaths->AddFilePaths(fullname);
+
+    for (int i = 7; i < tokens.size(); i++)
+    {
+      fullname = ignition::common::joinPaths(
+        fullname, ignition::common::lowercase(tokens[i]));
+      systemPaths->AddFilePaths(fullname);
+    }
   }
   else
   {
@@ -203,6 +229,25 @@ pxr::UsdGeomMesh UpdateMesh(const ignition::msgs::MeshGeom &_meshMsg,
     extentBounds.push_back(pxr::GfVec3f(meshMin.X(), meshMin.Y(), meshMin.Z()));
     extentBounds.push_back(pxr::GfVec3f(meshMax.X(), meshMax.Y(), meshMax.Z()));
     usdMesh.CreateExtentAttr().Set(extentBounds);
+
+    // TODO (ahcorde): Material inside the submesh
+    int materialIndex = subMesh->MaterialIndex();
+    if (materialIndex != -1)
+    {
+      auto material = ignMesh->MaterialByIndex(materialIndex);
+      // sdf::Material materialSdf = sdf::usd::convert(material);
+      // auto materialUSD = ParseSdfMaterial(&materialSdf, _stage);
+
+      // if(materialSdf.Emissive() != ignition::math::Color(0, 0, 0, 1)
+      //     || materialSdf.Specular() != ignition::math::Color(0, 0, 0, 1)
+      //     || materialSdf.PbrMaterial())
+      // {
+      //   if (materialUSD)
+      //   {
+      //     pxr::UsdShadeMaterialBindingAPI(usdMesh).Bind(materialUSD);
+      //   }
+      // }
+    }
 
     pxr::UsdGeomXformCommonAPI meshXformAPI(usdMesh);
 

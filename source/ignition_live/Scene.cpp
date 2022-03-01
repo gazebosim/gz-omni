@@ -197,7 +197,7 @@ bool Scene::Implementation::UpdateVisual(const ignition::msgs::Visual &_visual,
       pxr::UsdGeomXformCommonAPI cubeXformAPI(usdCube);
       cubeXformAPI.SetScale(pxr::GfVec3f(
           geom.box().size().x(), geom.box().size().y(), geom.box().size().z()));
-      if (!SetMaterial(usdCube, _visual, *stage))
+      if (!SetMaterial(usdCube, _visual, *stage, this->stageDirUrl))
       {
         ignwarn << "Failed to set material" << std::endl;
       }
@@ -220,7 +220,8 @@ bool Scene::Implementation::UpdateVisual(const ignition::msgs::Visual &_visual,
       extentBounds.push_back(-1.0 * endPoint);
       extentBounds.push_back(endPoint);
       usdCylinder.CreateExtentAttr().Set(extentBounds);
-      if (!SetMaterial(usdCylinder, _visual, *stage))
+      if (!SetMaterial(usdCylinder, _visual, *stage, this->stageDirUrl))
+
       {
         ignwarn << "Failed to set material" << std::endl;
       }
@@ -238,9 +239,9 @@ bool Scene::Implementation::UpdateVisual(const ignition::msgs::Visual &_visual,
       usdCube.CreateExtentAttr().Set(extentBounds);
 
       pxr::UsdGeomXformCommonAPI cubeXformAPI(usdCube);
-      cubeXformAPI.SetScale(pxr::GfVec3f(geom.plane().size().x(),
-                                         geom.plane().size().y(), 0.0025));
-      if (!SetMaterial(usdCube, _visual, *stage))
+      cubeXformAPI.SetScale(
+          pxr::GfVec3f(geom.plane().size().x(), geom.plane().size().y(), 0.0025));
+      if (!SetMaterial(usdCube, _visual, *stage, this->stageDirUrl))
       {
         ignwarn << "Failed to set material" << std::endl;
       }
@@ -267,7 +268,7 @@ bool Scene::Implementation::UpdateVisual(const ignition::msgs::Visual &_visual,
       extentBounds.push_back(pxr::GfVec3f{static_cast<float>(-maxRadii)});
       extentBounds.push_back(pxr::GfVec3f{static_cast<float>(maxRadii)});
       usdEllipsoid.CreateExtentAttr().Set(extentBounds);
-      if (!SetMaterial(usdEllipsoid, _visual, *stage))
+      if (!SetMaterial(usdEllipsoid, _visual, *stage, this->stageDirUrl))
       {
         ignwarn << "Failed to set material" << std::endl;
       }
@@ -283,7 +284,7 @@ bool Scene::Implementation::UpdateVisual(const ignition::msgs::Visual &_visual,
       extentBounds.push_back(pxr::GfVec3f(-1.0 * radius));
       extentBounds.push_back(pxr::GfVec3f(radius));
       usdSphere.CreateExtentAttr().Set(extentBounds);
-      if (!SetMaterial(usdSphere, _visual, *stage))
+      if (!SetMaterial(usdSphere, _visual, *stage, this->stageDirUrl))
       {
         ignwarn << "Failed to set material" << std::endl;
       }
@@ -303,7 +304,7 @@ bool Scene::Implementation::UpdateVisual(const ignition::msgs::Visual &_visual,
       extentBounds.push_back(-1.0 * endPoint);
       extentBounds.push_back(endPoint);
       usdCapsule.CreateExtentAttr().Set(extentBounds);
-      if (!SetMaterial(usdCapsule, _visual, *stage))
+      if (!SetMaterial(usdCapsule, _visual, *stage, this->stageDirUrl))
       {
         ignwarn << "Failed to set material" << std::endl;
       }
@@ -318,7 +319,7 @@ bool Scene::Implementation::UpdateVisual(const ignition::msgs::Visual &_visual,
                << std::endl;
         return false;
       }
-      if (!SetMaterial(usdMesh, _visual, *stage))
+      if (!SetMaterial(usdMesh, _visual, *stage, this->stageDirUrl))
       {
         ignerr << "Failed to update visual [" << _visual.name() << "]"
                << std::endl;

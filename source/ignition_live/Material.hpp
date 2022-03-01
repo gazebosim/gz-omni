@@ -29,7 +29,8 @@ namespace omniverse
 {
 bool SetMaterial(const pxr::UsdGeomGprim& _gprim,
                  const ignition::msgs::Visual& _visualMsg,
-                 const pxr::UsdStageRefPtr& _stage);
+                 const pxr::UsdStageRefPtr& _stage,
+                 const std::string& _stageDirUrl);
 }
 }  // namespace ignition
 
