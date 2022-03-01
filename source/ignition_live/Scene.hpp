@@ -52,13 +52,16 @@ namespace ignition
 {
 namespace omniverse
 {
+
+enum class Simulator : int { Ignition, IssacSim };
+
 class Scene
 {
  public:
   Scene(
     const std::string &_worldName,
     const std::string &_stageUrl,
-    const std::string &_simulatorPoses);
+    Simulator _simulatorPoses);
 
   /// \brief Initialize the scene and subscribes for updates. This blocks until
   /// the scene is initialized.

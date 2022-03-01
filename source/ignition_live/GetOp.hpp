@@ -33,7 +33,7 @@ class GetOp
   GetOp(pxr::UsdGeomXformable& xForm)
   {
     this->position = pxr::GfVec3d(0);
-    this->rotZYX = pxr::GfVec3f(0);
+    this->rotXYZ = pxr::GfVec3f(0);
     this->scale = pxr::GfVec3f(1);
 
     bool resetXformStack = false;
@@ -51,7 +51,7 @@ class GetOp
           break;
         case pxr::UsdGeomXformOp::TypeRotateXYZ:
           rotateOp = xFormOps[i];
-          rotateOp.Get(&this->rotZYX);
+          rotateOp.Get(&this->rotXYZ);
           break;
         case pxr::UsdGeomXformOp::TypeScale:
           scaleOp = xFormOps[i];
@@ -66,7 +66,7 @@ class GetOp
   pxr::UsdGeomXformOp rotateOp;
   pxr::UsdGeomXformOp scaleOp;
   pxr::GfVec3d position;
-  pxr::GfVec3f rotZYX;
+  pxr::GfVec3f rotXYZ;
   pxr::GfVec3f scale;
 };
 }  // namespace omniverse

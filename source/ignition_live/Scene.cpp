@@ -55,7 +55,7 @@ class Scene::Implementation
 
   std::shared_ptr<FUSDLayerNoticeListener> USDLayerNoticeListener;
   std::shared_ptr<FUSDNoticeListener> USDNoticeListener;
-  bool ignitionControlPoses = true;
+  Simulator simulatorPoses = {Simulator::Ignition};
 
   bool UpdateSensors(const ignition::msgs::Sensor &_sensor,
                     const std::string &_usdSensorPath);
@@ -84,7 +84,7 @@ class Scene::Implementation
 Scene::Scene(
   const std::string &_worldName,
   const std::string &_stageUrl,
-  const std::string &_simulatorPoses)
+  Simulator _simulatorPoses)
     : dataPtr(ignition::utils::MakeImpl<Implementation>())
 {
   ignmsg << "Opened stage [" << _stageUrl << "]" << std::endl;
@@ -93,14 +93,8 @@ Scene::Scene(
       pxr::UsdStage::Open(_stageUrl));
   this->dataPtr->node = std::make_shared<ignition::transport::Node>();
   this->dataPtr->stageDirUrl = ignition::common::parentPath(_stageUrl);
-  if (_simulatorPoses == "ignition")
-  {
-    this->dataPtr->ignitionControlPoses = true;
-  }
-  else
-  {
-    this->dataPtr->ignitionControlPoses = false;
-  }
+
+  this->dataPtr->simulatorPoses = _simulatorPoses;
 }
 
 // //////////////////////////////////////////////////
@@ -113,7 +107,7 @@ std::shared_ptr<ThreadSafe<pxr::UsdStageRefPtr>> &Scene::Stage()
 void Scene::Implementation::SetPose(const pxr::UsdGeomXformCommonAPI &_prim,
                                     const ignition::msgs::Pose &_pose)
 {
-  if (this->ignitionControlPoses)
+  if (this->simulatorPoses == Simulator::Ignition)
   {
     pxr::UsdGeomXformCommonAPI xformApi(_prim);
     const auto &pos = _pose.position();
@@ -905,9 +899,8 @@ bool Scene::Init()
     ignmsg << "Subscribed to topic: [" << topic << "]" << std::endl;
   }
 
-  if (!this->dataPtr->ignitionControlPoses)
+  if (this->dataPtr->simulatorPoses == Simulator::IssacSim)
   {
-    // TODO: disabled omniverse -> ignition sync to focus on ignition -> omniverse
     this->dataPtr->USDLayerNoticeListener =
       std::make_shared<FUSDLayerNoticeListener>(
         this->dataPtr->stage,

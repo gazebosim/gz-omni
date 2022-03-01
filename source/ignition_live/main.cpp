@@ -49,11 +49,17 @@ int main(int argc, char* argv[])
       // clang-format on
       ->required();
   std::string worldName;
-  std::string simulatorPoses;
+  ignition::omniverse::Simulator simulatorPoses{
+    ignition::omniverse::Simulator::Ignition};
   app.add_option("-w,--world", worldName, "Name of the ignition world")
       ->required();
+
+  std::map<std::string, ignition::omniverse::Simulator> map{
+    {"ignition", ignition::omniverse::Simulator::Ignition},
+    {"issacsim", ignition::omniverse::Simulator::IssacSim}};
   app.add_option("--pose", simulatorPoses, "Which simulator will handle the poses")
-      ->required();
+      ->required()
+      ->transform(CLI::CheckedTransformer(map, CLI::ignore_case));;
   app.add_flag_callback("-v,--verbose",
                         []() { ignition::common::Console::SetVerbosity(4); });
 

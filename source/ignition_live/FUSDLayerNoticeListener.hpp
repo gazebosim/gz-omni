@@ -47,15 +47,15 @@ class FUSDLayerNoticeListener : public pxr::TfWeakBase
 
   // Print some interesting info about the LayerNotice
   void HandleRootOrSubLayerChange(
-      const class pxr::SdfNotice::LayersDidChangeSentPerLayer& LayerNotice,
-      const pxr::TfWeakPtr<pxr::SdfLayer>& Sender)
+      const class pxr::SdfNotice::LayersDidChangeSentPerLayer& _layerNotice,
+      const pxr::TfWeakPtr<pxr::SdfLayer>& _sender)
   {
-    auto Iter = LayerNotice.find(Sender);
-    for (auto& ChangeEntry : Iter->second.GetEntryList())
+    auto iter = _layerNotice.find(_sender);
+    for (auto & changeEntry : iter->second.GetEntryList())
     {
-      const pxr::SdfPath& sdfPath = ChangeEntry.first;
+      const pxr::SdfPath& sdfPath = changeEntry.first;
 
-      if (ChangeEntry.second.flags.didRemoveNonInertPrim)
+      if (changeEntry.second.flags.didRemoveNonInertPrim)
       {
         ignition::msgs::Entity req;
         req.set_name(sdfPath.GetName());
@@ -83,7 +83,7 @@ class FUSDLayerNoticeListener : public pxr::TfWeakBase
         }
         ignmsg << "Deleted " << sdfPath.GetName() << std::endl;
       }
-      else if (ChangeEntry.second.flags.didAddNonInertPrim)
+      else if (changeEntry.second.flags.didAddNonInertPrim)
       {
         ignmsg << "Added" << sdfPath.GetName() << std::endl;
       }

@@ -164,14 +164,14 @@ class FUSDNoticeListener : public pxr::TfWeakBase
 
   void Handle(const class pxr::UsdNotice::ObjectsChanged &ObjectsChanged)
   {
-    for (const pxr::SdfPath &path : ObjectsChanged.GetResyncedPaths())
+    for (const pxr::SdfPath &objectsChanged : ObjectsChanged.GetResyncedPaths())
     {
-      ignmsg << "Resynced Path: " << path.GetText() << std::endl;
+      ignmsg << "Resynced Path: " << objectsChanged.GetText() << std::endl;
       auto stage = this->stage->Lock();
-      auto modelUSD = stage->GetPrimAtPath(path);
+      auto modelUSD = stage->GetPrimAtPath(objectsChanged);
       if (modelUSD)
       {
-        std::string strPath = path.GetText();
+        std::string strPath = objectsChanged.GetText();
         if (strPath.find("_link") != std::string::npos
            || strPath.find("_visual") != std::string::npos
            || strPath.find("geometry") != std::string::npos) {
@@ -226,16 +226,19 @@ class FUSDNoticeListener : public pxr::TfWeakBase
       	}
       }
     }
-    for (const pxr::SdfPath &path : ObjectsChanged.GetChangedInfoOnlyPaths())
+
+    for (const pxr::SdfPath &objectsChanged :
+        ObjectsChanged.GetChangedInfoOnlyPaths())
     {
       auto stage = this->stage->Lock();
-      auto modelUSD = stage->GetPrimAtPath(path.GetParentPath());
-      auto property = modelUSD.GetPropertyAtPath(path);
+      igndbg << "path " << objectsChanged.GetText() << std::endl;
+      auto modelUSD = stage->GetPrimAtPath(objectsChanged.GetParentPath());
+      auto property = modelUSD.GetPropertyAtPath(objectsChanged);
       std::string strProperty = property.GetBaseName().GetText();
       if (strProperty == "radius")
       {
         double radius;
-        auto attribute = modelUSD.GetAttributeAtPath(path);
+        auto attribute = modelUSD.GetAttributeAtPath(objectsChanged);
         attribute.Get(&radius);
       }
       if (strProperty == "translate")
@@ -255,9 +258,9 @@ class FUSDNoticeListener : public pxr::TfWeakBase
         req.mutable_position()->set_z(transforms.position[2]);
 
         ignition::math::Quaterniond q(
-          transforms.rotZYX[0],
-          transforms.rotZYX[1],
-          transforms.rotZYX[2]);
+          transforms.rotXYZ[0],
+          transforms.rotXYZ[1],
+          transforms.rotXYZ[2]);
 
         req.mutable_orientation()->set_x(q.X());
         req.mutable_orientation()->set_y(q.Y());
