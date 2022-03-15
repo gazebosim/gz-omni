@@ -246,12 +246,44 @@ class FUSDNoticeListener : public pxr::TfWeakBase
         auto xform = pxr::UsdGeomXformable(modelUSD);
 
         auto transforms = GetOp(xform);
+        auto currentPrim = modelUSD;
+        if (currentPrim.GetName() == "geometry")
+        {
+          currentPrim = currentPrim.GetParent();
+          auto visualXform = pxr::UsdGeomXformable(currentPrim);
+          auto visualOp = GetOp(visualXform);
+          transforms.position += visualOp.position;
+          transforms.rotXYZ += visualOp.rotXYZ;
+          transforms.scale += visualOp.scale;
+        }
+        auto currentPrimName = currentPrim.GetName().GetString();
+        if (currentPrimName.substr(currentPrimName.size() -
+                                   std::string("_visual").size()) == "_visual")
+        {
+          currentPrim = currentPrim.GetParent();
+          auto linkXform = pxr::UsdGeomXformable(currentPrim);
+          auto linkOp = GetOp(linkXform);
+          transforms.position += linkOp.position;
+          transforms.rotXYZ += linkOp.rotXYZ;
+          transforms.scale += linkOp.scale;
+        }
+        currentPrimName = currentPrim.GetName().GetString();
+        if (currentPrimName.substr(currentPrimName.size() -
+                                   std::string("_link").size()) == "_link")
+        {
+          currentPrim = currentPrim.GetParent();
+          auto modelXform = pxr::UsdGeomXformable(currentPrim);
+          auto modelOp = GetOp(modelXform);
+          transforms.position += modelOp.position;
+          transforms.rotXYZ += modelOp.rotXYZ;
+          transforms.scale += modelOp.scale;
+        }
 
         // Prepare the input parameters.
         ignition::msgs::Pose req;
         ignition::msgs::Boolean rep;
 
-        req.set_name(modelUSD.GetPath().GetName());
+        req.set_name(currentPrim.GetName());
 
         req.mutable_position()->set_x(transforms.position[0]);
         req.mutable_position()->set_y(transforms.position[1]);
