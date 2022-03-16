@@ -151,7 +151,7 @@ bool Scene::Implementation::UpdateVisual(const ignition::msgs::Visual &_visual,
 {
   auto stage = this->stage->Lock();
 
-  std::string usdVisualPath = _usdLinkPath + "/" + _visual.name();
+  std::string usdVisualPath = _usdLinkPath + "/" + _visual.name() + "_visual";
   auto usdVisualXform =
       pxr::UsdGeomXform::Define(*stage, pxr::SdfPath(usdVisualPath));
   pxr::UsdGeomXformCommonAPI xformApi(usdVisualXform);
@@ -350,7 +350,7 @@ bool Scene::Implementation::UpdateLink(const ignition::msgs::Link &_link,
                                        const std::string &_usdModelPath)
 {
   auto stage = this->stage->Lock();
-  std::string usdLinkPath = _usdModelPath + "/" + _link.name();
+  std::string usdLinkPath = _usdModelPath + "/" + _link.name() + "_link";
   auto xform = pxr::UsdGeomXform::Define(*stage, pxr::SdfPath(usdLinkPath));
   pxr::UsdGeomXformCommonAPI xformApi(xform);
 
