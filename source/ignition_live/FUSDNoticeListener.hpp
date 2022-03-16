@@ -260,8 +260,6 @@ class FUSDNoticeListener : public pxr::TfWeakBase
         int substrIndex = currentPrimName.size() - std::string("_visual").size();
         if (substrIndex >= 0 && substrIndex < currentPrimName.size())
         {
-          std::cerr << currentPrimName.substr(substrIndex) << '\n';
-
           if (currentPrimName.substr(substrIndex).find("_visual") !=
             std::string::npos)
           {
