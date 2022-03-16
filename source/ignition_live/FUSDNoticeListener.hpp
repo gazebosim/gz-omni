@@ -227,9 +227,13 @@ class FUSDNoticeListener : public pxr::TfWeakBase
       }
     }
 
+    ignition::msgs::Pose_V req;
+
     for (const pxr::SdfPath &objectsChanged :
         ObjectsChanged.GetChangedInfoOnlyPaths())
     {
+      if (std::string(objectsChanged.GetText()) == "/")
+        continue;
       auto stage = this->stage->Lock();
       igndbg << "path " << objectsChanged.GetText() << std::endl;
       auto modelUSD = stage->GetPrimAtPath(objectsChanged.GetParentPath());
@@ -247,14 +251,28 @@ class FUSDNoticeListener : public pxr::TfWeakBase
 
         auto transforms = GetOp(xform);
         auto currentPrim = modelUSD;
+        ignition::math::Quaterniond q(
+          transforms.rotXYZ[0],
+          transforms.rotXYZ[1],
+          transforms.rotXYZ[2]);
         if (currentPrim.GetName() == "geometry")
         {
           currentPrim = currentPrim.GetParent();
           auto visualXform = pxr::UsdGeomXformable(currentPrim);
           auto visualOp = GetOp(visualXform);
           transforms.position += visualOp.position;
-          transforms.rotXYZ += visualOp.rotXYZ;
-          transforms.scale += visualOp.scale;
+          ignition::math::Quaterniond qX, qY, qZ;
+          ignition::math::Angle angleX(IGN_DTOR(visualOp.rotXYZ[0]));
+          ignition::math::Angle angleY(IGN_DTOR(visualOp.rotXYZ[1]));
+          ignition::math::Angle angleZ(IGN_DTOR(visualOp.rotXYZ[2]));
+          qX = ignition::math::Quaterniond(angleX.Normalized().Radian(), 0, 0);
+          qY = ignition::math::Quaterniond(0, angleY.Normalized().Radian(), 0);
+          qZ = ignition::math::Quaterniond(0, 0, angleZ.Normalized().Radian());
+          q = ((q * qX) * qY) * qZ;
+          transforms.scale = pxr::GfVec3f(
+            transforms.scale[0] * visualOp.scale[0],
+            transforms.scale[1] * visualOp.scale[1],
+            transforms.scale[2] * visualOp.scale[2]);
         }
         auto currentPrimName = currentPrim.GetName().GetString();
         int substrIndex = currentPrimName.size() - std::string("_visual").size();
@@ -267,8 +285,18 @@ class FUSDNoticeListener : public pxr::TfWeakBase
             auto linkXform = pxr::UsdGeomXformable(currentPrim);
             auto linkOp = GetOp(linkXform);
             transforms.position += linkOp.position;
-            transforms.rotXYZ += linkOp.rotXYZ;
-            transforms.scale += linkOp.scale;
+            ignition::math::Quaterniond qX, qY, qZ;
+            ignition::math::Angle angleX(IGN_DTOR(linkOp.rotXYZ[0]));
+            ignition::math::Angle angleY(IGN_DTOR(linkOp.rotXYZ[1]));
+            ignition::math::Angle angleZ(IGN_DTOR(linkOp.rotXYZ[2]));
+            qX = ignition::math::Quaterniond(angleX.Normalized().Radian(), 0, 0);
+            qY = ignition::math::Quaterniond(0, angleY.Normalized().Radian(), 0);
+            qZ = ignition::math::Quaterniond(0, 0, angleZ.Normalized().Radian());
+            q = ((q * qX) * qY) * qZ;
+            transforms.scale = pxr::GfVec3f(
+              transforms.scale[0] * linkOp.scale[0],
+              transforms.scale[1] * linkOp.scale[1],
+              transforms.scale[2] * linkOp.scale[2]);
           }
         }
         currentPrimName = currentPrim.GetName().GetString();
@@ -281,45 +309,50 @@ class FUSDNoticeListener : public pxr::TfWeakBase
             currentPrim = currentPrim.GetParent();
             auto modelXform = pxr::UsdGeomXformable(currentPrim);
             auto modelOp = GetOp(modelXform);
-            transforms.position += modelOp.position;
-            transforms.rotXYZ += modelOp.rotXYZ;
-            transforms.scale += modelOp.scale;
+            // transforms.position += modelOp.position;
+            ignition::math::Quaterniond qX, qY, qZ;
+            ignition::math::Angle angleX(IGN_DTOR(modelOp.rotXYZ[0]));
+            ignition::math::Angle angleY(IGN_DTOR(modelOp.rotXYZ[1]));
+            ignition::math::Angle angleZ(IGN_DTOR(modelOp.rotXYZ[2]));
+            qX = ignition::math::Quaterniond(angleX.Normalized().Radian(), 0, 0);
+            qY = ignition::math::Quaterniond(0, angleY.Normalized().Radian(), 0);
+            qZ = ignition::math::Quaterniond(0, 0, angleZ.Normalized().Radian());
+            q = ((q * qX) * qY) * qZ;
+            transforms.scale = pxr::GfVec3f(
+              transforms.scale[0] * modelOp.scale[0],
+              transforms.scale[1] * modelOp.scale[1],
+              transforms.scale[2] * modelOp.scale[2]);
           }
         }
 
-        // Prepare the input parameters.
-        ignition::msgs::Pose req;
-        ignition::msgs::Boolean rep;
+        auto poseMsg = req.add_pose();
+        poseMsg->set_name(currentPrim.GetName());
 
-        req.set_name(currentPrim.GetName());
+        poseMsg->mutable_position()->set_x(transforms.position[0]);
+        poseMsg->mutable_position()->set_y(transforms.position[1]);
+        poseMsg->mutable_position()->set_z(transforms.position[2]);
 
-        req.mutable_position()->set_x(transforms.position[0]);
-        req.mutable_position()->set_y(transforms.position[1]);
-        req.mutable_position()->set_z(transforms.position[2]);
-
-        ignition::math::Quaterniond q(
-          transforms.rotXYZ[0],
-          transforms.rotXYZ[1],
-          transforms.rotXYZ[2]);
-
-        req.mutable_orientation()->set_x(q.X());
-        req.mutable_orientation()->set_y(q.Y());
-        req.mutable_orientation()->set_z(q.Z());
-        req.mutable_orientation()->set_w(q.W());
-
-        bool result;
-        unsigned int timeout = 500;
-        bool executed = this->node.Request(
-        	"/world/" + this->worldName + "/set_pose",
-          req, timeout, rep, result);
-        if (executed)
-        {
-          if (!result)
-            ignerr << "Service call failed" << std::endl;
-        }
-        else
-          ignerr << "Service call timed out" << std::endl;
+        // poseMsg->mutable_orientation()->set_x(q.X());
+        // poseMsg->mutable_orientation()->set_y(q.Y());
+        // poseMsg->mutable_orientation()->set_z(q.Z());
+        // poseMsg->mutable_orientation()->set_w(q.W());
       }
+    }
+    if (req.pose_size() > 0)
+    {
+      bool result;
+      ignition::msgs::Boolean rep;
+      unsigned int timeout = 500;
+      bool executed = this->node.Request(
+        "/world/" + this->worldName + "/set_pose_vector",
+        req, timeout, rep, result);
+      if (executed)
+      {
+        if (!result)
+          ignerr << "Service call failed" << std::endl;
+      }
+      else
+        ignerr << "Service call timed out" << std::endl;
     }
   }
 

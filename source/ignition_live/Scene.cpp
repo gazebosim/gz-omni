@@ -151,7 +151,19 @@ bool Scene::Implementation::UpdateVisual(const ignition::msgs::Visual &_visual,
 {
   auto stage = this->stage->Lock();
 
-  std::string usdVisualPath = _usdLinkPath + "/" + _visual.name() + "_visual";
+  std::string visualName = _visual.name();
+  std::string suffix = "_visual";
+  auto substrIndex = visualName.size() - std::string("_visual").size();
+  if (substrIndex >= 0 && substrIndex < visualName.size())
+  {
+    if (visualName.substr(substrIndex).find("_visual") !=
+        std::string::npos)
+    {
+      suffix = "";
+    }
+  }
+
+  std::string usdVisualPath = _usdLinkPath + "/" + _visual.name() + suffix;
   auto usdVisualXform =
       pxr::UsdGeomXform::Define(*stage, pxr::SdfPath(usdVisualPath));
   pxr::UsdGeomXformCommonAPI xformApi(usdVisualXform);
@@ -350,7 +362,20 @@ bool Scene::Implementation::UpdateLink(const ignition::msgs::Link &_link,
                                        const std::string &_usdModelPath)
 {
   auto stage = this->stage->Lock();
-  std::string usdLinkPath = _usdModelPath + "/" + _link.name() + "_link";
+
+  std::string linkName = _link.name();
+  std::string suffix = "_link";
+  auto substrIndex = linkName.size() - std::string("_link").size();
+  if (substrIndex >= 0 && substrIndex < linkName.size())
+  {
+    if (linkName.substr(substrIndex).find("_link") !=
+        std::string::npos)
+    {
+      suffix = "";
+    }
+  }
+
+  std::string usdLinkPath = _usdModelPath + "/" + _link.name() + suffix;
   auto xform = pxr::UsdGeomXform::Define(*stage, pxr::SdfPath(usdLinkPath));
   pxr::UsdGeomXformCommonAPI xformApi(xform);
 
