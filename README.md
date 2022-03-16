@@ -7,8 +7,8 @@ malfunctions or some undocumented features.
  - You should [install Ignition Fortress](https://ignitionrobotics.org/docs/fortress) (from source).
 
 **Requeriments**:
- -  ROS 2 Galactic.
- - Ignition Gazebo fortress
+ - ROS 2 Galactic.
+ - Ignition Gazebo Fortress
 
 **Features**:
  - Ignition -> IssacSim
@@ -36,7 +36,7 @@ git -C . apply ../ign-omni-meta/protobuf-cmake.patch
 cd ~/ign-omni
 colcon build --merge-install --event-handlers console_direct+ --packages-select protobuf
 cp src/ign-omni-meta/colcon.meta .
-colcon build --merge-install --event-handlers console_direct+ --packages-up-to ignition-omni1
+colcon build --merge-install --event-handlers console_direct+ --packages-up-to ignition-omniverse1
 ```
 
 ## Run it
@@ -46,7 +46,7 @@ colcon build --merge-install --event-handlers console_direct+ --packages-up-to i
 Run the `shapes.sdf` world in Ignition Gazebo. This should run in a separate terminal using your normal Ignition Gazebo installation.
 
 ```bash
-ign gazebo v -4 shapes.sdf
+ign gazebo -v 4 shapes.sdf
 ```
 
 ### Run IssacSim
