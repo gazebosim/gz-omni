@@ -257,26 +257,34 @@ class FUSDNoticeListener : public pxr::TfWeakBase
           transforms.scale += visualOp.scale;
         }
         auto currentPrimName = currentPrim.GetName().GetString();
-        if (currentPrimName.substr(currentPrimName.size() -
-                                   std::string("_visual").size()) == "_visual")
+        int substrIndex = currentPrimName.size() - std::string("_visual").size();
+        if (substrIndex >= 0 && substrIndex < currentPrimName.size())
         {
-          currentPrim = currentPrim.GetParent();
-          auto linkXform = pxr::UsdGeomXformable(currentPrim);
-          auto linkOp = GetOp(linkXform);
-          transforms.position += linkOp.position;
-          transforms.rotXYZ += linkOp.rotXYZ;
-          transforms.scale += linkOp.scale;
+          if (currentPrimName.substr(substrIndex).find("_visual") !=
+            std::string::npos)
+          {
+            currentPrim = currentPrim.GetParent();
+            auto linkXform = pxr::UsdGeomXformable(currentPrim);
+            auto linkOp = GetOp(linkXform);
+            transforms.position += linkOp.position;
+            transforms.rotXYZ += linkOp.rotXYZ;
+            transforms.scale += linkOp.scale;
+          }
         }
         currentPrimName = currentPrim.GetName().GetString();
-        if (currentPrimName.substr(currentPrimName.size() -
-                                   std::string("_link").size()) == "_link")
+        substrIndex = currentPrimName.size() - std::string("_link").size();
+        if (substrIndex >= 0 && substrIndex < currentPrimName.size())
         {
-          currentPrim = currentPrim.GetParent();
-          auto modelXform = pxr::UsdGeomXformable(currentPrim);
-          auto modelOp = GetOp(modelXform);
-          transforms.position += modelOp.position;
-          transforms.rotXYZ += modelOp.rotXYZ;
-          transforms.scale += modelOp.scale;
+          if (currentPrimName.substr(substrIndex).find("_link") !=
+              std::string::npos)
+          {
+            currentPrim = currentPrim.GetParent();
+            auto modelXform = pxr::UsdGeomXformable(currentPrim);
+            auto modelOp = GetOp(modelXform);
+            transforms.position += modelOp.position;
+            transforms.rotXYZ += modelOp.rotXYZ;
+            transforms.scale += modelOp.scale;
+          }
         }
 
         // Prepare the input parameters.
