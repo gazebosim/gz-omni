@@ -23,9 +23,12 @@
 
 #include <pxr/usd/sdf/path.h>
 #include <pxr/usd/usd/notice.h>
+#include <pxr/usd/usd/primRange.h>
 #include <pxr/usd/usdGeom/sphere.h>
 #include <pxr/usd/usdGeom/cube.h>
 #include <pxr/usd/usdGeom/cylinder.h>
+
+#include <ignition/transport/Node.hh>
 
 namespace ignition
 {
@@ -229,6 +232,92 @@ class FUSDNoticeListener : public pxr::TfWeakBase
 
     ignition::msgs::Pose_V req;
 
+    {
+      // Right now, there is no way to get the joint angle from Issac Sim
+      // We can get the rotation of the link
+
+
+      // this loop checks all paths to find revolute joints
+      // if there is some, we get the body0 and body1 and calculate the
+      // joint angle.
+
+      auto stage = this->stage->Lock();
+      auto range = pxr::UsdPrimRange::Stage(*stage);
+      for (auto const &prim : range)
+      {
+        std::string primType = prim.GetPrimTypeInfo().GetTypeName().GetText();
+        if (primType == std::string("PhysicsRevoluteJoint"))
+        {
+          auto attrTargetPos = prim.GetAttribute(
+              pxr::TfToken("drive:angular:physics:targetPosition"));
+
+          auto relBody0 = prim.GetRelationships();
+          std::vector<ignition::math::Quaterniond> qVector;
+          for (auto & rel : relBody0)
+          {
+            pxr::SdfPathVector paths;
+            rel.GetTargets(&paths);
+            for (auto p: paths)
+            {
+              auto modelUSD = stage->GetPrimAtPath(p);
+              auto xform = pxr::UsdGeomXformable(modelUSD);
+              auto transforms = GetOp(xform);
+              qVector.emplace_back(
+                transforms.rotQ.GetReal(),
+                transforms.rotQ.GetImaginary()[0],
+                transforms.rotQ.GetImaginary()[1],
+                transforms.rotQ.GetImaginary()[2]);
+              // std::cerr << "pxr::TfStringify(p) " << pxr::TfStringify(p) << '\n';
+            }
+          }
+
+          double angle1, angle2, angleDiff;
+          ignition::math::Vector3d axis1, axis2, axisDiff;
+          qVector[0].ToAxis(axis1, angle1);
+          qVector[1].ToAxis(axis2, angle2);
+          axis2.Normalize();
+          axis1.Normalize();
+          auto qdiff = qVector[1] - qVector[0];
+          qdiff.ToAxis(axisDiff, angleDiff);
+          //
+          // std::cerr << "axis1 " << axis1 << " " << qVector[0] << '\n';
+          // std::cerr << "axis2 " << axis2 << " " << qVector[1] << '\n';
+          // std::cerr << "axisDiff " << axisDiff << " " << qdiff << '\n';
+          // std::cerr << acos(axisDiff.Dot(ignition::math::Vector3d(0, 0, 1))) << '\n';
+          // auto attrBody0 = prim.GetAttribute(
+          //     pxr::TfToken("physics:body1"));
+          float pos = acos(axisDiff.Dot(ignition::math::Vector3d(0, 0, 1)));
+          if (attrTargetPos)
+          {
+            // Subscribe to commands
+            std::string topic = transport::TopicUtils::AsValidTopic(
+              std::string("/model/") + std::string("panda") +
+              std::string("/joint/") + prim.GetPath().GetName() +
+              std::string("/0/cmd_pos"));
+
+            auto pub = revoluteJointPublisher.find(topic);
+            if (pub == revoluteJointPublisher.end())
+            {
+              revoluteJointPublisher[topic] =
+                this->node.Advertise<msgs::Double>(topic);
+            }
+            else
+            {
+              msgs::Double cmd;
+              cmd.set_data(pos);
+              pub->second.Publish(cmd);
+            }
+          }
+          else
+          {
+            prim.CreateAttribute(
+              pxr::TfToken("drive:angular:physics:targetPosition"),
+              pxr::SdfValueTypeNames->Float, false).Set(0.0f);
+          }
+        }
+      }
+    }
+
     for (const pxr::SdfPath &objectsChanged :
         ObjectsChanged.GetChangedInfoOnlyPaths())
     {
@@ -336,6 +425,17 @@ class FUSDNoticeListener : public pxr::TfWeakBase
         poseMsg->mutable_orientation()->set_y(q.Y());
         poseMsg->mutable_orientation()->set_z(q.Z());
         poseMsg->mutable_orientation()->set_w(q.W());
+
+        // float angle = 2 * acos(q.W());
+        // float x = q.X() / sqrt(1-q.W()*q.W());
+        // float y = q.Y() / sqrt(1-q.W()*q.W());
+        // float z = q.Z() / sqrt(1-q.W()*q.W());
+        //
+        // std::cerr << "qXAxis " << q.XAxis() << '\n';
+        // std::cerr << "qYAxis " << q.YAxis() << '\n';
+        // std::cerr << "qZAxis " << q.ZAxis() << '\n';
+        // std::cerr << "angle " << angle << " (" << x << ", " << y << ", " << z << ")" << '\n';
+
       }
     }
     if (req.pose_size() > 0)
@@ -358,7 +458,10 @@ class FUSDNoticeListener : public pxr::TfWeakBase
 
   std::shared_ptr<ThreadSafe<pxr::UsdStageRefPtr>> stage;
   std::string worldName;
-  ignition::transport::Node node;
+  std::unordered_map<std::string, transport::Node::Publisher> revoluteJointPublisher;
+
+  /// \brief Ignition communication node.
+  public: transport::Node node;
 };
 }  // namespace omniverse
 }  // namespace ignition
