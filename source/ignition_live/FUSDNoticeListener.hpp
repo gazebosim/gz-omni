@@ -309,7 +309,7 @@ class FUSDNoticeListener : public pxr::TfWeakBase
             currentPrim = currentPrim.GetParent();
             auto modelXform = pxr::UsdGeomXformable(currentPrim);
             auto modelOp = GetOp(modelXform);
-            // transforms.position += modelOp.position;
+            transforms.position += modelOp.position;
             ignition::math::Quaterniond qX, qY, qZ;
             ignition::math::Angle angleX(IGN_DTOR(modelOp.rotXYZ[0]));
             ignition::math::Angle angleY(IGN_DTOR(modelOp.rotXYZ[1]));
@@ -332,10 +332,10 @@ class FUSDNoticeListener : public pxr::TfWeakBase
         poseMsg->mutable_position()->set_y(transforms.position[1]);
         poseMsg->mutable_position()->set_z(transforms.position[2]);
 
-        // poseMsg->mutable_orientation()->set_x(q.X());
-        // poseMsg->mutable_orientation()->set_y(q.Y());
-        // poseMsg->mutable_orientation()->set_z(q.Z());
-        // poseMsg->mutable_orientation()->set_w(q.W());
+        poseMsg->mutable_orientation()->set_x(q.X());
+        poseMsg->mutable_orientation()->set_y(q.Y());
+        poseMsg->mutable_orientation()->set_z(q.Z());
+        poseMsg->mutable_orientation()->set_w(q.W());
       }
     }
     if (req.pose_size() > 0)
