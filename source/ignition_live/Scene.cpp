@@ -153,10 +153,10 @@ bool Scene::Implementation::UpdateVisual(const ignition::msgs::Visual &_visual,
 
   std::string visualName = _visual.name();
   std::string suffix = "_visual";
-  auto substrIndex = visualName.size() - std::string("_visual").size();
-  if (substrIndex >= 0 && substrIndex < visualName.size())
+  std::size_t found = visualName.find("_visual");
+  if (found != std::string::npos)
   {
-    if (visualName.substr(substrIndex).find("_visual") !=
+    if (visualName.substr(found).find("_visual") !=
         std::string::npos)
     {
       suffix = "";
@@ -164,6 +164,10 @@ bool Scene::Implementation::UpdateVisual(const ignition::msgs::Visual &_visual,
   }
 
   std::string usdVisualPath = _usdLinkPath + "/" + _visual.name() + suffix;
+  auto prim = stage->GetPrimAtPath(pxr::SdfPath(usdVisualPath));
+  if (prim)
+    return true;
+
   auto usdVisualXform =
       pxr::UsdGeomXform::Define(*stage, pxr::SdfPath(usdVisualPath));
   pxr::UsdGeomXformCommonAPI xformApi(usdVisualXform);
@@ -365,10 +369,10 @@ bool Scene::Implementation::UpdateLink(const ignition::msgs::Link &_link,
 
   std::string linkName = _link.name();
   std::string suffix = "_link";
-  auto substrIndex = linkName.size() - std::string("_link").size();
-  if (substrIndex >= 0 && substrIndex < linkName.size())
+  std::size_t found = linkName.find("_link");
+  if (found != std::string::npos)
   {
-    if (linkName.substr(substrIndex).find("_link") !=
+    if (linkName.substr(found).find("_link") !=
         std::string::npos)
     {
       suffix = "";
@@ -376,6 +380,10 @@ bool Scene::Implementation::UpdateLink(const ignition::msgs::Link &_link,
   }
 
   std::string usdLinkPath = _usdModelPath + "/" + _link.name() + suffix;
+  auto prim = stage->GetPrimAtPath(pxr::SdfPath(usdLinkPath));
+  if (prim)
+    return true;
+
   auto xform = pxr::UsdGeomXform::Define(*stage, pxr::SdfPath(usdLinkPath));
   pxr::UsdGeomXformCommonAPI xformApi(xform);
 

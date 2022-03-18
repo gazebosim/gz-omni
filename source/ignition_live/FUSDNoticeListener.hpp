@@ -172,6 +172,13 @@ class FUSDNoticeListener : public pxr::TfWeakBase
       ignmsg << "Resynced Path: " << objectsChanged.GetText() << std::endl;
       auto stage = this->stage->Lock();
       auto modelUSD = stage->GetPrimAtPath(objectsChanged);
+
+      if (std::string(modelUSD.GetPath().GetName()).find("ROS_") !=
+          std::string::npos)
+      {
+        continue;
+      }
+
       if (modelUSD)
       {
         std::string strPath = objectsChanged.GetText();
@@ -262,31 +269,23 @@ class FUSDNoticeListener : public pxr::TfWeakBase
               auto modelUSD = stage->GetPrimAtPath(p);
               auto xform = pxr::UsdGeomXformable(modelUSD);
               auto transforms = GetOp(xform);
-              qVector.emplace_back(
+              ignition::math::Quaterniond qOrient(
                 transforms.rotQ.GetReal(),
                 transforms.rotQ.GetImaginary()[0],
                 transforms.rotQ.GetImaginary()[1],
                 transforms.rotQ.GetImaginary()[2]);
-              // std::cerr << "pxr::TfStringify(p) " << pxr::TfStringify(p) << '\n';
+              qVector.emplace_back(qOrient);
             }
           }
 
-          double angle1, angle2, angleDiff;
-          ignition::math::Vector3d axis1, axis2, axisDiff;
-          qVector[0].ToAxis(axis1, angle1);
-          qVector[1].ToAxis(axis2, angle2);
-          axis2.Normalize();
-          axis1.Normalize();
-          auto qdiff = qVector[1] - qVector[0];
-          qdiff.ToAxis(axisDiff, angleDiff);
-          //
-          // std::cerr << "axis1 " << axis1 << " " << qVector[0] << '\n';
-          // std::cerr << "axis2 " << axis2 << " " << qVector[1] << '\n';
-          // std::cerr << "axisDiff " << axisDiff << " " << qdiff << '\n';
-          // std::cerr << acos(axisDiff.Dot(ignition::math::Vector3d(0, 0, 1))) << '\n';
-          // auto attrBody0 = prim.GetAttribute(
-          //     pxr::TfToken("physics:body1"));
-          float pos = acos(axisDiff.Dot(ignition::math::Vector3d(0, 0, 1)));
+          double angle_L1L2;
+          ignition::math::Vector3d axis_L1L2;
+          auto R_L1L2 = (qVector[0].Inverse() * qVector[1]);
+          R_L1L2.ToAxis(axis_L1L2, angle_L1L2);
+          axis_L1L2.Normalize();
+          double pos = axis_L1L2.Dot(ignition::math::Vector3d::UnitZ) * angle_L1L2;
+
+
           if (attrTargetPos)
           {
             // Subscribe to commands
@@ -414,6 +413,13 @@ class FUSDNoticeListener : public pxr::TfWeakBase
           }
         }
 
+        std::size_t found = std::string(currentPrim.GetName()).find("_link");
+        if (found != std::string::npos)
+          continue;
+        found = std::string(currentPrim.GetName()).find("_visual");
+        if (found != std::string::npos)
+          continue;
+
         auto poseMsg = req.add_pose();
         poseMsg->set_name(currentPrim.GetName());
 
@@ -425,17 +431,6 @@ class FUSDNoticeListener : public pxr::TfWeakBase
         poseMsg->mutable_orientation()->set_y(q.Y());
         poseMsg->mutable_orientation()->set_z(q.Z());
         poseMsg->mutable_orientation()->set_w(q.W());
-
-        // float angle = 2 * acos(q.W());
-        // float x = q.X() / sqrt(1-q.W()*q.W());
-        // float y = q.Y() / sqrt(1-q.W()*q.W());
-        // float z = q.Z() / sqrt(1-q.W()*q.W());
-        //
-        // std::cerr << "qXAxis " << q.XAxis() << '\n';
-        // std::cerr << "qYAxis " << q.YAxis() << '\n';
-        // std::cerr << "qZAxis " << q.ZAxis() << '\n';
-        // std::cerr << "angle " << angle << " (" << x << ", " << y << ", " << z << ")" << '\n';
-
       }
     }
     if (req.pose_size() > 0)
