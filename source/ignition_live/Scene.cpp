@@ -736,9 +736,9 @@ bool Scene::Implementation::UpdateSensors(const ignition::msgs::Sensor &_sensor,
   }
   else
   {
-    ignerr << "This kind of sensor [" << _sensor.type()
-           << "] is not supported" << std::endl;
-    return false;
+    ignwarn << "This kind of sensor [" << _sensor.type()
+            << "] is not supported" << std::endl;
+    return true;
   }
   return true;
 }
