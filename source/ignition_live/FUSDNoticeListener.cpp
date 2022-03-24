@@ -172,7 +172,7 @@ void FUSDNoticeListener::Handle(
     std::string primName = modelUSD.GetName();
 
     if (primName.find("ROS_") != std::string::npos ||
-        primName.find("PhysicsScene" != std::string::npos)
+        primName.find("PhysicsScene") != std::string::npos)
     {
       continue;
     }
@@ -447,7 +447,8 @@ void FUSDNoticeListener::Handle(
           ignerr << "Service call failed" << std::endl;
       }
       else
-        ignerr << "Service call timed out" << std::endl;
+        ignerr << "Service [/world/" << this->dataPtr->worldName
+               << "/set_pose_vector] call timed out" << std::endl;
     }
   }
 }
