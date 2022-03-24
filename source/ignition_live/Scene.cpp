@@ -26,6 +26,7 @@
 #include <ignition/common/Filesystem.hh>
 #include <ignition/math/Quaternion.hh>
 
+#include <pxr/usd/usd/primRange.h>
 #include <pxr/usd/usdGeom/camera.h>
 #include <pxr/usd/usdGeom/xform.h>
 #include <pxr/usd/usdLux/diskLight.h>
@@ -37,6 +38,8 @@
 #include <string>
 #include <thread>
 #include <vector>
+
+#include <pxr/base/tf/nullPtr.h>
 
 using namespace std::chrono_literals;
 
@@ -625,6 +628,96 @@ bool Scene::Implementation::UpdateModel(const ignition::msgs::Model &_model)
   auto stage = this->stage->Lock();
 
   std::string modelName = _model.name();
+
+  auto range = pxr::UsdPrimRange::Stage(*stage);
+  for (auto const &prim : range)
+  {
+    if (prim.GetName().GetString() == modelName)
+    {
+      ignwarn << "The model [" << _model.name() << "] is already available"
+              << " in Issac Sim" << std::endl;
+
+      std::string usdModelPath = "/" + worldName + "/" + modelName;
+      auto prim = stage->GetPrimAtPath(
+            pxr::SdfPath(usdModelPath));
+      if (prim)
+      {
+        std::cerr << "model " << _model.name() << " - " << _model.id() << '\n';
+        this->entities[_model.id()] = prim;
+        for (const auto &link : _model.link())
+        {
+          std::string linkName = link.name();
+          std::string suffix = "_link";
+          std::size_t found = linkName.find("_link");
+          if (found != std::string::npos)
+          {
+            if (linkName.substr(found).find("_link") !=
+                std::string::npos)
+            {
+              suffix = "";
+            }
+          }
+          std::string usdLinkPath = usdModelPath + "/" + linkName + suffix;
+          auto linkPrim = stage->GetPrimAtPath(
+                pxr::SdfPath(usdLinkPath));
+          if (linkPrim)
+          {
+            this->entities[link.id()] = linkPrim;
+            for (const auto &visual : link.visual())
+            {
+              std::string visualName = visual.name();
+              std::string suffix = "_visual";
+              std::size_t found = visualName.find("_visual");
+              if (found != std::string::npos)
+              {
+                if (visualName.substr(found).find("_visual") !=
+                    std::string::npos)
+                {
+                  suffix = "";
+                }
+              }
+              std::string usdvisualPath =
+                usdLinkPath + "/" + visualName + suffix;
+              auto visualPrim = stage->GetPrimAtPath(
+                    pxr::SdfPath(usdvisualPath));
+              if (visualPrim)
+              {
+                this->entities[visual.id()] = visualPrim;
+              }
+            }
+            for (const auto &light : link.light())
+            {
+              std::string usdLightPath =
+                usdLinkPath + "/" + light.name();
+              auto lightPrim = stage->GetPrimAtPath(
+                    pxr::SdfPath(usdLightPath));
+              if (lightPrim)
+              {
+                this->entities[light.id()] = lightPrim;
+              }
+            }
+          }
+        }
+      }
+      else
+      {
+        this->entities[_model.id()] = pxr::UsdPrim();
+        for (const auto &link : _model.link())
+        {
+          this->entities[link.id()] = pxr::UsdPrim();
+          for (const auto &visual : link.visual())
+          {
+            this->entities[visual.id()] = pxr::UsdPrim();
+          }
+        }
+        ignwarn << "We can not update this model [" << _model.name()
+                <<  "]. This model should be a child of a XForm " << std::endl;
+      }
+
+      return true;
+    }
+  }
+
   std::replace(modelName.begin(), modelName.end(), ' ', '_');
 
   std::string usdModelPath = "/" + worldName + "/" + modelName;
@@ -785,7 +878,7 @@ bool Scene::Implementation::UpdateSensors(const ignition::msgs::Sensor &_sensor,
   {
     ignerr << "This kind of sensor [" << _sensor.type()
            << "] is not supported" << std::endl;
-    return false;
+    return true;
   }
   return true;
 }
@@ -932,27 +1025,25 @@ bool Scene::Init()
     ignmsg << "Subscribed to topic: [" << topic << "]" << std::endl;
   }
 
-  if (this->dataPtr->simulatorPoses == Simulator::IssacSim)
-  {
-    this->dataPtr->USDLayerNoticeListener =
-      std::make_shared<FUSDLayerNoticeListener>(
-        this->dataPtr->stage,
-        this->dataPtr->worldName);
-    auto LayerReloadKey = pxr::TfNotice::Register(
-        pxr::TfCreateWeakPtr(this->dataPtr->USDLayerNoticeListener.get()),
-        &FUSDLayerNoticeListener::HandleGlobalLayerReload);
-    auto LayerChangeKey = pxr::TfNotice::Register(
-        pxr::TfCreateWeakPtr(this->dataPtr->USDLayerNoticeListener.get()),
-        &FUSDLayerNoticeListener::HandleRootOrSubLayerChange,
-        this->dataPtr->stage->Lock()->GetRootLayer());
-
-    this->dataPtr->USDNoticeListener = std::make_shared<FUSDNoticeListener>(
+  this->dataPtr->USDLayerNoticeListener =
+    std::make_shared<FUSDLayerNoticeListener>(
       this->dataPtr->stage,
       this->dataPtr->worldName);
-    auto USDNoticeKey = pxr::TfNotice::Register(
-        pxr::TfCreateWeakPtr(this->dataPtr->USDNoticeListener.get()),
-        &FUSDNoticeListener::Handle);
-  }
+  auto LayerReloadKey = pxr::TfNotice::Register(
+      pxr::TfCreateWeakPtr(this->dataPtr->USDLayerNoticeListener.get()),
+      &FUSDLayerNoticeListener::HandleGlobalLayerReload);
+  auto LayerChangeKey = pxr::TfNotice::Register(
+      pxr::TfCreateWeakPtr(this->dataPtr->USDLayerNoticeListener.get()),
+      &FUSDLayerNoticeListener::HandleRootOrSubLayerChange,
+      this->dataPtr->stage->Lock()->GetRootLayer());
+
+  this->dataPtr->USDNoticeListener = std::make_shared<FUSDNoticeListener>(
+    this->dataPtr->stage,
+    this->dataPtr->worldName,
+    this->dataPtr->simulatorPoses);
+  auto USDNoticeKey = pxr::TfNotice::Register(
+      pxr::TfCreateWeakPtr(this->dataPtr->USDNoticeListener.get()),
+      &FUSDNoticeListener::Handle);
   return true;
 }
 
@@ -969,11 +1060,14 @@ void Scene::Implementation::CallbackPoses(const ignition::msgs::Pose_V &_msg)
     {
       auto stage = this->stage->Lock();
       const auto &prim = this->entities.at(poseMsg.id());
-      this->SetPose(pxr::UsdGeomXformCommonAPI(prim), poseMsg);
+      if (prim)
+      {
+        this->SetPose(pxr::UsdGeomXformCommonAPI(prim), poseMsg);
+      }
     }
     catch (const std::out_of_range &)
     {
-      ignwarn << "Error updating pose, cannot find [" << poseMsg.name() << "]"
+      ignwarn << "Error updating pose, cannot find [" << poseMsg.name() << " - " << poseMsg.id() << "]"
               << std::endl;
     }
   }

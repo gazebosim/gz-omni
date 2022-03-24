@@ -24,7 +24,8 @@
 #include <pxr/usd/usd/stage.h>
 
 #include <ignition/common/Console.hh>
-#include <ignition/common/WorkerPool.hh>
+
+#include <ignition/utils/ImplPtr.hh>
 
 namespace ignition
 {
@@ -35,65 +36,18 @@ class FUSDLayerNoticeListener : public pxr::TfWeakBase
  public:
   FUSDLayerNoticeListener(
     std::shared_ptr<ThreadSafe<pxr::UsdStageRefPtr>> _stage,
-    const std::string& _worldName)
-      : stage(_stage), worldName(_worldName)
-  {
-  }
+    const std::string& _worldName);
 
-  void HandleGlobalLayerReload(const pxr::SdfNotice::LayerDidReloadContent& n)
-  {
-    igndbg << "HandleGlobalLayerReload called" << std::endl;
-  }
+  void HandleGlobalLayerReload(const pxr::SdfNotice::LayerDidReloadContent& n);
 
   // Print some interesting info about the LayerNotice
   void HandleRootOrSubLayerChange(
       const class pxr::SdfNotice::LayersDidChangeSentPerLayer& _layerNotice,
-      const pxr::TfWeakPtr<pxr::SdfLayer>& _sender)
-  {
-    auto iter = _layerNotice.find(_sender);
-    for (auto & changeEntry : iter->second.GetEntryList())
-    {
-      const pxr::SdfPath& sdfPath = changeEntry.first;
+      const pxr::TfWeakPtr<pxr::SdfLayer>& _sender);
 
-      if (changeEntry.second.flags.didRemoveNonInertPrim)
-      {
-        ignition::msgs::Entity req;
-        req.set_name(sdfPath.GetName());
-        req.set_type(ignition::msgs::Entity::MODEL);
-
-        ignition::msgs::Boolean rep;
-        bool result;
-        unsigned int timeout = 5000;
-        bool executed = this->node.Request(
-          "/world/" + this->worldName + "/remove",
-          req, timeout, rep, result);
-        if (executed)
-        {
-          if (rep.data())
-          {
-            igndbg << "Model was removed [" << sdfPath.GetName() << "]"
-                   << std::endl;
-            this->stage->Lock()->RemovePrim(sdfPath);
-          }
-          else
-          {
-            ignerr << "Error model was not removed [" << sdfPath.GetName()
-                   << "]" << std::endl;
-          }
-        }
-        ignmsg << "Deleted " << sdfPath.GetName() << std::endl;
-      }
-      else if (changeEntry.second.flags.didAddNonInertPrim)
-      {
-        ignmsg << "Added" << sdfPath.GetName() << std::endl;
-      }
-    }
-  }
-
-  std::shared_ptr<ThreadSafe<pxr::UsdStageRefPtr>> stage;
-  std::string worldName;
-  ignition::transport::Node node;
-  ignition::common::WorkerPool pool;
+  /// \internal
+  /// \brief Private data pointer
+  IGN_UTILS_IMPL_PTR(dataPtr)
 };
 }  // namespace omniverse
 }  // namespace ignition
