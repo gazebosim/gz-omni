@@ -92,7 +92,9 @@ If not already done so, install nvidia omniverse, isaac sim and omniverse nucleu
 #### (Optional) Create ignition user in nucleus
 When nucleus is first installed, it will prompt you to create a user. If the ignition user is not created at this time, it can be created later via the omniverse app.
 
-![](omniverse-create-user.mp4)
+<video controls>
+  <source src="omniverse-create-user.mp4" type="video/mp4">
+</video>
 
 Launch `IssacSim` and activate the `live sync`
 
