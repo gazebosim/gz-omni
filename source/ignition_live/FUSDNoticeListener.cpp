@@ -128,7 +128,7 @@ void FUSDNoticeListener::Implementation::ParseSphere(
   auto variant_sphere = pxr::UsdGeomSphere(_prim);
   variant_sphere.GetRadiusAttr().Get(&radius);
 
-  // By default issac sim uses millimeters
+  // By default isaac sim uses millimeters
   radius *= 0.01;
 
   sdf::Visual visual;
@@ -233,7 +233,7 @@ void FUSDNoticeListener::Handle(
 
   ignition::msgs::Pose_V req;
 
-  if (this->dataPtr->simulatorPoses == Simulator::IssacSim)
+  if (this->dataPtr->simulatorPoses == Simulator::IsaacSim)
   {
     // this loop checks all paths to find revolute joints
     // if there is some, we get the body0 and body1 and calculate the

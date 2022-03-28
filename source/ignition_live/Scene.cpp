@@ -159,11 +159,7 @@ bool Scene::Implementation::UpdateVisual(const ignition::msgs::Visual &_visual,
   std::size_t found = visualName.find("_visual");
   if (found != std::string::npos)
   {
-    if (visualName.substr(found).find("_visual") !=
-        std::string::npos)
-    {
-      suffix = "";
-    }
+    suffix = "";
   }
 
   std::string usdVisualPath = _usdLinkPath + "/" + _visual.name() + suffix;
@@ -375,11 +371,7 @@ bool Scene::Implementation::UpdateLink(const ignition::msgs::Link &_link,
   std::size_t found = linkName.find("_link");
   if (found != std::string::npos)
   {
-    if (linkName.substr(found).find("_link") !=
-        std::string::npos)
-    {
-      suffix = "";
-    }
+    suffix = "";
   }
 
   std::string usdLinkPath = _usdModelPath + "/" + _link.name() + suffix;
@@ -635,14 +627,13 @@ bool Scene::Implementation::UpdateModel(const ignition::msgs::Model &_model)
     if (prim.GetName().GetString() == modelName)
     {
       ignwarn << "The model [" << _model.name() << "] is already available"
-              << " in Issac Sim" << std::endl;
+              << " in Isaac Sim" << std::endl;
 
       std::string usdModelPath = "/" + worldName + "/" + modelName;
       auto prim = stage->GetPrimAtPath(
             pxr::SdfPath(usdModelPath));
       if (prim)
       {
-        std::cerr << "model " << _model.name() << " - " << _model.id() << '\n';
         this->entities[_model.id()] = prim;
         for (const auto &link : _model.link())
         {
@@ -651,11 +642,7 @@ bool Scene::Implementation::UpdateModel(const ignition::msgs::Model &_model)
           std::size_t found = linkName.find("_link");
           if (found != std::string::npos)
           {
-            if (linkName.substr(found).find("_link") !=
-                std::string::npos)
-            {
-              suffix = "";
-            }
+            suffix = "";
           }
           std::string usdLinkPath = usdModelPath + "/" + linkName + suffix;
           auto linkPrim = stage->GetPrimAtPath(
@@ -670,11 +657,7 @@ bool Scene::Implementation::UpdateModel(const ignition::msgs::Model &_model)
               std::size_t found = visualName.find("_visual");
               if (found != std::string::npos)
               {
-                if (visualName.substr(found).find("_visual") !=
-                    std::string::npos)
-                {
-                  suffix = "";
-                }
+                suffix = "";
               }
               std::string usdvisualPath =
                 usdLinkPath + "/" + visualName + suffix;
@@ -876,8 +859,8 @@ bool Scene::Implementation::UpdateSensors(const ignition::msgs::Sensor &_sensor,
   }
   else
   {
-    ignerr << "This kind of sensor [" << _sensor.type()
-           << "] is not supported" << std::endl;
+    ignwarn << "This kind of sensor [" << _sensor.type()
+            << "] is not supported" << std::endl;
     return true;
   }
   return true;

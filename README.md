@@ -11,12 +11,12 @@ malfunctions or some undocumented features.
  - Ignition Gazebo fortress
 
 **Features**:
- - Ignition -> IssacSim
+ - Ignition -> IsaacSim
    - Move/rotate models
    - Create/remove models
    - Joints
    - Sensors (lidar, cameras)
- - IssacSim -> Ignition
+ - IsaacSim -> Ignition
    - Create/remove models
 
 ## How to compile it
@@ -49,9 +49,9 @@ Run the `shapes.sdf` world in Ignition Gazebo. This should run in a separate ter
 ign gazebo v -4 shapes.sdf
 ```
 
-### Run IssacSim
+### Run IsaacSim
 
-Launch `IssacSim` and activate the `live sync`
+Launch `IsaacSim` and activate the `live sync`
 
 ![](live_sync.gif)
 
@@ -101,9 +101,9 @@ source ~/turtlebot3_ws/install/setup.bash
 export TURTLEBOT3_MODEL=waffle ros2 launch turtlebot3_ignition ignition.launch.py
 ```
 
-### Run IssacSim
+### Run IsaacSim
 
-Launch `IssacSim` and activate the `live sync`
+Launch `IsaacSim` and activate the `live sync`
 
 ![](live_sync.gif)
 

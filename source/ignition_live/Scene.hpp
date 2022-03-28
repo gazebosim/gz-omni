@@ -53,7 +53,7 @@ namespace ignition
 namespace omniverse
 {
 
-enum class Simulator : int { Ignition, IssacSim };
+enum class Simulator : int { Ignition, IsaacSim };
 
 class Scene
 {

@@ -56,7 +56,7 @@ int main(int argc, char* argv[])
 
   std::map<std::string, ignition::omniverse::Simulator> map{
     {"ignition", ignition::omniverse::Simulator::Ignition},
-    {"issacsim", ignition::omniverse::Simulator::IssacSim}};
+    {"isaacsim", ignition::omniverse::Simulator::IsaacSim}};
   app.add_option("--pose", simulatorPoses, "Which simulator will handle the poses")
       ->required()
       ->transform(CLI::CheckedTransformer(map, CLI::ignore_case));;
