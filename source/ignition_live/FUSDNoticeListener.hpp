@@ -41,7 +41,7 @@ class FUSDNoticeListener : public pxr::TfWeakBase
 
   /// \internal
   /// \brief Private data pointer
-  IGN_UTILS_IMPL_PTR(dataPtr)
+  IGN_UTILS_UNIQUE_IMPL_PTR(dataPtr)
 };
 }  // namespace omniverse
 }  // namespace ignition

@@ -31,17 +31,16 @@ class FUSDLayerNoticeListener::Implementation
 public:
   std::shared_ptr<ThreadSafe<pxr::UsdStageRefPtr>> stage;
   std::string worldName;
-  std::shared_ptr<ignition::transport::Node> node;
+  ignition::transport::Node node;
 };
 
 FUSDLayerNoticeListener::FUSDLayerNoticeListener(
   std::shared_ptr<ThreadSafe<pxr::UsdStageRefPtr>> _stage,
   const std::string& _worldName)
-    : dataPtr(ignition::utils::MakeImpl<Implementation>())
+    : dataPtr(ignition::utils::MakeUniqueImpl<Implementation>())
 {
   this->dataPtr->stage = _stage;
   this->dataPtr->worldName = _worldName;
-  this->dataPtr->node = std::make_shared<ignition::transport::Node>();
 }
 
 void FUSDLayerNoticeListener::HandleGlobalLayerReload(
@@ -69,7 +68,7 @@ void FUSDLayerNoticeListener::HandleRootOrSubLayerChange(
       ignition::msgs::Boolean rep;
       bool result;
       unsigned int timeout = 5000;
-      bool executed = this->dataPtr->node->Request(
+      bool executed = this->dataPtr->node.Request(
         "/world/" + this->dataPtr->worldName + "/remove",
         req, timeout, rep, result);
       if (executed)

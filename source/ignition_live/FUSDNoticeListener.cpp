@@ -29,6 +29,8 @@
 
 #include <ignition/transport/Node.hh>
 
+#include <ignition/msgs/model.pb.h>
+
 #include <sdf/Collision.hh>
 #include <sdf/Geometry.hh>
 #include <sdf/Root.hh>
@@ -52,11 +54,8 @@ public:
 
   bool ParsePrim(const pxr::UsdPrim &_prim, sdf::Link &_link)
   {
-    std::cerr << "ParsePrim " << '\n';
     if (_prim.IsA<pxr::UsdGeomSphere>())
     {
-      std::cerr << "ParseSphere " << '\n';
-
       ParseSphere(_prim, _link);
       return true;
     }
@@ -69,7 +68,6 @@ public:
 
   void CreateSDF(sdf::Link &_link, const pxr::UsdPrim &_prim)
   {
-    std::cerr << "CreateSDF " << '\n';
     if (!_prim)
       return;
     if (ParsePrim(_prim, _link))
@@ -93,14 +91,19 @@ public:
     }
   }
 
+  void jointStateCb(const ignition::msgs::Model &_msg);
+
   std::shared_ptr<ThreadSafe<pxr::UsdStageRefPtr>> stage;
   std::string worldName;
   std::unordered_map<std::string, transport::Node::Publisher> revoluteJointPublisher;
 
   /// \brief Ignition communication node.
-  public: std::shared_ptr<transport::Node> node;
+  public: transport::Node node;
 
   Simulator simulatorPoses;
+
+  std::mutex jointStateMsgMutex;
+  std::unordered_map<std::string, double> jointStateMap;
 };
 
 void FUSDNoticeListener::Implementation::ParseCube(
@@ -153,12 +156,29 @@ FUSDNoticeListener::FUSDNoticeListener(
   std::shared_ptr<ThreadSafe<pxr::UsdStageRefPtr>> _stage,
   const std::string &_worldName,
   Simulator _simulatorPoses)
-    : dataPtr(ignition::utils::MakeImpl<Implementation>())
+    : dataPtr(ignition::utils::MakeUniqueImpl<Implementation>())
 {
   this->dataPtr->stage = _stage;
   this->dataPtr->worldName = _worldName;
   this->dataPtr->simulatorPoses = _simulatorPoses;
-  this->dataPtr->node = std::make_shared<ignition::transport::Node>();
+
+  std::string jointStateTopic = "/joint_states";
+
+  this->dataPtr->node.Subscribe(
+    jointStateTopic,
+    &FUSDNoticeListener::Implementation::jointStateCb,
+    this->dataPtr.get());
+}
+
+void FUSDNoticeListener::Implementation::jointStateCb(
+  const ignition::msgs::Model &_msg)
+{
+  std::lock_guard<std::mutex> lock(this->jointStateMsgMutex);
+  for(int i = 0 ; i < _msg.joint_size();++i)
+  {
+    this->jointStateMap[_msg.joint(i).name()] =
+      _msg.joint(i).axis1().position();
+  }
 }
 
 void FUSDNoticeListener::Handle(
@@ -208,24 +228,25 @@ void FUSDNoticeListener::Handle(
     	req.set_name(modelUSD.GetPath().GetName());
     	req.set_allow_renaming(false);
 
-      std::cerr << "root.ToElement()->ToString("") " << root.ToElement()->ToString("") << '\n';
+      igndbg << "root.ToElement()->ToString("") "
+             << root.ToElement()->ToString("") << '\n';
 
       ignition::msgs::Boolean rep;
       bool result;
       unsigned int timeout = 5000;
-      bool executed = this->dataPtr->node->Request(
+      bool executed = this->dataPtr->node.Request(
         "/world/" + this->dataPtr->worldName + "/create",
         req, timeout, rep, result);
     	if (executed)
       {
     		if (rep.data())
     		{
-    			std::cerr << "Model was inserted [" << modelUSD.GetPath().GetName()
+    			igndbg << "Model was inserted [" << modelUSD.GetPath().GetName()
                     << "]" << '\n';
     		}
     		else
     		{
-    			std::cerr << "Error model was not inserted" << '\n';
+    			igndbg << "Error model was not inserted" << '\n';
     		}
     	}
     }
@@ -240,79 +261,31 @@ void FUSDNoticeListener::Handle(
     // joint angle.
     auto stage = this->dataPtr->stage->Lock();
     auto range = pxr::UsdPrimRange::Stage(*stage);
-    // int count = 0;
-    for (auto const &prim : range)
     {
-      std::string primType = prim.GetPrimTypeInfo().GetTypeName().GetText();
-      if (primType == std::string("PhysicsRevoluteJoint"))
+      std::lock_guard<std::mutex> lock(this->dataPtr->jointStateMsgMutex);
+      for (auto const &prim : range)
       {
-        auto attrTargetPos = prim.GetAttribute(
-            pxr::TfToken("drive:angular:physics:targetPosition"));
-
-        auto relBody0 = prim.GetRelationships();
-        std::vector<ignition::math::Quaterniond> qVector;
-        for (auto & rel : relBody0)
+        std::string primType = prim.GetPrimTypeInfo().GetTypeName().GetText();
+        if (primType == std::string("PhysicsRevoluteJoint"))
         {
-          pxr::SdfPathVector paths;
-          rel.GetTargets(&paths);
-          for (auto p: paths)
-          {
-            auto modelUSD = stage->GetPrimAtPath(p);
-            auto xform = pxr::UsdGeomXformable(modelUSD);
-            auto transforms = GetOp(xform);
-            ignition::math::Quaterniond qOrient(
-              transforms.rotQ.GetReal(),
-              transforms.rotQ.GetImaginary()[0],
-              transforms.rotQ.GetImaginary()[1],
-              transforms.rotQ.GetImaginary()[2]);
-            qVector.emplace_back(qOrient);
-            std::cerr << "pxr::TfStringify(p) " << pxr::TfStringify(p)  << "\t" << qOrient.Yaw()*180/3.1416 << '\n';
-          }
-        }
+              std::string topic = transport::TopicUtils::AsValidTopic(
+              std::string("/model/") + std::string("panda") +
+              std::string("/joint/") + prim.GetPath().GetName() +
+              std::string("/0/cmd_pos"));
 
-        double angle_L1L2;
-        ignition::math::Vector3d axis_L1L2;
-        auto R_L1L2 = (qVector[0].Inverse() * qVector[1]);
-        std::cerr << "q " << R_L1L2.W() << "\t"
-                          << R_L1L2.X() << "\t"
-                          << R_L1L2.Y() << "\t"
-                          << R_L1L2.Z() << '\n';
-        R_L1L2.ToAxis(axis_L1L2, angle_L1L2);
-        axis_L1L2.Normalize();
-        // std::cerr << "angle " << angle_L1L2*180/3.1416 << '\n';
-        // std::cerr << "axis " << axis_L1L2.X() << "\t"
-        //                      << axis_L1L2.Y() << "\t"
-        //                      << axis_L1L2.Z() << '\n';
-        double pos = axis_L1L2.Dot(ignition::math::Vector3d::UnitZ) * angle_L1L2;
-        // std::cerr << "pos : " << pos*180/3.1416 << '\n';
-
-
-        if (attrTargetPos)
-        {
-          // Subscribe to commands
-          std::string topic = transport::TopicUtils::AsValidTopic(
-            std::string("/model/") + std::string("panda") +
-            std::string("/joint/") + prim.GetPath().GetName() +
-            std::string("/0/cmd_pos"));
-
-          auto pub = this->dataPtr->revoluteJointPublisher.find(topic);
-          if (pub == this->dataPtr->revoluteJointPublisher.end())
-          {
-            this->dataPtr->revoluteJointPublisher[topic] =
-              this->dataPtr->node->Advertise<msgs::Double>(topic);
-          }
-          else
-          {
-            msgs::Double cmd;
-            cmd.set_data(pos);
-            pub->second.Publish(cmd);
-          }
-        }
-        else
-        {
-          prim.CreateAttribute(
-            pxr::TfToken("drive:angular:physics:targetPosition"),
-            pxr::SdfValueTypeNames->Float, false).Set(0.0f);
+            auto pub = this->dataPtr->revoluteJointPublisher.find(topic);
+            if (pub == this->dataPtr->revoluteJointPublisher.end())
+            {
+              this->dataPtr->revoluteJointPublisher[topic] =
+                this->dataPtr->node.Advertise<msgs::Double>(topic);
+            }
+            else
+            {
+              msgs::Double cmd;
+              float pos = this->dataPtr->jointStateMap[prim.GetName()];
+              cmd.set_data(pos);
+              pub->second.Publish(cmd);
+            }
         }
       }
     }
@@ -437,8 +410,8 @@ void FUSDNoticeListener::Handle(
     {
       bool result;
       ignition::msgs::Boolean rep;
-      unsigned int timeout = 500;
-      bool executed = this->dataPtr->node->Request(
+      unsigned int timeout = 100;
+      bool executed = this->dataPtr->node.Request(
         "/world/" + this->dataPtr->worldName + "/set_pose_vector",
         req, timeout, rep, result);
       if (executed)

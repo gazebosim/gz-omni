@@ -352,7 +352,7 @@ bool Scene::Implementation::UpdateVisual(const ignition::msgs::Visual &_visual,
   // Use ReplaceOperations to append in place.
   if (!listOpPanda.ReplaceOperations(pxr::SdfListOpTypeExplicit,
        0, 0, {appliedSchemaNamePhysicsCollisionAPI})) {
-     std::cerr << "Error Applying schema PhysicsCollisionAPI" << '\n';
+     ignerr << "Error Applying schema PhysicsCollisionAPI" << '\n';
   }
   primSpec->SetInfo(
     pxr::UsdTokens->apiSchemas, pxr::VtValue::Take(listOpPanda));
@@ -425,7 +425,8 @@ bool Scene::Implementation::UpdateLink(const ignition::msgs::Link &_link,
 }
 
 //////////////////////////////////////////////////
-bool Scene::Implementation::UpdateJoint(const ignition::msgs::Joint &_joint)
+bool Scene::Implementation::UpdateJoint(
+  const ignition::msgs::Joint &_joint)
 {
   // TODO: this is not tested
   auto stage = this->stage->Lock();
@@ -620,6 +621,9 @@ bool Scene::Implementation::UpdateModel(const ignition::msgs::Model &_model)
   auto stage = this->stage->Lock();
 
   std::string modelName = _model.name();
+
+  if (modelName.empty())
+    return true;
 
   auto range = pxr::UsdPrimRange::Stage(*stage);
   for (auto const &prim : range)
