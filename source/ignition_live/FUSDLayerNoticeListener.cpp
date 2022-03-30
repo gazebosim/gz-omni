@@ -35,7 +35,7 @@ public:
 };
 
 FUSDLayerNoticeListener::FUSDLayerNoticeListener(
-  std::shared_ptr<ThreadSafe<pxr::UsdStageRefPtr>> _stage,
+  std::shared_ptr<ThreadSafe<pxr::UsdStageRefPtr>> &_stage,
   const std::string& _worldName)
     : dataPtr(ignition::utils::MakeUniqueImpl<Implementation>())
 {

@@ -52,9 +52,10 @@ class Scene::Implementation
  public:
   std::string worldName;
   std::shared_ptr<ThreadSafe<pxr::UsdStageRefPtr>> stage;
-  std::shared_ptr<ignition::transport::Node> node;
+  ignition::transport::Node node;
   std::string stageDirUrl;
   std::unordered_map<uint32_t, pxr::UsdPrim> entities;
+  std::unordered_map<std::string, uint32_t> entitiesByName;
 
   std::shared_ptr<FUSDLayerNoticeListener> USDLayerNoticeListener;
   std::shared_ptr<FUSDNoticeListener> USDNoticeListener;
@@ -69,7 +70,8 @@ class Scene::Implementation
                     const std::string &_usdPath);
   bool UpdateLink(const ignition::msgs::Link &_link,
                   const std::string &_usdModelPath);
-  bool UpdateJoint(const ignition::msgs::Joint &_joint);
+  bool UpdateJoint(const ignition::msgs::Joint &_joint,
+                   const std::string &_modelName);
   bool UpdateModel(const ignition::msgs::Model &_model);
   void SetPose(const pxr::UsdGeomXformCommonAPI &_prim,
                const ignition::msgs::Pose &_pose);
@@ -88,13 +90,12 @@ Scene::Scene(
   const std::string &_worldName,
   const std::string &_stageUrl,
   Simulator _simulatorPoses)
-    : dataPtr(ignition::utils::MakeImpl<Implementation>())
+    : dataPtr(ignition::utils::MakeUniqueImpl<Implementation>())
 {
   ignmsg << "Opened stage [" << _stageUrl << "]" << std::endl;
   this->dataPtr->worldName = _worldName;
   this->dataPtr->stage = std::make_shared<ThreadSafe<pxr::UsdStageRefPtr>>(
       pxr::UsdStage::Open(_stageUrl));
-  this->dataPtr->node = std::make_shared<ignition::transport::Node>();
   this->dataPtr->stageDirUrl = ignition::common::parentPath(_stageUrl);
 
   this->dataPtr->simulatorPoses = _simulatorPoses;
@@ -112,16 +113,20 @@ void Scene::Implementation::SetPose(const pxr::UsdGeomXformCommonAPI &_prim,
 {
   if (this->simulatorPoses == Simulator::Ignition)
   {
-    pxr::UsdGeomXformCommonAPI xformApi(_prim);
-    const auto &pos = _pose.position();
-    const auto &orient = _pose.orientation();
-    ignition::math::Quaterniond quat(orient.w(), orient.x(), orient.y(),
-                                     orient.z());
-    xformApi.SetTranslate(pxr::GfVec3d(pos.x(), pos.y(), pos.z()));
-    xformApi.SetRotate(pxr::GfVec3f(ignition::math::Angle(quat.Roll()).Degree(),
-                                    ignition::math::Angle(quat.Pitch()).Degree(),
-                                    ignition::math::Angle(quat.Yaw()).Degree()),
-                       pxr::UsdGeomXformCommonAPI::RotationOrderXYZ);
+    if (_prim)
+    {
+      pxr::UsdGeomXformCommonAPI xformApi(_prim);
+      const auto &pos = _pose.position();
+      const auto &orient = _pose.orientation();
+      ignition::math::Quaterniond quat(orient.w(), orient.x(), orient.y(),
+                                       orient.z());
+      xformApi.SetTranslate(pxr::GfVec3d(pos.x(), pos.y(), pos.z()));
+      xformApi.SetRotate(pxr::GfVec3f(
+          ignition::math::Angle(quat.Roll()).Degree(),
+          ignition::math::Angle(quat.Pitch()).Degree(),
+          ignition::math::Angle(quat.Yaw()).Degree()),
+        pxr::UsdGeomXformCommonAPI::RotationOrderXYZ);
+    }
   }
 }
 
@@ -187,6 +192,7 @@ bool Scene::Implementation::UpdateVisual(const ignition::msgs::Visual &_visual,
     this->ResetPose(xformApi);
   }
   this->entities[_visual.id()] = usdVisualXform.GetPrim();
+  this->entitiesByName[usdVisualXform.GetPrim().GetName()] = _visual.id();
 
   std::string usdGeomPath(usdVisualPath + "/geometry");
   const auto &geom = _visual.geometry();
@@ -374,10 +380,21 @@ bool Scene::Implementation::UpdateLink(const ignition::msgs::Link &_link,
     suffix = "";
   }
 
-  std::string usdLinkPath = _usdModelPath + "/" + _link.name() + suffix;
+  std::string usdLinkPath = _usdModelPath + "/" + _link.name();
   auto prim = stage->GetPrimAtPath(pxr::SdfPath(usdLinkPath));
   if (prim)
+  {
     return true;
+  }
+  else
+  {
+    usdLinkPath = _usdModelPath + "/" + _link.name() + suffix;
+    prim = stage->GetPrimAtPath(pxr::SdfPath(usdLinkPath));
+    if (prim)
+    {
+      return true;
+    }
+  }
 
   auto xform = pxr::UsdGeomXform::Define(*stage, pxr::SdfPath(usdLinkPath));
   pxr::UsdGeomXformCommonAPI xformApi(xform);
@@ -391,6 +408,7 @@ bool Scene::Implementation::UpdateLink(const ignition::msgs::Link &_link,
     this->ResetPose(xformApi);
   }
   this->entities[_link.id()] = xform.GetPrim();
+  this->entitiesByName[xform.GetPrim().GetName()] = _link.id();
 
   for (const auto &visual : _link.visual())
   {
@@ -426,191 +444,203 @@ bool Scene::Implementation::UpdateLink(const ignition::msgs::Link &_link,
 
 //////////////////////////////////////////////////
 bool Scene::Implementation::UpdateJoint(
-  const ignition::msgs::Joint &_joint)
+  const ignition::msgs::Joint &_joint, const std::string &_modelName)
 {
-  // TODO: this is not tested
   auto stage = this->stage->Lock();
   auto jointUSD =
       stage->GetPrimAtPath(pxr::SdfPath("/" + worldName + "/" + _joint.name()));
   // TODO(ahcorde): This code is duplicated in the sdformat converter.
   if (!jointUSD)
   {
-    switch (_joint.type())
+    jointUSD =
+        stage->GetPrimAtPath(
+          pxr::SdfPath(
+            "/" + worldName + "/" + _modelName + "/" + _joint.name()));
+    if (!jointUSD)
     {
-      case ignition::msgs::Joint::FIXED:
+      switch (_joint.type())
       {
-        pxr::TfToken usdPrimTypeName("PhysicsFixedJoint");
-        auto jointFixedUSD = stage->DefinePrim(
-          pxr::SdfPath("/" + this->worldName + "/" + _joint.name()),
-          usdPrimTypeName);
+        case ignition::msgs::Joint::FIXED:
+        {
+          pxr::TfToken usdPrimTypeName("PhysicsFixedJoint");
+          auto jointFixedUSD = stage->DefinePrim(
+            pxr::SdfPath("/" + this->worldName + "/" + _joint.name()),
+            usdPrimTypeName);
 
-        auto body0 = jointFixedUSD.CreateRelationship(
-          pxr::TfToken("physics:body0"), false);
-        body0.AddTarget(pxr::SdfPath(
-          "/" + this->worldName + "/" + _joint.parent()));
-        auto body1 = jointFixedUSD.CreateRelationship(
-          pxr::TfToken("physics:body1"), false);
-        body1.AddTarget(pxr::SdfPath(
-          "/" + this->worldName + "/" + _joint.child()));
+          auto body0 = jointFixedUSD.CreateRelationship(
+            pxr::TfToken("physics:body0"), false);
+          body0.AddTarget(pxr::SdfPath(
+            "/" + this->worldName + "/" + _joint.parent()));
+          auto body1 = jointFixedUSD.CreateRelationship(
+            pxr::TfToken("physics:body1"), false);
+          body1.AddTarget(pxr::SdfPath(
+            "/" + this->worldName + "/" + _joint.child()));
 
-        jointFixedUSD.CreateAttribute(pxr::TfToken("physics:localPos1"),
-                pxr::SdfValueTypeNames->Point3fArray, false).Set(
-                  pxr::GfVec3f(0, 0, 0));
+          jointFixedUSD.CreateAttribute(pxr::TfToken("physics:localPos1"),
+                  pxr::SdfValueTypeNames->Point3fArray, false).Set(
+                    pxr::GfVec3f(0, 0, 0));
 
-        jointFixedUSD.CreateAttribute(pxr::TfToken("physics:localPos0"),
-                pxr::SdfValueTypeNames->Point3fArray, false).Set(
-                  pxr::GfVec3f(_joint.pose().position().x(),
-                               _joint.pose().position().y(),
-                               _joint.pose().position().z()));
-        return true;
+          jointFixedUSD.CreateAttribute(pxr::TfToken("physics:localPos0"),
+                  pxr::SdfValueTypeNames->Point3fArray, false).Set(
+                    pxr::GfVec3f(_joint.pose().position().x(),
+                                 _joint.pose().position().y(),
+                                 _joint.pose().position().z()));
+          return true;
+        }
+        case ignition::msgs::Joint::REVOLUTE:
+        {
+          igndbg << "Creating a revolute joint" << '\n';
+
+          pxr::TfToken usdPrimTypeName("PhysicsRevoluteJoint");
+          auto revoluteJointUSD = stage->DefinePrim(
+            pxr::SdfPath("/" + this->worldName + "/" + _joint.name()),
+            usdPrimTypeName);
+
+          igndbg << "\tParent "
+                 << "/" + this->worldName + "/" + _joint.parent() << '\n';
+          igndbg << "\tchild "
+                 << "/" + this->worldName + "/" + _joint.child() << '\n';
+
+          pxr::TfTokenVector identifiersBody0 =
+              {pxr::TfToken("physics"), pxr::TfToken("body0")};
+
+          if (pxr::UsdRelationship body0 = revoluteJointUSD.CreateRelationship(
+            pxr::TfToken(pxr::SdfPath::JoinIdentifier(identifiersBody0)), false))
+          {
+            body0.AddTarget(
+              pxr::SdfPath("/" + this->worldName + "/panda/" + _joint.parent()),
+              pxr::UsdListPositionFrontOfAppendList);
+          }
+          else
+          {
+            igndbg << "Not able to create UsdRelationship for body1" << '\n';
+          }
+
+          pxr::TfTokenVector identifiersBody1 =
+              {pxr::TfToken("physics"), pxr::TfToken("body1")};
+
+          if (pxr::UsdRelationship body1 = revoluteJointUSD.CreateRelationship(
+            pxr::TfToken(pxr::SdfPath::JoinIdentifier(identifiersBody1)), false))
+          {
+            body1.AddTarget(
+              pxr::SdfPath("/" + this->worldName + "/panda/" + _joint.child()),
+              pxr::UsdListPositionFrontOfAppendList);
+          }
+          else
+          {
+            igndbg << "Not able to create UsdRelationship for body1" << '\n';
+          }
+
+          ignition::math::Vector3i axis(
+            _joint.axis1().xyz().x(),
+            _joint.axis1().xyz().y(),
+            _joint.axis1().xyz().z());
+
+          if (axis == ignition::math::Vector3i(1, 0, 0))
+          {
+            revoluteJointUSD.CreateAttribute(pxr::TfToken("physics:axis"),
+              pxr::SdfValueTypeNames->Token, false).Set(pxr::TfToken("X"));
+          }
+          else if (axis == ignition::math::Vector3i(0, 1, 0))
+          {
+            revoluteJointUSD.CreateAttribute(pxr::TfToken("physics:axis"),
+              pxr::SdfValueTypeNames->Token, false).Set(pxr::TfToken("Y"));
+          }
+          else if (axis == ignition::math::Vector3i(0, 0, 1))
+          {
+            revoluteJointUSD.CreateAttribute(pxr::TfToken("physics:axis"),
+              pxr::SdfValueTypeNames->Token, false).Set(pxr::TfToken("Z"));
+          }
+
+          revoluteJointUSD.CreateAttribute(pxr::TfToken("physics:localPos1"),
+                  pxr::SdfValueTypeNames->Point3f, false).Set(
+                    pxr::GfVec3f(0, 0, 0));
+
+          revoluteJointUSD.CreateAttribute(pxr::TfToken("physics:localPos0"),
+            pxr::SdfValueTypeNames->Point3f, false).Set(
+              pxr::GfVec3f(
+                _joint.pose().position().x(),
+                _joint.pose().position().y(),
+                _joint.pose().position().z()));
+
+          revoluteJointUSD.CreateAttribute(
+            pxr::TfToken("drive:angular:physics:damping"),
+            pxr::SdfValueTypeNames->Float, false).Set(100000.0f);
+          revoluteJointUSD.CreateAttribute(
+            pxr::TfToken("drive:angular:physics:stiffness"),
+            pxr::SdfValueTypeNames->Float, false).Set(1000000.0f);
+
+          revoluteJointUSD.CreateAttribute(
+            pxr::TfToken("drive:angular:physics:targetPosition"),
+            pxr::SdfValueTypeNames->Float, false).Set(0.0f);
+
+          revoluteJointUSD.CreateAttribute(
+            pxr::TfToken("physics:lowerLimit"),
+            pxr::SdfValueTypeNames->Float, false).Set(
+              static_cast<float>(_joint.axis1().limit_lower() * 180 / 3.1416));
+
+          revoluteJointUSD.CreateAttribute(
+            pxr::TfToken("physics:upperLimit"),
+            pxr::SdfValueTypeNames->Float, false).Set(
+              static_cast<float>(_joint.axis1().limit_upper() * 180 / 3.1416));
+
+          pxr::TfToken appliedSchemaNamePhysicsArticulationRootAPI(
+            "PhysicsArticulationRootAPI");
+          pxr::TfToken appliedSchemaNamePhysxArticulationAPI(
+            "PhysxArticulationAPI");
+          pxr::SdfPrimSpecHandle primSpecPanda = pxr::SdfCreatePrimInLayer(
+            stage->GetEditTarget().GetLayer(),
+            pxr::SdfPath("/" + this->worldName + "/panda"));
+          pxr::SdfTokenListOp listOpPanda;
+          // Use ReplaceOperations to append in place.
+          if (!listOpPanda.ReplaceOperations(
+            pxr::SdfListOpTypeExplicit,
+            0,
+            0,
+            {appliedSchemaNamePhysicsArticulationRootAPI,
+             appliedSchemaNamePhysxArticulationAPI})) {
+            ignerr << "Not able to setup the schema PhysxArticulationAPI "
+                   << "and PhysicsArticulationRootAPI\n";
+          }
+          primSpecPanda->SetInfo(
+            pxr::UsdTokens->apiSchemas, pxr::VtValue::Take(listOpPanda));
+
+          pxr::TfToken appliedSchemaName("PhysicsDriveAPI:angular");
+          pxr::SdfPrimSpecHandle primSpec = pxr::SdfCreatePrimInLayer(
+            stage->GetEditTarget().GetLayer(),
+            pxr::SdfPath("/" + this->worldName + "/" + _joint.name()));
+          pxr::SdfTokenListOp listOp;
+
+          // Use ReplaceOperations to append in place.
+          if (!listOp.ReplaceOperations(pxr::SdfListOpTypeExplicit,
+                  0, 0, {appliedSchemaName})) {
+            ignerr << "Not able to setup the schema PhysicsDriveAPI\n";
+          }
+
+          primSpec->SetInfo(
+            pxr::UsdTokens->apiSchemas, pxr::VtValue::Take(listOp));
+          break;
+        }
+        default:
+          return false;
       }
-      case ignition::msgs::Joint::REVOLUTE:
-      {
-        igndbg << "Creating a revolute joint" << '\n';
-
-        pxr::TfToken usdPrimTypeName("PhysicsRevoluteJoint");
-        auto revoluteJointUSD = stage->DefinePrim(
-          pxr::SdfPath("/" + this->worldName + "/" + _joint.name()),
-          usdPrimTypeName);
-
-        igndbg << "\tParent "
-               << "/" + this->worldName + "/" + _joint.parent() << '\n';
-        igndbg << "\tchild "
-               << "/" + this->worldName + "/" + _joint.child() << '\n';
-
-        pxr::TfTokenVector identifiersBody0 =
-            {pxr::TfToken("physics"), pxr::TfToken("body0")};
-
-        if (pxr::UsdRelationship body0 = revoluteJointUSD.CreateRelationship(
-          pxr::TfToken(pxr::SdfPath::JoinIdentifier(identifiersBody0)), false))
-        {
-          body0.AddTarget(
-            pxr::SdfPath("/" + this->worldName + "/panda/" + _joint.parent()),
-            pxr::UsdListPositionFrontOfAppendList);
-        }
-        else
-        {
-          igndbg << "Not able to create UsdRelationship for body1" << '\n';
-        }
-
-        pxr::TfTokenVector identifiersBody1 =
-            {pxr::TfToken("physics"), pxr::TfToken("body1")};
-
-        if (pxr::UsdRelationship body1 = revoluteJointUSD.CreateRelationship(
-          pxr::TfToken(pxr::SdfPath::JoinIdentifier(identifiersBody1)), false))
-        {
-          body1.AddTarget(
-            pxr::SdfPath("/" + this->worldName + "/panda/" + _joint.child()),
-            pxr::UsdListPositionFrontOfAppendList);
-        }
-        else
-        {
-          igndbg << "Not able to create UsdRelationship for body1" << '\n';
-        }
-
-        ignition::math::Vector3i axis(
-          _joint.axis1().xyz().x(),
-          _joint.axis1().xyz().y(),
-          _joint.axis1().xyz().z());
-
-        if (axis == ignition::math::Vector3i(1, 0, 0))
-        {
-          revoluteJointUSD.CreateAttribute(pxr::TfToken("physics:axis"),
-            pxr::SdfValueTypeNames->Token, false).Set(pxr::TfToken("X"));
-        }
-        else if (axis == ignition::math::Vector3i(0, 1, 0))
-        {
-          revoluteJointUSD.CreateAttribute(pxr::TfToken("physics:axis"),
-            pxr::SdfValueTypeNames->Token, false).Set(pxr::TfToken("Y"));
-        }
-        else if (axis == ignition::math::Vector3i(0, 0, 1))
-        {
-          revoluteJointUSD.CreateAttribute(pxr::TfToken("physics:axis"),
-            pxr::SdfValueTypeNames->Token, false).Set(pxr::TfToken("Z"));
-        }
-
-        revoluteJointUSD.CreateAttribute(pxr::TfToken("physics:localPos1"),
-                pxr::SdfValueTypeNames->Point3f, false).Set(
-                  pxr::GfVec3f(0, 0, 0));
-
-        revoluteJointUSD.CreateAttribute(pxr::TfToken("physics:localPos0"),
-          pxr::SdfValueTypeNames->Point3f, false).Set(
-            pxr::GfVec3f(
-              _joint.pose().position().x(),
-              _joint.pose().position().y(),
-              _joint.pose().position().z()));
-
-        revoluteJointUSD.CreateAttribute(
-          pxr::TfToken("drive:angular:physics:damping"),
-          pxr::SdfValueTypeNames->Float, false).Set(100000.0f);
-        revoluteJointUSD.CreateAttribute(
-          pxr::TfToken("drive:angular:physics:stiffness"),
-          pxr::SdfValueTypeNames->Float, false).Set(1000000.0f);
-
-        revoluteJointUSD.CreateAttribute(
-          pxr::TfToken("drive:angular:physics:targetPosition"),
-          pxr::SdfValueTypeNames->Float, false).Set(0.0f);
-
-        revoluteJointUSD.CreateAttribute(
-          pxr::TfToken("physics:lowerLimit"),
-          pxr::SdfValueTypeNames->Float, false).Set(
-            static_cast<float>(_joint.axis1().limit_lower() * 180 / 3.1416));
-
-        revoluteJointUSD.CreateAttribute(
-          pxr::TfToken("physics:upperLimit"),
-          pxr::SdfValueTypeNames->Float, false).Set(
-            static_cast<float>(_joint.axis1().limit_upper() * 180 / 3.1416));
-
-        pxr::TfToken appliedSchemaNamePhysicsArticulationRootAPI(
-          "PhysicsArticulationRootAPI");
-        pxr::TfToken appliedSchemaNamePhysxArticulationAPI(
-          "PhysxArticulationAPI");
-        pxr::SdfPrimSpecHandle primSpecPanda = pxr::SdfCreatePrimInLayer(
-          stage->GetEditTarget().GetLayer(),
-          pxr::SdfPath("/" + this->worldName + "/panda"));
-        pxr::SdfTokenListOp listOpPanda;
-        // Use ReplaceOperations to append in place.
-        if (!listOpPanda.ReplaceOperations(
-          pxr::SdfListOpTypeExplicit,
-          0,
-          0,
-          {appliedSchemaNamePhysicsArticulationRootAPI,
-           appliedSchemaNamePhysxArticulationAPI})) {
-          ignerr << "Not able to setup the schema PhysxArticulationAPI "
-                 << "and PhysicsArticulationRootAPI\n";
-        }
-        primSpecPanda->SetInfo(
-          pxr::UsdTokens->apiSchemas, pxr::VtValue::Take(listOpPanda));
-
-        pxr::TfToken appliedSchemaName("PhysicsDriveAPI:angular");
-        pxr::SdfPrimSpecHandle primSpec = pxr::SdfCreatePrimInLayer(
-          stage->GetEditTarget().GetLayer(),
-          pxr::SdfPath("/" + this->worldName + "/" + _joint.name()));
-        pxr::SdfTokenListOp listOp;
-
-        // Use ReplaceOperations to append in place.
-        if (!listOp.ReplaceOperations(pxr::SdfListOpTypeExplicit,
-                0, 0, {appliedSchemaName})) {
-          ignerr << "Not able to setup the schema PhysicsDriveAPI\n";
-        }
-
-        primSpec->SetInfo(
-          pxr::UsdTokens->apiSchemas, pxr::VtValue::Take(listOp));
-        break;
-      }
-      default:
-        return false;
     }
   }
-  // auto driveJoint = pxr::UsdPhysicsDriveAPI(jointUSD);
   auto attrTargetPos = jointUSD.GetAttribute(
       pxr::TfToken("drive:angular:physics:targetPosition"));
   if (attrTargetPos)
   {
-    float pos;
-    attrTargetPos.Get(&pos);
     attrTargetPos.Set(pxr::VtValue(
-        ignition::math::Angle(_joint.axis1().position()).Degree()));
+        static_cast<float>(
+          ignition::math::Angle(_joint.axis1().position()).Degree())));
+  }
+  else
+  {
+    jointUSD.CreateAttribute(
+      pxr::TfToken("drive:angular:physics:targetPosition"),
+      pxr::SdfValueTypeNames->Float, false).Set(
+        static_cast<float>(
+          ignition::math::Angle(_joint.axis1().position()).Degree()));
   }
   return true;
 }
@@ -639,6 +669,8 @@ bool Scene::Implementation::UpdateModel(const ignition::msgs::Model &_model)
       if (prim)
       {
         this->entities[_model.id()] = prim;
+        this->entitiesByName[prim.GetName()] = _model.id();
+
         for (const auto &link : _model.link())
         {
           std::string linkName = link.name();
@@ -651,9 +683,16 @@ bool Scene::Implementation::UpdateModel(const ignition::msgs::Model &_model)
           std::string usdLinkPath = usdModelPath + "/" + linkName + suffix;
           auto linkPrim = stage->GetPrimAtPath(
                 pxr::SdfPath(usdLinkPath));
+          if (!linkPrim)
+          {
+            usdLinkPath = usdModelPath + "/" + linkName;
+            linkPrim = stage->GetPrimAtPath(
+                  pxr::SdfPath(usdLinkPath));
+          }
           if (linkPrim)
           {
             this->entities[link.id()] = linkPrim;
+            this->entitiesByName[linkPrim.GetName()] = link.id();
             for (const auto &visual : link.visual())
             {
               std::string visualName = visual.name();
@@ -670,6 +709,19 @@ bool Scene::Implementation::UpdateModel(const ignition::msgs::Model &_model)
               if (visualPrim)
               {
                 this->entities[visual.id()] = visualPrim;
+                this->entitiesByName[visualPrim.GetName()] = visual.id();
+              }
+              else
+              {
+                usdvisualPath =
+                  usdLinkPath + "/" + visualName;
+                visualPrim = stage->GetPrimAtPath(
+                      pxr::SdfPath(usdvisualPath));
+                if (visualPrim)
+                {
+                  this->entities[visual.id()] = visualPrim;
+                  this->entitiesByName[visualPrim.GetName()] = visual.id();
+                }
               }
             }
             for (const auto &light : link.light())
@@ -681,33 +733,21 @@ bool Scene::Implementation::UpdateModel(const ignition::msgs::Model &_model)
               if (lightPrim)
               {
                 this->entities[light.id()] = lightPrim;
+                this->entitiesByName[lightPrim.GetName()] = light.id();
               }
             }
           }
         }
       }
-      else
-      {
-        this->entities[_model.id()] = pxr::UsdPrim();
-        for (const auto &link : _model.link())
-        {
-          this->entities[link.id()] = pxr::UsdPrim();
-          for (const auto &visual : link.visual())
-          {
-            this->entities[visual.id()] = pxr::UsdPrim();
-          }
-        }
-        ignwarn << "We can not update this model [" << _model.name()
-                <<  "]. This model should be a child of a XForm " << std::endl;
-      }
-
-      return true;
     }
   }
 
   std::replace(modelName.begin(), modelName.end(), ' ', '_');
 
   std::string usdModelPath = "/" + worldName + "/" + modelName;
+
+  this->entitiesByName[modelName] = _model.id();
+
   auto xform = pxr::UsdGeomXform::Define(*stage, pxr::SdfPath(usdModelPath));
   pxr::UsdGeomXformCommonAPI xformApi(xform);
   if (_model.has_scale())
@@ -739,7 +779,7 @@ bool Scene::Implementation::UpdateModel(const ignition::msgs::Model &_model)
 
   for (const auto &joint : _model.joint())
   {
-    if (!this->UpdateJoint(joint))
+    if (!this->UpdateJoint(joint, _model.name()))
     {
       ignerr << "Failed to update model [" << modelName << "]" << std::endl;
       return false;
@@ -885,6 +925,7 @@ bool Scene::Implementation::UpdateLights(const ignition::msgs::Light &_light,
       auto pointLight = pxr::UsdLuxSphereLight::Define(*stage, sdfLightPath);
       pointLight.CreateTreatAsPointAttr().Set(true);
       this->entities[_light.id()] = pointLight.GetPrim();
+      this->entitiesByName[pointLight.GetPrim().GetName()] = _light.id();
       pointLight.CreateRadiusAttr(pxr::VtValue(0.1f));
       pointLight.CreateColorAttr(pxr::VtValue(pxr::GfVec3f(
           _light.diffuse().r(), _light.diffuse().g(), _light.diffuse().b())));
@@ -894,6 +935,7 @@ bool Scene::Implementation::UpdateLights(const ignition::msgs::Light &_light,
     {
       auto diskLight = pxr::UsdLuxDiskLight::Define(*stage, sdfLightPath);
       this->entities[_light.id()] = diskLight.GetPrim();
+      this->entitiesByName[diskLight.GetPrim().GetName()] = _light.id();
       diskLight.CreateColorAttr(pxr::VtValue(pxr::GfVec3f(
           _light.diffuse().r(), _light.diffuse().g(), _light.diffuse().b())));
       break;
@@ -903,6 +945,7 @@ bool Scene::Implementation::UpdateLights(const ignition::msgs::Light &_light,
       auto directionalLight =
           pxr::UsdLuxDistantLight::Define(*stage, sdfLightPath);
       this->entities[_light.id()] = directionalLight.GetPrim();
+      this->entitiesByName[directionalLight.GetPrim().GetName()] = _light.id();
       directionalLight.CreateColorAttr(pxr::VtValue(pxr::GfVec3f(
           _light.diffuse().r(), _light.diffuse().g(), _light.diffuse().b())));
       break;
@@ -932,7 +975,7 @@ bool Scene::Init()
   bool result;
   ignition::msgs::Empty req;
   ignition::msgs::Scene ignScene;
-  if (!this->dataPtr->node->Request(
+  if (!this->dataPtr->node.Request(
           "/world/" + this->dataPtr->worldName + "/scene/info", req, 5000,
           ignScene, result))
   {
@@ -940,7 +983,7 @@ bool Scene::Init()
             << this->dataPtr->worldName
             << "] is available, ignition-omniverse will keep trying..."
             << std::endl;
-    if (!this->dataPtr->node->Request(
+    if (!this->dataPtr->node.Request(
             "/world/" + this->dataPtr->worldName + "/scene/info", req, -1,
             ignScene, result))
     {
@@ -955,14 +998,14 @@ bool Scene::Init()
   }
 
   std::vector<std::string> topics;
-  this->dataPtr->node->TopicList(topics);
+  this->dataPtr->node.TopicList(topics);
 
   for (auto const &topic : topics)
   {
     if (topic.find("/joint_state") != std::string::npos)
     {
-      if (!this->dataPtr->node->Subscribe(
-        topic, &Scene::Implementation::CallbackJoint, this->dataPtr.Get()))
+      if (!this->dataPtr->node.Subscribe(
+        topic, &Scene::Implementation::CallbackJoint, this->dataPtr.get()))
       {
         ignerr << "Error subscribing to topic [" << topic << "]" << std::endl;
         return false;
@@ -976,8 +1019,8 @@ bool Scene::Init()
 
   std::string topic = "/world/" + this->dataPtr->worldName + "/pose/info";
   // Subscribe to a topic by registering a callback.
-  if (!this->dataPtr->node->Subscribe(
-          topic, &Scene::Implementation::CallbackPoses, this->dataPtr.Get()))
+  if (!this->dataPtr->node.Subscribe(
+          topic, &Scene::Implementation::CallbackPoses, this->dataPtr.get()))
   {
     ignerr << "Error subscribing to topic [" << topic << "]" << std::endl;
     return false;
@@ -988,8 +1031,8 @@ bool Scene::Init()
   }
 
   topic = "/world/" + this->dataPtr->worldName + "/scene/info";
-  if (!this->dataPtr->node->Subscribe(
-          topic, &Scene::Implementation::CallbackScene, this->dataPtr.Get()))
+  if (!this->dataPtr->node.Subscribe(
+          topic, &Scene::Implementation::CallbackScene, this->dataPtr.get()))
   {
     ignerr << "Error subscribing to topic [" << topic << "]" << std::endl;
     return false;
@@ -1000,9 +1043,9 @@ bool Scene::Init()
   }
 
   topic = "/world/" + this->dataPtr->worldName + "/scene/deletion";
-  if (!this->dataPtr->node->Subscribe(
+  if (!this->dataPtr->node.Subscribe(
           topic, &Scene::Implementation::CallbackSceneDeletion,
-          this->dataPtr.Get()))
+          this->dataPtr.get()))
   {
     ignerr << "Error subscribing to topic [" << topic << "]" << std::endl;
     return false;
@@ -1027,7 +1070,8 @@ bool Scene::Init()
   this->dataPtr->USDNoticeListener = std::make_shared<FUSDNoticeListener>(
     this->dataPtr->stage,
     this->dataPtr->worldName,
-    this->dataPtr->simulatorPoses);
+    this->dataPtr->simulatorPoses,
+    this->dataPtr->entitiesByName);
   auto USDNoticeKey = pxr::TfNotice::Register(
       pxr::TfCreateWeakPtr(this->dataPtr->USDNoticeListener.get()),
       &FUSDNoticeListener::Handle);
@@ -1064,7 +1108,15 @@ void Scene::Implementation::CallbackPoses(const ignition::msgs::Pose_V &_msg)
 /// \brief Function called each time a topic update is received.
 void Scene::Implementation::CallbackJoint(const ignition::msgs::Model &_msg)
 {
-  this->UpdateModel(_msg);
+  // this->UpdateModel(_msg);
+  for (const auto &joint : _msg.joint())
+  {
+    if (!this->UpdateJoint(joint, _msg.name()))
+    {
+      ignerr << "Failed to update model [" << _msg.name() << "]" << std::endl;
+      return;
+    }
+  }
 }
 
 //////////////////////////////////////////////////
@@ -1083,9 +1135,11 @@ void Scene::Implementation::CallbackSceneDeletion(
     {
       auto stage = this->stage->Lock();
       const auto &prim = this->entities.at(id);
+      std::string primName = prim.GetName();
       stage->RemovePrim(prim.GetPath());
       ignmsg << "Removed [" << prim.GetPath() << "]" << std::endl;
       this->entities.erase(id);
+      this->entitiesByName.erase(primName);
     }
     catch (const std::out_of_range &)
     {

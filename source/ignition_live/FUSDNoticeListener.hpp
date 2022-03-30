@@ -33,9 +33,10 @@ class FUSDNoticeListener : public pxr::TfWeakBase
 {
  public:
   FUSDNoticeListener(
-    std::shared_ptr<ThreadSafe<pxr::UsdStageRefPtr>> _stage,
+    std::shared_ptr<ThreadSafe<pxr::UsdStageRefPtr>> &_stage,
     const std::string &_worldName,
-    Simulator _simulatorPoses);
+    Simulator _simulatorPoses,
+    std::unordered_map<std::string, uint32_t> &entitiesByName);
 
   void Handle(const class pxr::UsdNotice::ObjectsChanged &ObjectsChanged);
 

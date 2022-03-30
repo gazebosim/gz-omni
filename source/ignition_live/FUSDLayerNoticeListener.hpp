@@ -35,7 +35,7 @@ class FUSDLayerNoticeListener : public pxr::TfWeakBase
 {
  public:
   FUSDLayerNoticeListener(
-    std::shared_ptr<ThreadSafe<pxr::UsdStageRefPtr>> _stage,
+    std::shared_ptr<ThreadSafe<pxr::UsdStageRefPtr>> &_stage,
     const std::string& _worldName);
 
   void HandleGlobalLayerReload(const pxr::SdfNotice::LayerDidReloadContent& n);

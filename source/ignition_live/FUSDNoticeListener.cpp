@@ -104,6 +104,8 @@ public:
 
   std::mutex jointStateMsgMutex;
   std::unordered_map<std::string, double> jointStateMap;
+
+  std::unordered_map<std::string, uint32_t> * entitiesByName;
 };
 
 void FUSDNoticeListener::Implementation::ParseCube(
@@ -131,9 +133,6 @@ void FUSDNoticeListener::Implementation::ParseSphere(
   auto variant_sphere = pxr::UsdGeomSphere(_prim);
   variant_sphere.GetRadiusAttr().Get(&radius);
 
-  // By default isaac sim uses millimeters
-  radius *= 0.01;
-
   sdf::Visual visual;
   sdf::Collision collision;
   sdf::Geometry geom;
@@ -153,14 +152,16 @@ void FUSDNoticeListener::Implementation::ParseSphere(
 }
 
 FUSDNoticeListener::FUSDNoticeListener(
-  std::shared_ptr<ThreadSafe<pxr::UsdStageRefPtr>> _stage,
+  std::shared_ptr<ThreadSafe<pxr::UsdStageRefPtr>> &_stage,
   const std::string &_worldName,
-  Simulator _simulatorPoses)
+  Simulator _simulatorPoses,
+  std::unordered_map<std::string, uint32_t> &_entitiesByName)
     : dataPtr(ignition::utils::MakeUniqueImpl<Implementation>())
 {
   this->dataPtr->stage = _stage;
   this->dataPtr->worldName = _worldName;
   this->dataPtr->simulatorPoses = _simulatorPoses;
+  this->dataPtr->entitiesByName = &_entitiesByName;
 
   std::string jointStateTopic = "/joint_states";
 
@@ -174,7 +175,7 @@ void FUSDNoticeListener::Implementation::jointStateCb(
   const ignition::msgs::Model &_msg)
 {
   std::lock_guard<std::mutex> lock(this->jointStateMsgMutex);
-  for(int i = 0 ; i < _msg.joint_size();++i)
+  for(int i = 0; i < _msg.joint_size(); ++i)
   {
     this->jointStateMap[_msg.joint(i).name()] =
       _msg.joint(i).axis1().position();
@@ -184,10 +185,11 @@ void FUSDNoticeListener::Implementation::jointStateCb(
 void FUSDNoticeListener::Handle(
   const class pxr::UsdNotice::ObjectsChanged &ObjectsChanged)
 {
+  auto stage = this->dataPtr->stage->Lock();
+
   for (const pxr::SdfPath &objectsChanged : ObjectsChanged.GetResyncedPaths())
   {
     ignmsg << "Resynced Path: " << objectsChanged.GetText() << std::endl;
-    auto stage = this->dataPtr->stage->Lock();
     auto modelUSD = stage->GetPrimAtPath(objectsChanged);
     std::string primName = modelUSD.GetName();
 
@@ -199,12 +201,27 @@ void FUSDNoticeListener::Handle(
 
     if (modelUSD)
     {
-      // std::string strPath = objectsChanged.GetText();
-      // if (strPath.find("_link") != std::string::npos
-      //    || strPath.find("_visual") != std::string::npos
-      //    || strPath.find("geometry") != std::string::npos) {
-      //   return;
-      // }
+      std::string strPath = objectsChanged.GetText();
+      if (strPath.find("_link") != std::string::npos
+         || strPath.find("_visual") != std::string::npos
+         || strPath.find("geometry") != std::string::npos) {
+        return;
+      }
+
+      auto it = this->dataPtr->entitiesByName->find(modelUSD.GetName().GetString());
+      if (it != this->dataPtr->entitiesByName->end())
+      {
+        continue;
+      }
+
+      auto range = pxr::UsdPrimRange::Stage(*stage);
+      for (auto const &prim : range)
+      {
+        if (prim.GetName().GetString() == primName)
+        {
+          continue;
+        }
+      }
 
       sdf::Root root;
 
@@ -259,7 +276,6 @@ void FUSDNoticeListener::Handle(
     // this loop checks all paths to find revolute joints
     // if there is some, we get the body0 and body1 and calculate the
     // joint angle.
-    auto stage = this->dataPtr->stage->Lock();
     auto range = pxr::UsdPrimRange::Stage(*stage);
     {
       std::lock_guard<std::mutex> lock(this->dataPtr->jointStateMsgMutex);
@@ -295,7 +311,6 @@ void FUSDNoticeListener::Handle(
     {
       if (std::string(objectsChanged.GetText()) == "/")
         continue;
-      auto stage = this->dataPtr->stage->Lock();
       igndbg << "path " << objectsChanged.GetText() << std::endl;
       auto modelUSD = stage->GetPrimAtPath(objectsChanged.GetParentPath());
       auto property = modelUSD.GetPropertyAtPath(objectsChanged);
