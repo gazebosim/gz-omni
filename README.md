@@ -1,5 +1,7 @@
 # ign-omni
 
+![](./tutorials/hybrid_diagram.png)
+
 **NOTES**:
  - This repository is under development, you might find compilation errors,
 malfunctions or some undocumented features.
