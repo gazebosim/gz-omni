@@ -15,8 +15,6 @@
  *
  */
 
-#include "FUSDLayerNoticeListener.hpp"
-#include "FUSDNoticeListener.hpp"
 #include "GetOp.hpp"
 #include "OmniverseConnect.hpp"
 #include "Scene.hpp"
@@ -29,7 +27,6 @@
 
 #include <ignition/utils/cli.hh>
 
-#include <pxr/usd/usd/stage.h>
 #include <pxr/usd/sdf/path.h>
 #include <pxr/usd/usd/prim.h>
 #include <pxr/usd/usdGeom/xformCommonAPI.h>
@@ -52,8 +49,17 @@ int main(int argc, char* argv[])
       // clang-format on
       ->required();
   std::string worldName;
+  ignition::omniverse::Simulator simulatorPoses{
+    ignition::omniverse::Simulator::Ignition};
   app.add_option("-w,--world", worldName, "Name of the ignition world")
       ->required();
+
+  std::map<std::string, ignition::omniverse::Simulator> map{
+    {"ignition", ignition::omniverse::Simulator::Ignition},
+    {"isaacsim", ignition::omniverse::Simulator::IsaacSim}};
+  app.add_option("--pose", simulatorPoses, "Which simulator will handle the poses")
+      ->required()
+      ->transform(CLI::CheckedTransformer(map, CLI::ignore_case));;
   app.add_flag_callback("-v,--verbose",
                         []() { ignition::common::Console::SetVerbosity(4); });
 
@@ -67,8 +73,6 @@ int main(int argc, char* argv[])
   {
     systemPaths->AddFilePaths(resourcePath);
   }
-
-  pxr::UsdStageRefPtr stage;
 
   // Connect with omniverse
   if (!StartOmniverse())
@@ -94,25 +98,11 @@ int main(int argc, char* argv[])
 
   PrintConnectedUsername(stageUrl);
 
-  Scene scene(worldName, stageUrl);
+  Scene scene(worldName, stageUrl, simulatorPoses);
   if (!scene.Init())
   {
     return -1;
   };
-
-  // TODO: disabled omniverse -> ignition sync to focus on ignition -> omniverse
-  // FUSDLayerNoticeListener USDLayerNoticeListener(scene, worldName);
-  // auto LayerReloadKey = pxr::TfNotice::Register(
-  //     pxr::TfCreateWeakPtr(&USDLayerNoticeListener),
-  //     &FUSDLayerNoticeListener::HandleGlobalLayerReload);
-  // auto LayerChangeKey = pxr::TfNotice::Register(
-  //     pxr::TfCreateWeakPtr(&USDLayerNoticeListener),
-  //     &FUSDLayerNoticeListener::HandleRootOrSubLayerChange,
-  //     stage->GetRootLayer());
-
-  FUSDNoticeListener USDNoticeListener(scene, worldName);
-  auto USDNoticeKey = pxr::TfNotice::Register(
-      pxr::TfCreateWeakPtr(&USDNoticeListener), &FUSDNoticeListener::Handle);
 
   auto lastUpdate = std::chrono::steady_clock::now();
   // don't spam the console, show the fps only once a sec

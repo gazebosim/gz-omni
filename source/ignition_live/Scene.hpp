@@ -52,10 +52,16 @@ namespace ignition
 {
 namespace omniverse
 {
+
+enum class Simulator : int { Ignition, IsaacSim };
+
 class Scene
 {
  public:
-  Scene(const std::string &_worldName, const std::string &_stageUrl);
+  Scene(
+    const std::string &_worldName,
+    const std::string &_stageUrl,
+    Simulator _simulatorPoses);
 
   /// \brief Initialize the scene and subscribes for updates. This blocks until
   /// the scene is initialized.
@@ -69,7 +75,7 @@ class Scene
 
   /// \internal
   /// \brief Private data pointer
-  IGN_UTILS_IMPL_PTR(dataPtr)
+  IGN_UTILS_UNIQUE_IMPL_PTR(dataPtr)
 };
 }  // namespace omniverse
 }  // namespace ignition

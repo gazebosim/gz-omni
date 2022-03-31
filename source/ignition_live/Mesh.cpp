@@ -51,8 +51,8 @@ pxr::UsdGeomMesh UpdateMesh(const ignition::msgs::MeshGeom &_meshMsg,
   std::string home;
   if (!ignition::common::env("HOME", home, false))
   {
-    std::cerr << "The HOME environment variable was not defined, "
-              << "so the resource [" << fullname << "] could not be found\n";
+    ignerr << "The HOME environment variable was not defined, "
+           << "so the resource [" << fullname << "] could not be found\n";
     return pxr::UsdGeomMesh();
   }
   if (uri.Scheme() == "https" || uri.Scheme() == "http")

@@ -19,8 +19,11 @@
 #define IGNITION_OMNIVERSE_GET_OP_HPP
 
 #include <pxr/base/gf/vec3f.h>
+#include <pxr/base/gf/quatf.h>
 #include <pxr/usd/usdGeom/xform.h>
 #include <pxr/usd/usdGeom/xformCommonAPI.h>
+
+#include <ignition/math/Quaternion.hh>
 
 namespace ignition
 {
@@ -33,8 +36,9 @@ class GetOp
   GetOp(pxr::UsdGeomXformable& xForm)
   {
     this->position = pxr::GfVec3d(0);
-    this->rotZYX = pxr::GfVec3f(0);
+    this->rotXYZ = pxr::GfVec3f(0);
     this->scale = pxr::GfVec3f(1);
+    ignition::math::Quaterniond orientQuat;
 
     bool resetXformStack = false;
     std::vector<pxr::UsdGeomXformOp> xFormOps =
@@ -51,7 +55,18 @@ class GetOp
           break;
         case pxr::UsdGeomXformOp::TypeRotateXYZ:
           rotateOp = xFormOps[i];
-          rotateOp.Get(&this->rotZYX);
+          rotateOp.Get(&this->rotXYZ);
+          break;
+        case pxr::UsdGeomXformOp::TypeOrient:
+          rotateOp = xFormOps[i];
+          rotateOp.Get(&this->rotQ);
+          orientQuat = ignition::math::Quaterniond(
+            this->rotQ.GetReal(),
+            this->rotQ.GetImaginary()[0],
+            this->rotQ.GetImaginary()[1],
+            this->rotQ.GetImaginary()[2]);
+          this->rotXYZ = pxr::GfVec3f(
+            orientQuat.Roll(), orientQuat.Pitch(), orientQuat.Yaw());
           break;
         case pxr::UsdGeomXformOp::TypeScale:
           scaleOp = xFormOps[i];
@@ -66,8 +81,9 @@ class GetOp
   pxr::UsdGeomXformOp rotateOp;
   pxr::UsdGeomXformOp scaleOp;
   pxr::GfVec3d position;
-  pxr::GfVec3f rotZYX;
+  pxr::GfVec3f rotXYZ;
   pxr::GfVec3f scale;
+  pxr::GfQuatf rotQ;
 };
 }  // namespace omniverse
 }  // namespace ignition
