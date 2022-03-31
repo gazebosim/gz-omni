@@ -53,7 +53,7 @@ namespace ignition
 namespace omniverse
 {
 
-enum class Simulator : int { Ignition, IssacSim };
+enum class Simulator : int { Ignition, IsaacSim };
 
 class Scene
 {
@@ -75,7 +75,7 @@ class Scene
 
   /// \internal
   /// \brief Private data pointer
-  IGN_UTILS_IMPL_PTR(dataPtr)
+  IGN_UTILS_UNIQUE_IMPL_PTR(dataPtr)
 };
 }  // namespace omniverse
 }  // namespace ignition
