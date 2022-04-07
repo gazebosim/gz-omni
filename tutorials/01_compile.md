@@ -1,6 +1,6 @@
 # How to compile it
 
-## Compile ignition
+## Install Ignition
 
 ```bash
 sudo apt install python3-pip wget lsb-release gnupg curl
@@ -8,24 +8,9 @@ sudo sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main
 curl -s https://raw.githubusercontent.com/ros/rosdistro/master/ros.asc | sudo apt-key add -
 sudo apt-get update
 sudo apt-get install python3-vcstool python3-colcon-common-extensions
-sudo apt-get install git
+sudo apt-get install git libfreeimage-dev
 
-# get sources
-mkdir -p ~/ignition-fortress/src
-cd ~/ignition-fortress/src
-wget https://raw.githubusercontent.com/ignition-tooling/gazebodistro/master/collection-fortress.yaml
-vcs import < collection-fortress.yaml
-
-# install dependencies
-sudo wget https://packages.osrfoundation.org/gazebo.gpg -O /usr/share/keyrings/pkgs-osrf-archive-keyring.gpg
-echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/pkgs-osrf-archive-keyring.gpg] http://packages.osrfoundation.org/gazebo/ubuntu-stable $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/gazebo-stable.list > /dev/null
-sudo apt-get update
-sudo apt -y install \
-  $(sort -u $(find . -iname 'packages-'`lsb_release -cs`'.apt' -o -iname 'packages.apt' | grep -v '/\.git/') | sed '/ignition\|sdf/d' | tr '\n' ' ')
-
-# build
-cd ~/ignition-fortress
-colcon build --cmake-args -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF --merge-install
+sudo apt-get install ignition-fortress
 ```
 
 For more information, see https://ignitionrobotics.org/docs/fortress/install_ubuntu_src.

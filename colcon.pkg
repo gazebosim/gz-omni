@@ -4,3 +4,4 @@ dependencies:
   - ignition-common4
   - ignition-msgs8
   - ignition-transport11
+  - sdformat12
