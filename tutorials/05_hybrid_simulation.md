@@ -19,7 +19,7 @@ Once the connector is running we need to defined which data from sensor or actua
  - Isaac Sim can share the data in the ROS network using some the predefined ROS plugins
 ![](isaac_ros_plugins.png)
 
- - Ignition uses `ros_ign_bridge`, this package provides a network bridge which enables the exchange of messages between ROS 2 and Ignition Transport. You can follow this tutorial to learn more about [how to use ROS Ignition bridges](https://docs.ros.org/en/foxy/Tutorials/Simulators/Ignition/Setting-up-a-Robot-Simulation-Ignition.html)
+ - Ignition uses `ros_ign_bridge`, this package provides a network bridge which enables the exchange of messages between ROS 2 and Ignition Transport. You can follow this tutorial to learn more about [how to use ROS Ignition bridges](https://docs.ros.org/en/galactic/Tutorials/Simulators/Ignition/Setting-up-a-Robot-Simulation-Ignition.html)
 
 ## Demo
 
@@ -35,9 +35,9 @@ In particular will follow this steps:
  - [Turtebot4 Simulation](https://github.com/turtlebot/turtlebot4_simulator)
  - Omniverse Issac Sim
    - [ROS & ROS2 Bridge](https://docs.omniverse.nvidia.com/app_isaacsim/app_isaacsim/ext_omni_isaac_ros_bridge.html)
- - [How to use ROS Ignition bridges](https://docs.ros.org/en/foxy/Tutorials/Simulators/Ignition/Setting-up-a-Robot-Simulation-Ignition.html)
+ - [How to use ROS Ignition bridges](https://docs.ros.org/en/galactic/Tutorials/Simulators/Ignition/Setting-up-a-Robot-Simulation-Ignition.html)
    - ros_ign_bridge
-     - ROS 2: `sudo apt-get install ros-foxy-ros-ign-bridge`
+     - ROS 2: `sudo apt-get install ros-galactic-ros-ign-bridge`
 
 ## Launch a world containing a ROS 2-controlled robot
 
