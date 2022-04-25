@@ -43,7 +43,7 @@ In particular will follow this steps:
 
 In this case we are going to simulate the Turtebot4 available in this [repository](https://github.com/turtlebot/turtlebot4_simulator).
 
-But first we are going to modify the lidar ros_ign_bridge bridge. Edit the file `~/turtlebot4_ws/src/turtlebot4_ignition_bringup/launch/ros_ign_bridge.launch.py`. We should remap the `/scan` ROS 2 topic to `/scan_ignition`. The original file is:
+But first we are going to modify the lidar ros_ign_bridge bridge. Edit the file `~/turtlebot4_ws/src/turtlebot4_simulator/turtlebot4_ignition_bringup/launch/ros_ign_bridge.launch.py`. We should remap the `/scan` ROS 2 topic to `/scan_ignition`. The original file is:
 
 ```python
 remappings=[
@@ -69,23 +69,7 @@ Now you should compile it. Follow the instructions in the [README.md](https://gi
 
 ## Running the connector (ign-omni)
 
-We need to compile some Ignition packages from source with a specific flag due the `omni-client` library.
-To make this process simple we have created the [`ign-omni-meta` repository](https://github.com/ignitionrobotics/ign-omni-meta).
-
-To compile this libraries you should run:
-
-```bash
-mkdir -p ~/ign-omni/src
-cd ~/ign-omni/src
-git clone https://github.com/ignitionrobotics/ign-omni-meta
-vcs import . < ign-omni-meta/repos.yaml
-cd protobuf
-git -C . apply ../ign-omni-meta/protobuf-cmake.patch
-cd ~/ign-omni
-colcon build --merge-install --event-handlers console_direct+ --packages-select protobuf
-cp src/ign-omni-meta/colcon.meta .
-colcon build --merge-install --event-handlers console_direct+ --packages-up-to ignition-omni1
-```
+If you need to compile `ign-omni`, please review this [instructions](01_compile.md).
 
 **Note**: `ignition-omni` will be built under `src/ign-omni/_build`, this is because
 it uses a custom build system by NVidia which is hard coded to put output in that directory.
@@ -103,7 +87,7 @@ You should run the Turtlebot4 simulation in Ignition, we are going to set to tru
 
 ```bash
 source ~/turtlebot4_ws/install/setup.bash
-ros2 launch turtlebot4_ignition_bringup ignition.launch.py slam:=true rviz:=true
+ros2 launch turtlebot4_ignition_bringup ignition.launch.py slam:=sync rviz:=true
 ```
 
 ### Run the connector
