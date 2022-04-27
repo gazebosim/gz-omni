@@ -116,7 +116,7 @@ In particular we need to define:
 ```bash
 source ~/ign-omni/install/setup.bash
 cd ~/ign-omni/src/ign-omni
-export IGN_GAZEBO_RESOURCE_PATH=$IGN_GAZEBO_RESOURCE_PATH:`echo $HOME`/turtlebot4_ws/install/share/:`echo $HOME`/install/turtlebot4_description/share/
+export IGN_GAZEBO_RESOURCE_PATH=$IGN_GAZEBO_RESOURCE_PATH:`echo $HOME`/turtlebot4_ws/install/share/:`echo $HOME`/turtlebot4_ws/install/turtlebot4_description/share/:`echo $HOME`/turtlebot4_ws/install/irobot_create_description/share/
 bash run_ignition_omni.sh -p omniverse://localhost/Users/ignition/turtlebot4.usd -w depot -v --pose ignition
 ```
 
