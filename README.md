@@ -25,6 +25,6 @@ malfunctions or some undocumented features.
 ## Tutorials
   - [How to compile it](tutorials/01_compile.md)
   - [Quickstart](tutorials/02_quickstart.md)
-  - [Mobile base simulation (turtlebot3) (Nav2)](tutorials/01_ROS_simulation.md)
+  - [Mobile base simulation (turtlebot3) (Nav2)](tutorials/03_ROS_simulation.md)
   - [Articulated arm Isaac Sim -> Ignition (Moveit 2)](tutorials/04_articulated_arm_issacsim_to_ignition.md)
   - [Hybrid simulation (Nav2)](tutorials/05_hybrid_simulation.md)
