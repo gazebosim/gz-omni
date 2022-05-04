@@ -43,7 +43,7 @@ Launch `IsaacSim` and activate the `live sync`
 Create this directory `omniverse://localhost/Users/ignition/` in the nucleus server  and run the connector
 
 ```bash
-reset && bash run_ignition_omni.sh -p omniverse://localhost/Users/ignition/turtlebot3.usd -w empty -v
+reset && bash run_ignition_omni.sh -p omniverse://localhost/Users/ignition/turtlebot3.usd -w empty -v --pose ignition
 ```
 
 ![](turtlebot3.gif)
