@@ -7,7 +7,6 @@ Please review this [tutorial](./01_compile.md) if you need to install ign-omni.
 Run the `shapes.sdf` world in Ignition Gazebo. This should run in a separate terminal using your normal Ignition Gazebo installation.
 
 ```bash
-source ~/ignition-fortress/install/setup.bash
 ign gazebo -v 4 shapes.sdf
 ```
 
@@ -25,8 +24,6 @@ Launch `IsaacSim` and activate the `live sync`
 ![](live_sync.gif)
 
 ## Run the connector
-
-And finally run:
 
 **Note**: `ignition-omni` will be built under `src/ign-omni/_build`, this is because
 it uses a custom build system by NVidia which is hard coded to put output in that directory.
