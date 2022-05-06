@@ -87,7 +87,7 @@ You should run the Turtlebot4 simulation in Ignition, we are going to set to tru
 
 ```bash
 source ~/turtlebot4_ws/install/setup.bash
-ros2 launch turtlebot4_ignition_bringup ignition.launch.py slam:=sync rviz:=true
+ros2 launch turtlebot4_ignition_bringup ignition.launch.py slam:=sync nav2:=true rviz:=true
 ```
 
 ### Run the connector
