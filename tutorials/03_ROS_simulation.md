@@ -29,7 +29,7 @@ This should run in a separate terminal using your normal Ignition Gazebo install
 
 ```bash
 source ~/turtlebot3_ws/install/setup.bash
-export TURTLEBOT3_MODEL=waffle ros2 launch turtlebot3_ignition ignition.launch.py
+TURTLEBOT3_MODEL=waffle ros2 launch turtlebot3_ignition ignition.launch.py
 ```
 
 ## Run IsaacSim
@@ -43,6 +43,7 @@ Launch `IsaacSim` and activate the `live sync`
 Create this directory `omniverse://localhost/Users/ignition/` in the nucleus server  and run the connector
 
 ```bash
+export IGN_GAZEBO_RESOURCE_PATH="~/turtlebot3_ws/src/turtlebot3_simulations/turtlebot3_gazebo/models:/opt/ros/galactic/share"
 reset && bash run_ignition_omni.sh -p omniverse://localhost/Users/ignition/turtlebot3.usd -w empty -v --pose ignition
 ```
 
