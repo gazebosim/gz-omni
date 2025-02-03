@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 Open Source Robotics Foundation
+ * Copyright (C) 2025 Open Source Robotics Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,22 +14,15 @@
  * limitations under the License.
  *
  */
-#ifndef GZ_OMNIVERSE_MESH_HPP
-#define GZ_OMNIVERSE_MESH_HPP
 
-#include <gz/msgs/meshgeom.pb.h>
+#ifndef GZ_OMNIVERSE_UTIL_HPP
+#define GZ_OMNIVERSE_UTIL_HPP
 
-#include <pxr/usd/usd/stage.h>
-#include <pxr/usd/usdGeom/mesh.h>
+#include <string>
 
-namespace gz
+namespace gz::omniverse
 {
-namespace omniverse
-{
-bool UpdateMesh(const gz::msgs::MeshGeom& _meshMsg,
-                      const std::string& _path,
-                      const pxr::UsdStageRefPtr& _stage);
-}
-}  // namespace gz
+std::string validPath(const std::string &_path);
+}  // namespace gz::omniverse
 
 #endif

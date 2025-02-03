@@ -36,6 +36,8 @@ namespace gz
 {
 namespace omniverse
 {
+namespace
+{
 /// Return the full path of an URL
 /// If the resource is a URI we try to find to file in the filesystem
 /// \brief _fullPath URI of the resource
@@ -183,6 +185,7 @@ void CreateMaterialInput(
     ignerr << "Not able to convert the prim to a UsdShadeShader" << std::endl;
   }
 }
+}  // namespace
 
 /// \param[in] _stageDirUrl stage directory URL to copy materials if required
 bool SetMaterial(const pxr::UsdGeomGprim &_gprim,

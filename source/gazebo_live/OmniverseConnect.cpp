@@ -17,6 +17,8 @@
 
 #include "OmniverseConnect.hpp"
 
+#include <omni/connect/core/Core.h>
+
 #include <gz/common/Console.hh>
 
 #include <pxr/base/gf/vec3f.h>
@@ -184,8 +186,16 @@ void CheckpointFile(const char* stageUrl, const char* comment)
 }
 
 // Startup Omniverse
-bool StartOmniverse()
+bool StartOmniverse(bool verbose)
 {
+  // Startup the core Omniverse frameworks required for Connectors
+  // NOTE: this funciton will also initialize the Omniverse USD Resolver plugin
+  OMNICONNECTCORE_INIT();
+  if (!omni::connect::core::initialized())
+  {
+      return false;
+  }
+
   // Register a function to be called whenever the library wants to print
   // something to a log
   omniClientSetLogCallback(
@@ -213,17 +223,11 @@ bool StartOmniverse()
         }
       });
 
-  // The default log level is "Info", set it to "Debug" to see all messages
-  omniClientSetLogLevel(eOmniClientLogLevel_Info);
+  // Set Omni client library log level
+  omniClientSetLogLevel(verbose? eOmniClientLogLevel_Verbose : eOmniClientLogLevel_Info);
 
-  // Initialize the library and pass it the version constant defined in
-  // OmniClient.h This allows the library to verify it was built with a
-  // compatible version. It will return false if there is a version mismatch.
-  if (!omniClientInitialize(kOmniClientVersion))
-  {
-    return false;
-  }
-
+  // Handle connection errors. Note Connect SDK already provides logging for status changes,
+  // so we only need to add any extra status handling.
   omniClientRegisterConnectionStatusCallback(
       nullptr,
       [](void* userData, const char* url,
@@ -233,17 +237,23 @@ bool StartOmniverse()
         gzmsg << "Connection Status: "
                << omniClientGetConnectionStatusString(status) << " [" << url
                << "]" << std::endl;
-        if (status == eOmniClientConnectionStatus_ConnectError)
-        {
-          // We shouldn't just exit here - we should clean up a bit, but we're
-          // going to do it anyway
-          gzerr << "Failed connection, exiting." << std::endl;
-          exit(-1);
-        }
+        switch (status)
+            {
+                case eOmniClientConnectionStatus_Connecting:
+                case eOmniClientConnectionStatus_Connected:
+                {
+                    // no need to inform the user as Connect SDK has handled this for us.
+                    return;
+                }
+                default:
+                {
+                    // all other cases are failure states that means we cannot continue this sample program
+                    OMNI_LOG_FATAL("There was a problem connecting to Nucleus (OmniClientConnectionStatus: %d). Exiting.", status);
+                    // We shouldn't just exit here - we should clean up a bit, but we're going to do it anyway
+                    exit(-1);
+                }
+            }
       });
-
-  // Enable live updates
-  // omniUsdLiveSetDefaultEnabled(true);
 
   return true;
 }

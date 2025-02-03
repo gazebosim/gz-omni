@@ -19,16 +19,17 @@ workspace "gazebo-omniverse1"
 
 function sample(projectName, sourceFolder)
     project(projectName)
-    
-    local gazeboInstallDir = "../../install"
 
-    buildoptions {"-D_GLIBCXX_USE_CXX11_ABI=0 -Wno-deprecated-declarations -Wno-deprecated -Wno-unused-variable -pthread -lstdc++fs -Wno-error=switch -Wno-error=shadow -Wno-error=sign-compare -Wno-error=unused-parameter -Wno-error=unused-function"}
-    
+    local gazeboInstallDir = "/usr/local/google/home/shameek/omni-workspace/install"
+
+    buildoptions {"-D_GLIBCXX_USE_CXX11_ABI=0 -Wno-deprecated-declarations -Wno-deprecated -Wno-unused-variable -Wno-error=switch -Wno-error=shadow -Wno-error=sign-compare -Wno-error=unused-parameter -Wno-error=unused-function"}
+
     includedirs {
         "source/common/include",
+    }
+    externalincludedirs {
         gazeboInstallDir.."/include",
-        -- include gazebo libraries
-        gazeboInstallDir.."/include/**",
+        gazeboInstallDir.."/include/**"
     }
 
     -- setup all paths, links, and carb dependencies to enable omni_connect_core
@@ -62,12 +63,8 @@ function sample(projectName, sourceFolder)
             debugenvs "CARB_APP_PATH=$(ProjectDir)..\\..\\..\\_build\\windows-x86_64\\release"
         filter {}
     filter { "system:linux" }
-        -- linkoptions{ "-L" }
-        -- link gazebo libraries
         libdirs { gazeboInstallDir.."/lib" }
-        links {
-            "pthread", "stdc++fs", "protobuf", "protoc", "gz-transport13", "gz-msgs10", "gz-common5", "sdformat14", "carb", "gz-math7", "gz-common5-graphics"
-        }
+        links { "pthread", "stdc++fs", "protobuf", "protoc", "gz-transport13", "gz-msgs10", "gz-common5", "sdformat14", "gz-math7", "gz-utils2", "gz-common5-graphics" }
     filter {}
 
     connect_build.executable({

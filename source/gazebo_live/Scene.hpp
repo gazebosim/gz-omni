@@ -44,6 +44,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <mutex>
 #include <string>
 #include <thread>
 #include <unordered_map>
@@ -61,7 +62,11 @@ class Scene
   Scene(
     const std::string &_worldName,
     const std::string &_stageUrl,
-    Simulator _simulatorPoses);
+    pxr::UsdStageRefPtr stage,
+    Simulator _simulatorPoses,
+    bool use_live,
+    const std::string &_scopeName,
+    const gz::math::Pose3d &_scopePose);
 
   /// \brief Initialize the scene and subscribes for updates. This blocks until
   /// the scene is initialized.
@@ -71,7 +76,8 @@ class Scene
   /// \brief Equivalent to `scene.Stage().Lock()->Save()`.
   void Save();
 
-  std::shared_ptr<ThreadSafe<pxr::UsdStageRefPtr>> &Stage();
+  /// Returns a reference to the stage update mutex in this scene.
+  std::mutex& Mutex();
 
   /// \internal
   /// \brief Private data pointer

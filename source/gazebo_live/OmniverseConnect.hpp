@@ -52,7 +52,7 @@ MaybeError<std::string, GenericError> CreateOmniverseModel(
 void CheckpointFile(const char* stageUrl, const char* comment);
 
 // Startup Omniverse
-bool StartOmniverse();
+bool StartOmniverse(bool verbose);
 }  // namespace gz::omniverse
 
 #endif
