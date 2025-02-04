@@ -20,7 +20,7 @@ workspace "gazebo-omniverse1"
 function sample(projectName, sourceFolder)
     project(projectName)
 
-    local gazeboInstallDir = "/usr/local/google/home/shameek/omni-workspace/install"
+    local gazeboInstallDir = "../../install"
 
     buildoptions {"-D_GLIBCXX_USE_CXX11_ABI=0 -Wno-deprecated-declarations -Wno-deprecated -Wno-unused-variable -Wno-error=switch -Wno-error=shadow -Wno-error=sign-compare -Wno-error=unused-parameter -Wno-error=unused-function"}
 
